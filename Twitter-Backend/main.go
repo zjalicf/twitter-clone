@@ -47,6 +47,13 @@ func main() {
 	postRouter.HandleFunc("/add", tweetsHandler.PostTweet)
 	postRouter.Use(tweetsHandler.MiddlewareTweetValidation)
 
+	putRouter := router.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", tweetsHandler.PutTweet)
+	putRouter.Use(tweetsHandler.MiddlewareTweetValidation)
+
+	deleteRouter := router.Methods(http.MethodDelete).Subrouter()
+	deleteRouter.HandleFunc("/{id:[0-9]+}", tweetsHandler.DeleteTweet)
+
 	cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 
 	server := http.Server{

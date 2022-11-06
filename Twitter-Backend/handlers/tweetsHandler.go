@@ -3,8 +3,10 @@ package handlers
 import (
 	"Twitter-Backend/data"
 	"context"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type KeyTweet struct{}
@@ -33,6 +35,48 @@ func (tweetsHandler *TweetsHandler) PostTweet(responseWriter http.ResponseWriter
 	tweet := request.Context().Value(KeyTweet{}).(*data.Tweet)
 	tweetsHandler.tweetRepo.PostTweet(tweet)
 	responseWriter.WriteHeader(http.StatusCreated)
+}
+
+func (tweetsHandler *TweetsHandler) PutTweet(responseWriter http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	id, _ := strconv.Atoi(vars["id"])
+
+	tweet := request.Context().Value(KeyTweet{}).(*data.Tweet)
+	putErr := tweetsHandler.tweetRepo.PutTweet(tweet, id)
+
+	if putErr != nil {
+		http.Error(responseWriter, putErr.Error(), http.StatusBadRequest)
+		tweetsHandler.logger.Println(putErr.Error())
+		return
+	}
+
+	err := tweet.ToJSON(responseWriter)
+	if err != nil {
+		http.Error(responseWriter, "Unable to convert to JSON", http.StatusInternalServerError)
+		tweetsHandler.logger.Println("Unable to convert to JSON :", err)
+		return
+	}
+}
+
+func (tweetsHandler *TweetsHandler) DeleteTweet(responseWriter http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	id, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
+		tweetsHandler.logger.Println("Unable to convert from ascii to integer - input was :", vars["id"])
+		return
+	}
+
+	err = tweetsHandler.tweetRepo.DeleteTweet(id)
+
+	if err != nil {
+		http.Error(responseWriter, err.Error(), http.StatusBadRequest)
+		tweetsHandler.logger.Println("Unable to delete Tweet", err)
+		return
+	}
+
+	responseWriter.WriteHeader(http.StatusOK)
 }
 
 func (tweetsHandler *TweetsHandler) MiddlewareTweetValidation(next http.Handler) http.Handler {

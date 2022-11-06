@@ -81,7 +81,7 @@ func (tweetRepo *TweetRepoPostgreSql) DeleteTweet(id int) error {
 
 	var tweet Tweet
 
-	tweetRepo.database.Where("id = ?", id).Find(&tweet)
+	tweetRepo.database.Where("id = ?", id).Delete(&tweet)
 
 	if tweet.ID == 0 {
 		return errors.New(fmt.Sprintf("Tweet with id %d not found", id))
