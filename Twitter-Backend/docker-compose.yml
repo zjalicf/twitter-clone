@@ -1,0 +1,30 @@
+#Generally designed with an idea of being cross compatible between compose and
+#swarm mode.
+version: '3.1'
+
+services:
+  #Our service.
+  server:
+    #we could've specified an image to use, but while developing we may want to always rebuild the
+    #service since we are probably changing the code a lot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    container_name: 'product-server'
+    hostname: 'product-server'
+    #Mapping ports
+    ports:
+      # <port_on_local>:<port_in_machine>
+      - "8000:8000"
+    volumes:
+      -  ./.env:/usr/bin/.env
+
+  db:
+    image: postgres
+    container_name: db
+    restart: on-failure
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: tweets
