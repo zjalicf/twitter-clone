@@ -1,4 +1,4 @@
-package data
+package domain
 
 type TweetRepo interface {
 	GetAll() Tweets
