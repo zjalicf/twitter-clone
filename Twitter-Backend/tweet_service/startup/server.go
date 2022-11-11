@@ -58,7 +58,7 @@ func (server *Server) initTweetStore(client *mongo.Client) domain.TweetStore {
 	store := store2.NewTweetMongoDBStore(client)
 
 	//Delete everything from the database on server start
-	//store.DeleteAll()
+	//	store.DeleteAll()
 	return store
 }
 
