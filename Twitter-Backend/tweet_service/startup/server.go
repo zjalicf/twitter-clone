@@ -1,11 +1,6 @@
 package startup
 
 import (
-	"Twitter-Backend/application"
-	"Twitter-Backend/domain"
-	"Twitter-Backend/handlers"
-	"Twitter-Backend/startup/config"
-	store2 "Twitter-Backend/store"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -16,6 +11,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"tweet_service/application"
+	"tweet_service/domain"
+	"tweet_service/handlers"
+	"tweet_service/startup/config"
+	store2 "tweet_service/store"
 )
 
 type Server struct {
