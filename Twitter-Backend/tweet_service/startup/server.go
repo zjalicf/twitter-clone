@@ -39,11 +39,9 @@ func (server *Server) Start() {
 
 	tweetStore := server.initTweetStore(mongoClient)
 	tweetService := server.initTweetService(tweetStore)
-
 	tweetHandler := server.initTweetHandler(tweetService)
 
 	server.start(tweetHandler)
-
 }
 
 func (server *Server) initMongoClient() *mongo.Client {
