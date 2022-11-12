@@ -1,7 +1,9 @@
 package main
 
-import "Twitter-Backend/startup"
-import cfg "Twitter-Backend/startup/config"
+import (
+	"tweet-service/startup"
+	cfg "tweet-service/startup/config"
+)
 
 func main() {
 	config := cfg.NewConfig()

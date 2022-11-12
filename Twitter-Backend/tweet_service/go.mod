@@ -1,4 +1,4 @@
-module Twitter-Backend
+module tweet-service
 
 go 1.18
 
