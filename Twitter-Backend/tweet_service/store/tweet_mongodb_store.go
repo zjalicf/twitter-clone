@@ -1,11 +1,11 @@
 package store
 
 import (
-	"Twitter-Backend/domain"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"tweet_service/domain"
 )
 
 const (
