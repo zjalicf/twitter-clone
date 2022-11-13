@@ -20,6 +20,8 @@ import { HeaderComponent } from './components/header/header.component';
 import { TweetViewComponent } from './components/tweet/tweet-view/tweet-view.component';
 import { TweetItemComponent } from './components/tweet/tweet-item/tweet-item.component';
 import { TweetListComponent } from './components/tweet/tweet-list/tweet-list.component';
+import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
+import { RegisterBusinessComponent } from './components/register-business/register-business.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +30,9 @@ import { TweetListComponent } from './components/tweet/tweet-list/tweet-list.com
     HeaderComponent,
     TweetViewComponent,
     TweetItemComponent,
-    TweetListComponent
+    TweetListComponent,
+    RegisterRegularComponent,
+    RegisterBusinessComponent
   ],
   imports: [
     BrowserModule,

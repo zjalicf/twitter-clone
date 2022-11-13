@@ -1,0 +1,61 @@
+<div class="row">
+    <div class="col-7 col-lg-8">
+        <mat-card class="add-post-card">
+            <mat-card-title class="register-title">Register as a Regular User</mat-card-title>
+            <div class="form-group">
+                <form>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">First Name</mat-card-title>
+                        <input type="text" class="form-control" formControlName="title">
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Surname</mat-card-title>
+                        <input type="text" class="form-control" formControlName="title">
+                    </div>
+
+                    <div class="mb-3 w-25">
+                        <mat-card-title class="card-title">Gender</mat-card-title>
+                            <mat-select matNativeControl class="form-control" formControlName="gender" id="gender">
+                                <mat-option *ngFor="let gender of genders" [value]="gender">{{gender}}</mat-option>
+                            </mat-select>
+                    </div>
+
+                    <div class="mb-3 w-25">
+                        <mat-card-title class="card-title">Age</mat-card-title>
+                        <input type="number" class="form-control" formControlName="title">
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Residence</mat-card-title>
+                        <input type="text" class="form-control" formControlName="title">
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Username</mat-card-title>
+                        <input type="text" class="form-control" formControlName="title">
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Password</mat-card-title>
+                        <input type="password" class="form-control" formControlName="title">
+                    </div>
+
+                    
+
+                </form>
+
+            </div>
+        </mat-card>
+    </div>
+
+    <div class="col-5 col-lg-4">
+            <img class="twitter-logo" src="https://cdn-icons-png.flaticon.com/512/124/124021.png">
+            <div>
+                <mat-card-title class="register-business">If you want to Register as a <b>Business User</b></mat-card-title>
+                <mat-card-title class="click-here" [routerLink]="['/Register-Business']">Click Here</mat-card-title>
+            </div>
+    </div>
+
+</div>

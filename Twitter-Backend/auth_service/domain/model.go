@@ -33,6 +33,8 @@ const (
 )
 
 type Credentials struct {
-	Username	string	`bson:"username" json:"username"`
-	Password	string	`bson:"password" json:"password"`
+	ID       primitive.ObjectID `bson:"id" json:"id"`
+	Username string             `bson:"username" json:"username"`
+	Password string             `bson:"password" json:"password"`
+	UserType UserType           `bson:"userType" json:"userType"`
 }
