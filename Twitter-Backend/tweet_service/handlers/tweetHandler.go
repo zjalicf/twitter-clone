@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"Twitter-Backend/application"
-	"Twitter-Backend/domain"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
+	"tweet_service/application"
+	"tweet_service/domain"
 )
 
 type TweetHandler struct {
