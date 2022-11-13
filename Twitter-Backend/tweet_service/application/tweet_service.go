@@ -1,9 +1,9 @@
 package application
 
 import (
-	"Twitter-Backend/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+	"tweet_service/domain"
 )
 
 type TweetService struct {
