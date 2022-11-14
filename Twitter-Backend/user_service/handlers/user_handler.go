@@ -21,9 +21,19 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 }
 
 func (handler *UserHandler) Init(router *mux.Router) {
-	router.HandleFunc("/", handler.Get).Methods("GET")
+	router.HandleFunc("/{id}", handler.Get).Methods("GET")
+	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/", handler.Post).Methods("POST")
 	http.Handle("/", router)
+}
+
+func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
+	users, err := handler.service.GetAll()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(users, writer)
 }
 
 func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {

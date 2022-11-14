@@ -2,12 +2,17 @@ package application
 
 import (
 	"auth_service/domain"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/http"
 	"os"
 )
 
 var (
-	user_service_port = os.Getenv("USER_SERVICE_PORT")
+	userServiceHost = os.Getenv("USER_SERVICE_HOST")
+	userServicePort = os.Getenv("USER_SERVICE_PORT")
 )
 
 type AuthService struct {
@@ -21,26 +26,24 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 }
 
 func (service *AuthService) Register(user *domain.User) error {
-	//if isBusiness {
-	//	user.UserType = domain.Business
-	//} else {
-	//	user.UserType = domain.Regular
-	//}
+	validatedUser, err := validateUserType(user)
+	if err != nil {
+		return err
+	}
 
-	//body, err := json.Marshal(user)
-	//if err != nil {
-	//	return err
-	//}
+	body, err := json.Marshal(validatedUser)
+	if err != nil {
+		return err
+	}
 
-	//uServRequest, _ := http.NewRequest("POST", "http://localhost:"+user_service_port, bytes.NewReader(body))
-	//client := &http.Client{}
-	//userResponse, err := client.Do(uServRequest)
+	uServUrl := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
+	fmt.Println(uServUrl)
+	uServRequest, _ := http.NewRequest("POST", uServUrl, bytes.NewReader(body))
+	_, err = http.DefaultClient.Do(uServRequest)
 
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//defer userResponse.Body.Close()
+	if err != nil {
+		return err
+	}
 
 	credentials := domain.Credentials{Username: user.Username, Password: user.Password, UserType: user.UserType}
 	credentials.ID = primitive.NewObjectID()
@@ -50,4 +53,37 @@ func (service *AuthService) Register(user *domain.User) error {
 
 func (service *AuthService) Login(credentials *domain.Credentials) error {
 	return nil
+}
+
+func validateUserType(user *domain.User) (*domain.User, error) {
+
+	business := isBusiness(user)
+	regular := isRegular(user)
+
+	if business && regular {
+		return nil, fmt.Errorf("invalid user format.")
+	} else if business {
+		user.UserType = domain.Business
+		return user, nil
+	} else if regular {
+		user.UserType = domain.Regular
+	}
+
+	return nil, fmt.Errorf("invalid user data.")
+}
+
+func isBusiness(user *domain.User) bool {
+	if len(user.CompanyName) != 0 && len(user.Email) != 0 && len(user.WebSite) != 0 {
+		return false
+	}
+
+	return true
+}
+
+func isRegular(user *domain.User) bool {
+	if len(user.FirstName) != 0 && len(user.LastName) != 0 && len(user.Username) != 0 && len(user.Gender) != 0 {
+		return false
+	}
+
+	return true
 }

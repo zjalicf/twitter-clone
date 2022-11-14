@@ -51,6 +51,8 @@ services:
       AUTH_DB_HOST: ${AUTH_DB_HOST}
       AUTH_DB_PORT: ${AUTH_DB_PORT}
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
+      USER_SERVICE_HOST: ${USER_SERVICE_HOST}
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
     depends_on:
       - auth_db
     networks:

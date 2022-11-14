@@ -3,13 +3,12 @@ package store
 import (
 	"auth_service/domain"
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
-	DATABASE   = "auth"
+	DATABASE   = "credentials"
 	COLLECTION = "credentials"
 )
 
@@ -26,12 +25,12 @@ func NewAuthMongoDBStore(client *mongo.Client) domain.AuthStore {
 
 func (store *AuthMongoDBStore) Register(credentials *domain.Credentials) error {
 	credentials.ID = primitive.NewObjectID()
-	_, err := store.credentials.InsertOne(context.TODO(), credentials)
+	result, err := store.credentials.InsertOne(context.TODO(), credentials)
 
 	if err != nil {
-		return fmt.Errorf("database save error.")
+		return err
 	}
-
+	credentials.ID = result.InsertedID.(primitive.ObjectID)
 	return nil
 }
 
