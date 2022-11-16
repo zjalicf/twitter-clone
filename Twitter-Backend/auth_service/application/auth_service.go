@@ -36,10 +36,10 @@ func (service *AuthService) Register(user *domain.User) error {
 		return err
 	}
 
-	uServUrl := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-	fmt.Println(uServUrl)
-	uServRequest, _ := http.NewRequest("POST", uServUrl, bytes.NewReader(body))
-	_, err = http.DefaultClient.Do(uServRequest)
+	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
+
+	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
+	_, err = http.DefaultClient.Do(userServiceRequest)
 
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func validateUserType(user *domain.User) (*domain.User, error) {
 	regular := isRegular(user)
 
 	if business && regular {
-		return nil, fmt.Errorf("invalid user format.")
+		return nil, fmt.Errorf("invalid user format")
 	} else if business {
 		user.UserType = domain.Business
 		return user, nil
@@ -69,7 +69,7 @@ func validateUserType(user *domain.User) (*domain.User, error) {
 		user.UserType = domain.Regular
 	}
 
-	return nil, fmt.Errorf("invalid user data.")
+	return nil, fmt.Errorf("invalid user data")
 }
 
 func isBusiness(user *domain.User) bool {

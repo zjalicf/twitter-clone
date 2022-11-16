@@ -77,8 +77,6 @@ func (server *Server) start(authHandler *handlers.AuthHandler) {
 		Handler: router,
 	}
 
-	fmt.Println("Auth service pokrenut")
-
 	wait := time.Second * 15
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {

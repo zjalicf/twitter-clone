@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DATABASE   = "credentials"
+	DATABASE   = "user_credentials"
 	COLLECTION = "credentials"
 )
 
