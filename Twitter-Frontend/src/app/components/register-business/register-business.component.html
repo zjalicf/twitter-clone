@@ -1,1 +1,81 @@
-<p>register-business works!</p>
+<div class="row">
+    <div class="col-7 col-lg-8">
+        <mat-card class="add-post-card">
+            <mat-card-title class="register-title">Register as a Business User</mat-card-title>
+            <div class="form-group">
+                <form [formGroup]="formGroup">
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Company Name</mat-card-title>
+                        <input type="text" class="form-control" formControlName="companyName"
+                            [ngClass]="{ 'is-invalid': submitted && f['companyName'].errors }">
+                        <div *ngIf="submitted && f['companyName'].errors" class="invalid-feedback">
+                            <div *ngIf="f['companyName'].errors['required']">Company Name is required.</div>
+                            <div *ngIf="f['companyName'].errors['minlength']">Company Name must be at least 3 characters long.</div>
+                            <div *ngIf="f['companyName'].errors['maxlength']">Company Name must not exceed 35 characters.</div>
+                        </div>    
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Email</mat-card-title>
+                        <input type="text" class="form-control" formControlName="email"
+                            [ngClass]="{ 'is-invalid': submitted && f['email'].errors }">
+                        <div *ngIf="submitted && f['email'].errors" class="invalid-feedback">
+                            <div *ngIf="f['email'].errors['required']">Email is required.</div>
+                            <div *ngIf="f['email'].errors['minlength']">Email must be at least 3 characters long.</div>
+                            <div *ngIf="f['email'].errors['maxlength']">Email must not exceed 35 characters.</div>
+                            <div *ngIf="f['email'].errors['email']">Email is not in the correct format.</div>
+                        </div>    
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Website</mat-card-title>
+                        <input type="text" class="form-control" formControlName="website"
+                            [ngClass]="{ 'is-invalid': submitted && f['website'].errors }">
+                        <div *ngIf="submitted && f['website'].errors" class="invalid-feedback">
+                            <div *ngIf="f['website'].errors['required']">Website is required.</div>
+                            <div *ngIf="f['website'].errors['minlength']">Website must be at least 3 characters long.</div>
+                            <div *ngIf="f['website'].errors['maxlength']">Website must not exceed 35 characters.</div>
+                        </div>    
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Username</mat-card-title>
+                        <input type="text" class="form-control" formControlName="username"
+                            [ngClass]="{ 'is-invalid': submitted && f['username'].errors}">
+                        <div *ngIf="submitted && f['username'].errors" class="invalid-feedback">
+                            <div *ngIf="f['username'].errors['required']">Username is required.</div>
+                            <div *ngIf="f['username'].errors['minlength']">Username must be at least 3 characters long.</div>
+                            <div *ngIf="f['username'].errors['maxlength']">Username must not exceed 35 characters.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Password</mat-card-title>
+                        <input type="password" class="form-control" formControlName="password"
+                            [ngClass]="{ 'is-invalid': submitted && f['password'].errors}">
+                        <div *ngIf="submitted && f['password'].errors" class="invalid-feedback">
+                            <div *ngIf="f['password'].errors['required']">Password is required.</div>
+                            <div *ngIf="f['password'].errors['minlength']">Password must be at least 3 characters long.</div>
+                            <div *ngIf="f['password'].errors['maxlength']">Password must not exceed 35 characters.</div>
+                        </div>
+                        <div class="form-group form-check">
+                            <button type="submit" class="btn btn-primary" (click)="onSubmit()">Register</button>
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+        </mat-card>
+    </div>
+
+    <div class="col-5 col-lg-4">
+            <img class="twitter-logo" src="https://cdn-icons-png.flaticon.com/512/124/124021.png">
+            <div>
+                <mat-card-title class="register-business">If you want to Register as a <b>Regular User</b></mat-card-title>
+                <mat-card-title class="click-here" [routerLink]="['/Register-Regular']">Click Here</mat-card-title>
+            </div>
+    </div>
+
+</div>

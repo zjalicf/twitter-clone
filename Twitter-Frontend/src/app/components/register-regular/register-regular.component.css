@@ -51,7 +51,8 @@
 
 .btn-primary {
     margin-top: 10px;
-    float: right;
+    text-align: center;
+    margin-left: 70px;
 }
 
 .community-view-rules-card {

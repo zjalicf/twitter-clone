@@ -1,21 +1,25 @@
 export class User {
-    userId: number = 0;
+    firstName: string = "";
+    lastName: string = "";
+    gender: string = "";
+    age: number = 0;
+    residence: string = "";
     username: string = "";
     password: string = "";
-    avatar: string = "";
+    companyName: string = "";
     email: string = "";
-    dateOfRegistration: Date = new Date('2022-05-03');
-    description: string = "";
-    displayName: string = "";
+    website: string = "";
 
-    User(userId: number, username: string, password: string, avatar: string, email: string,  dateOfRegistration: Date, description: string, displayName: string) {
-        this.userId = userId;
+    User(firstName: string, lastName: string, gender: string, age: number, residence: string, username: string, password: string, companyName: string, email: string, website: string) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.gender = gender;
+        this.age = age;
+        this.residence = residence;
         this.username = username;
         this.password = password;
-        this.avatar = avatar;
+        this.companyName = companyName;
         this.email = email;
-        this.dateOfRegistration = dateOfRegistration;
-        this.description = description;
-        this.displayName = displayName;
+        this.website = website;
     }
 }

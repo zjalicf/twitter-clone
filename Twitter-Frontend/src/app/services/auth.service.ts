@@ -8,11 +8,14 @@ import { User } from "../models/user.model";
 providedIn: 'root'
 })
 export class AuthService {
-    private url = "Auth";
     constructor(private http: HttpClient) { }
 
-    public register(user: User, isBusiness: boolean): Observable<User> {
-        return this.http.post<User>(`${environment.baseApiUrl}/${this.url}/Register`, user);
+    public registerRegular(user: User): Observable<User> {
+        return this.http.post<User>(`${environment.baseApiUrl}/registerRegular`, user);
+    }
+
+    public registerBusiness(user: User): Observable<User> {
+        return this.http.post<User>(`${environment.baseApiUrl}/registerBusiness`, user);
     }
 
     // public login(loginDTO: LoginDTO): Observable<string> {
