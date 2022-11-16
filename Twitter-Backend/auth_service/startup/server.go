@@ -5,7 +5,7 @@ import (
 	"auth_service/domain"
 	"auth_service/handlers"
 	"auth_service/startup/config"
-	//store2 "auth_service/store"
+	store2 "auth_service/store"
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -53,7 +53,7 @@ func (server *Server) initMongoClient() *mongo.Client {
 }
 
 func (server *Server) initAuthStore(client *mongo.Client) domain.AuthStore {
-	store := store2.NewTweetMongoDBStore(client)
+	store := store2.NewAuthMongoDBStore(client)
 
 	//Delete everything from the database on server start
 	//	store.DeleteAll()
