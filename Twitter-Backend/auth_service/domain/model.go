@@ -4,11 +4,11 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type User struct {
 	ID        primitive.ObjectID `bson:"id" json:"id"`
-	FirstName string             `bson:"firstName" json:"firstName"`
-	LastName  string             `bson:"lastName" json:"lastName"`
-	Gender    Gender             `bson:"gender" json:"gender"`
-	Age       int                `bson:"age" json:"age"`
-	Residence string             `bson:"residence" json:"residence"`
+	FirstName string             `bson:"firstName,omitempty" json:"firstName,omitempty"`
+	LastName  string             `bson:"lastName,omitempty" json:"lastName,omitempty"`
+	Gender    Gender             `bson:"gender,omitempty" json:"gender,omitempty"`
+	Age       int                `bson:"age,omitempty" json:"age,omitempty"`
+	Residence string             `bson:"residence,omitempty" json:"residence,omitempty"`
 	Username  string             `bson:"username" json:"username"`
 	Password  string             `bson:"password" json:"password"`
 	UserType  UserType           `bson:"userType" json:"userType"`
