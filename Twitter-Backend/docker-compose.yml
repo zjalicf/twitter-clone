@@ -65,7 +65,7 @@ services:
     container_name: api_gateway
     restart: on-failure
     ports:
-      - 8000:8000
+      - "8000:8000"
     networks:
       - network
 
