@@ -22,6 +22,7 @@ import { TweetItemComponent } from './components/tweet/tweet-item/tweet-item.com
 import { TweetListComponent } from './components/tweet/tweet-list/tweet-list.component';
 import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
 import { RegisterBusinessComponent } from './components/register-business/register-business.component';
+import { LoginComponent } from './components/login/login.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +33,8 @@ import { RegisterBusinessComponent } from './components/register-business/regist
     TweetItemComponent,
     TweetListComponent,
     RegisterRegularComponent,
-    RegisterBusinessComponent
+    RegisterBusinessComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,
