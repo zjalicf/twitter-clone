@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,17 +36,20 @@ func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) 
 	return store.filterOne(filter)
 }
 
-func (store *UserMongoDBStore) Post(user *domain.User) error {
+func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
+	fmt.Println(json.Marshal(user))
 	user.ID = primitive.NewObjectID()
 	result, err := store.users.InsertOne(context.TODO(), user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	user.ID = result.InsertedID.(primitive.ObjectID)
-	return nil
+	return user, nil
 }
 func (store *UserMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
 	cursor, err := store.users.Find(context.TODO(), filter)
+	fmt.Println("ovde")
+	fmt.Println(cursor.Current)
 	defer cursor.Close(context.TODO())
 
 	if err != nil {
