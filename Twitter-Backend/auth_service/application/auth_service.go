@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"net/http"
 	"os"
 )
@@ -27,11 +27,6 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 }
 
 func (service *AuthService) Register(user *domain.User) error {
-	validatedUser, err := validateUserType(user)
-	if err != nil {
-		return err
-	}
-
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
@@ -39,7 +34,7 @@ func (service *AuthService) Register(user *domain.User) error {
 	}
 	user.Password = string(hash)
 
-	body, err := json.Marshal(validatedUser)
+	body, err := json.Marshal(user)
 	if err != nil {
 		return err
 	}
@@ -47,51 +42,29 @@ func (service *AuthService) Register(user *domain.User) error {
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
 
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
-	_, err = http.DefaultClient.Do(userServiceRequest)
-
+	responseUser, err := http.DefaultClient.Do(userServiceRequest)
 	if err != nil {
 		return err
 	}
 
-	credentials := domain.Credentials{Username: user.Username, Password: user.Password, UserType: user.UserType}
-	credentials.ID = primitive.NewObjectID()
+	response, err := io.ReadAll(responseUser.Body)
+	if err != nil {
+		return err
+	}
+
+	var newUser domain.User
+	json.Unmarshal(response, &newUser)
+
+	credentials := domain.Credentials{
+		ID:       newUser.ID,
+		Username: user.Username,
+		Password: user.Password,
+		UserType: newUser.UserType,
+	}
 
 	return service.store.Register(&credentials)
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) error {
 	return nil
-}
-
-func validateUserType(user *domain.User) (*domain.User, error) {
-
-	business := isBusiness(user)
-	regular := isRegular(user)
-
-	if business && regular {
-		return nil, fmt.Errorf("invalid user format")
-	} else if business {
-		user.UserType = domain.Business
-		return user, nil
-	} else if regular {
-		user.UserType = domain.Regular
-	}
-
-	return nil, fmt.Errorf("invalid user data")
-}
-
-func isBusiness(user *domain.User) bool {
-	if len(user.CompanyName) != 0 && len(user.Email) != 0 && len(user.WebSite) != 0 {
-		return false
-	}
-
-	return true
-}
-
-func isRegular(user *domain.User) bool {
-	if len(user.FirstName) != 0 && len(user.LastName) != 0 && len(user.Username) != 0 && len(user.Gender) != 0 {
-		return false
-	}
-
-	return true
 }
