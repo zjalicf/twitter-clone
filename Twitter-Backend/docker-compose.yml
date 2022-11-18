@@ -12,11 +12,11 @@ services:
     ports:
       - ${TWEET_SERVICE_PORT}:${TWEET_SERVICE_PORT}
     environment:
-      TWEET_DB_HOST: ${TWEET_DB_HOST}
-      TWEET_DB_PORT: ${TWEET_DB_PORT}
+      TWEET_DB: ${TWEET_DB}
       TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
     depends_on:
-      - tweet_db
+       tweet_db:
+         condition: service_healthy
     networks:
       - network
 
@@ -69,10 +69,27 @@ services:
     networks:
       - network
 
+#  tweet_db:
+#    image: mongo
+#    container_name: tweet_db
+#    restart: on-failure
+#    networks:
+#      - network
+
   tweet_db:
-    image: mongo
+    image: cassandra
     container_name: tweet_db
-    restart: on-failure
+    restart: always
+    ports:
+      - "9042:9042"
+    # Docker healtcheck - checks if database is "alive"
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - cassandra_store:/var/lib/cassandra/data
     networks:
       - network
 
@@ -89,6 +106,9 @@ services:
     restart: on-failure
     networks:
       - network
+
+volumes:
+  cassandra_store:
 
 networks:
   network:

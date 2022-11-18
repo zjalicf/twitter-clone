@@ -12,10 +12,8 @@ import (
 	"syscall"
 	"time"
 	"tweet_service/application"
-	"tweet_service/domain"
 	"tweet_service/handlers"
 	"tweet_service/startup/config"
-	store2 "tweet_service/store"
 )
 
 type Server struct {
@@ -44,24 +42,8 @@ func (server *Server) Start() {
 	server.start(tweetHandler)
 }
 
-func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store2.GetClient(server.config.TweetDBHost, server.config.TweetDBPort)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-func (server *Server) initTweetStore(client *mongo.Client) domain.TweetStore {
-	store := store2.NewTweetMongoDBStore(client)
-
-	//Delete everything from the database on server start
-	//	store.DeleteAll()
-	return store
-}
-
-func (server *Server) initTweetService(store domain.TweetStore) *application.TweetService {
-	return application.NewTweetService(store)
+func (server *Server) initTweetService() *application.TweetService {
+	return application.NewTweetService()
 }
 
 func (server *Server) initTweetHandler(service *application.TweetService) *handlers.TweetHandler {
