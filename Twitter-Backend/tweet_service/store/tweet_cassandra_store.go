@@ -73,25 +73,23 @@ func (sr *TweetRepo) CreateTables() {
 	//		COLLECTION)).Exec()
 
 	err := sr.session.Query(
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s 
-					(tweet_id UUID, text text, 
-					PRIMARY KEY ((tweet_id)) 
-					WITH CLUSTERING ORDER BY (tweet_id DESC)`,
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, text text, PRIMARY KEY ((tweet_id)))",
 			COLLECTION)).Exec()
+	//CREATE TABLE IF NOT EXISTS %s  ( predmet text, PRIMARY KEY ((student_id), ispit_id, ocena)) WITH CLUSTERING ORDER BY (ispit_id ASC, ocena DESC), "ispiti_by_student")).Exec()
 
 	if err != nil {
 		sr.logger.Println(err)
 	}
 }
 
-func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
+func (sr *TweetRepo) GetAll() ([]*domain.Tweet, error) {
 	//scanner := sr.session.Query(`SELECT tweet_id, text, created_at, favorite, favorite_count, retweeted, retweet_count,
 	//   user_id FROM tweet`).Iter().Scanner()
 	scanner := sr.session.Query(`SELECT tweet_id, text FROM tweet`).Iter().Scanner()
 
-	var tweets []domain.Tweet
+	var tweets []*domain.Tweet
 	for scanner.Next() {
-		var tweet domain.Tweet
+		var tweet *domain.Tweet
 		err := scanner.Scan(&tweet.ID, &tweet.Text)
 		if err != nil {
 			sr.logger.Println(err)

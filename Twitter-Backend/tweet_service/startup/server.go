@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"tweet_service/application"
 	"tweet_service/handlers"
 	"tweet_service/startup/config"
+	"tweet_service/store"
 )
 
 type Server struct {
@@ -27,23 +27,22 @@ func NewServer(config *config.Config) *Server {
 }
 
 func (server *Server) Start() {
-	mongoClient := server.initMongoClient()
-	defer func(mongoClient *mongo.Client, ctx context.Context) {
-		err := mongoClient.Disconnect(ctx)
-		if err != nil {
 
-		}
-	}(mongoClient, context.Background())
+	tweetStore, err := store.New(log.Default())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tweetStore.CloseSession()
+	tweetStore.CreateTables()
 
-	tweetStore := server.initTweetStore(mongoClient)
-	tweetService := server.initTweetService(tweetStore)
+	tweetService := server.initTweetService(*tweetStore)
 	tweetHandler := server.initTweetHandler(tweetService)
 
 	server.start(tweetHandler)
 }
 
-func (server *Server) initTweetService() *application.TweetService {
-	return application.NewTweetService()
+func (server *Server) initTweetService(store store.TweetRepo) *application.TweetService {
+	return application.NewTweetService(&store)
 }
 
 func (server *Server) initTweetHandler(service *application.TweetService) *handlers.TweetHandler {
