@@ -9,13 +9,13 @@ type User struct {
 	Gender    Gender             `bson:"gender,omitempty" json:"gender,omitempty"`
 	Age       int                `bson:"age,omitempty" json:"age,omitempty"`
 	Residence string             `bson:"residence,omitempty" json:"residence,omitempty"`
+	Email     string             `bson:"email" json:"email"`
 	Username  string             `bson:"username" json:"username"`
 	Password  string             `bson:"password" json:"password"`
 	UserType  UserType           `bson:"userType" json:"userType"`
 
 	CompanyName string `bson:"companyName,omitempty" json:"companyName,omitempty"`
-	Email       string `bson:"email,omitempty" json:"email,omitempty"`
-	WebSite     string `bson:"webSite,omitempty" json:"webSite,omitempty"`
+	WebSite     string `bson:"website,omitempty" json:"website,omitempty"`
 }
 
 type Gender string
