@@ -58,6 +58,17 @@ services:
     networks:
       - network
 
+  api_gateway:
+    build:
+      context: ./api_gateway/
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    restart: on-failure
+    ports:
+      - 8000:8000
+    networks:
+      - network
+
   tweet_db:
     image: mongo
     container_name: tweet_db

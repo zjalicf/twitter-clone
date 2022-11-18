@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"os"
 )
@@ -30,6 +31,13 @@ func (service *AuthService) Register(user *domain.User) error {
 	if err != nil {
 		return err
 	}
+
+	pass := []byte(user.Password)
+	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hash)
 
 	body, err := json.Marshal(validatedUser)
 	if err != nil {
