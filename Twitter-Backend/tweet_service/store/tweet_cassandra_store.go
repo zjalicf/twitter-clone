@@ -82,14 +82,14 @@ func (sr *TweetRepo) CreateTables() {
 	}
 }
 
-func (sr *TweetRepo) GetAll() ([]*domain.Tweet, error) {
+func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	//scanner := sr.session.Query(`SELECT tweet_id, text, created_at, favorite, favorite_count, retweeted, retweet_count,
 	//   user_id FROM tweet`).Iter().Scanner()
 	scanner := sr.session.Query(`SELECT tweet_id, text FROM tweet`).Iter().Scanner()
 
-	var tweets []*domain.Tweet
+	var tweets []domain.Tweet
 	for scanner.Next() {
-		var tweet *domain.Tweet
+		var tweet domain.Tweet
 		err := scanner.Scan(&tweet.ID, &tweet.Text)
 		if err != nil {
 			sr.logger.Println(err)

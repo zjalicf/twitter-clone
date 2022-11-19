@@ -18,7 +18,7 @@ func NewTweetService(store domain.TweetStore) *TweetService {
 //	return service.store.Get(id)
 //}
 
-func (service *TweetService) GetAll() ([]*domain.Tweet, error) {
+func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 	return service.store.GetAll()
 }
 
