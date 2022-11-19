@@ -54,7 +54,7 @@ export class RegisterBusinessComponent implements OnInit {
     registerUser.username = this.formGroup.get("username")?.value;
     registerUser.password = this.formGroup.get("password")?.value;
 
-    this.authService.registerBusiness(registerUser)
+    this.authService.Register(registerUser)
       .subscribe({
         next: (data: User) => {
           console.log(data);
