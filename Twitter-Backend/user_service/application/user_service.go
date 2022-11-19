@@ -69,7 +69,7 @@ func isBusiness(user *domain.User) bool {
 
 func isRegular(user *domain.User) bool {
 	if len(user.Firstname) != 0 && len(user.Lastname) != 0 &&
-		len(user.Gender) != 0 && user.Age <= 0 &&
+		len(user.Gender) != 0 && user.Age > 0 &&
 		len(user.Residence) != 0 && len(user.Email) != 0 &&
 		len(user.Username) != 0 && len(user.Password) != 0 {
 		return true
