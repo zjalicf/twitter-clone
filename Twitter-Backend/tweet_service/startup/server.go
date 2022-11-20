@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
 	"os"
@@ -12,10 +11,9 @@ import (
 	"syscall"
 	"time"
 	"tweet_service/application"
-	"tweet_service/domain"
 	"tweet_service/handlers"
 	"tweet_service/startup/config"
-	store2 "tweet_service/store"
+	"tweet_service/store"
 )
 
 type Server struct {
@@ -29,39 +27,22 @@ func NewServer(config *config.Config) *Server {
 }
 
 func (server *Server) Start() {
-	mongoClient := server.initMongoClient()
-	defer func(mongoClient *mongo.Client, ctx context.Context) {
-		err := mongoClient.Disconnect(ctx)
-		if err != nil {
 
-		}
-	}(mongoClient, context.Background())
+	tweetStore, err := store.New(log.Default())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tweetStore.CloseSession()
+	tweetStore.CreateTables()
 
-	tweetStore := server.initTweetStore(mongoClient)
-	tweetService := server.initTweetService(tweetStore)
+	tweetService := server.initTweetService(*tweetStore)
 	tweetHandler := server.initTweetHandler(tweetService)
 
 	server.start(tweetHandler)
 }
 
-func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store2.GetClient(server.config.TweetDBHost, server.config.TweetDBPort)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-func (server *Server) initTweetStore(client *mongo.Client) domain.TweetStore {
-	store := store2.NewTweetMongoDBStore(client)
-
-	//Delete everything from the database on server start
-	//	store.DeleteAll()
-	return store
-}
-
-func (server *Server) initTweetService(store domain.TweetStore) *application.TweetService {
-	return application.NewTweetService(store)
+func (server *Server) initTweetService(store store.TweetRepo) *application.TweetService {
+	return application.NewTweetService(&store)
 }
 
 func (server *Server) initTweetHandler(service *application.TweetService) *handlers.TweetHandler {
