@@ -23,6 +23,7 @@ import { TweetListComponent } from './components/tweet/tweet-list/tweet-list.com
 import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
 import { RegisterBusinessComponent } from './components/register-business/register-business.component';
 import { LoginComponent } from './components/login/login.component';
+import { AuthInterceptor } from './services/auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -52,7 +53,11 @@ import { LoginComponent } from './components/login/login.component';
     MatSelectModule,
     MatDividerModule
   ],
-  providers: [],
+  providers: [{
+    provide: HTTP_INTERCEPTORS,
+    useClass: AuthInterceptor,
+    multi: true
+  }],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
