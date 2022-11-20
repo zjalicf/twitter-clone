@@ -65,6 +65,18 @@ func (service *AuthService) Register(user *domain.User) error {
 	return service.store.Register(&credentials)
 }
 
-func (service *AuthService) Login(credentials *domain.Credentials) error {
-	return nil
+func (service *AuthService) Login(credentials *domain.Credentials) (*domain.User, error) {
+
+	user, err := service.store.GetOneUser(credentials.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
+
+	if passError != nil {
+		return nil, passError
+	}
+
+	return user, nil
 }
