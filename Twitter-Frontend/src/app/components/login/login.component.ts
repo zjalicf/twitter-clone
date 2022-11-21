@@ -51,10 +51,15 @@ export class LoginComponent implements OnInit {
     login.password = this.formGroup.get('password')?.value;
 
     this.authService.Login(login)
-      .subscribe( data => {
-        localStorage.setItem("token", data)
-        // this.router.navigate()
-      })
+      .subscribe({
+        next: (token: string) => {
+          localStorage.setItem('authToken', token);
+          this.router.navigate(['/Main-Page']);
+        },
+        error: (error) => {
+          console.log(error)
+        }
+      });
 
   }
 

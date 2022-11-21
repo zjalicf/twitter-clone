@@ -13,18 +13,18 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  // isLoggedIn(): boolean {
-  //   if (localStorage.getItem("authToken") != null) {
-  //     return true;
-  //   }
-  //   else {
-  //     return false;
-  //   }
-  // }
+  isLoggedIn(): boolean {
+    if (localStorage.getItem("authToken") != null) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
-  // logout() {
-  //   localStorage.clear();
-  //   this.router.navigate(['/login']);
-  // }
+  logout() {
+    localStorage.clear();
+    this.router.navigate(['/Login']);
+  }
 
 }
