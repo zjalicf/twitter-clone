@@ -69,19 +69,19 @@ func (service *AuthService) Register(user *domain.User) error {
 	return service.store.Register(&credentials)
 }
 
-func (service *AuthService) Login(credentials *domain.Credentials) string {
+func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {
 
 	user, err := service.store.GetOneUser(credentials.Username)
 	if err != nil {
 		fmt.Println(err)
-		return ""
+		return "", err
 	}
 
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 
 	if passError != nil {
 		fmt.Println(passError)
-		return ""
+		return "", err
 	}
 
 	expirationTime := time.Now().Add(15 * time.Minute)
@@ -100,8 +100,8 @@ func (service *AuthService) Login(credentials *domain.Credentials) string {
 
 	if err != nil {
 		fmt.Println(err)
-		return ""
+		return "", err
 	}
 
-	return tokenString
+	return tokenString, nil
 }

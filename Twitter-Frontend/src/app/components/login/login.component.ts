@@ -51,9 +51,12 @@ export class LoginComponent implements OnInit {
       .subscribe({
         next: (token: string) => {
           localStorage.setItem('authToken', token);
-          this.router.navigate(['/mainPage']);
+          this.router.navigate(['/Main-Page']);
+        },
+        error: (error) => {
+          console.log(error)
         }
-      })
+      });
 
   }
 
