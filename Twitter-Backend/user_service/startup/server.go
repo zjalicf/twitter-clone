@@ -80,6 +80,7 @@ func (server *Server) start(tweetHandler *handlers.UserHandler) {
 	wait := time.Second * 15
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
+			//srv.ListenAndServeTLS("././cert/twitter-server.crt", "././cert/twitter-server.key")
 			log.Println(err)
 		}
 	}()

@@ -23,12 +23,13 @@ export class LoginComponent implements OnInit {
   ) { }
 
   submitted = false;
-
+  // incorrect = false;
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
       password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
     });
+    this.formGroup.setErrors({ unauthenticated: true})
   }
 
   get loginGroup(): { [key: string]: AbstractControl } {
@@ -54,7 +55,8 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['/Main-Page']);
         },
         error: (error) => {
-          console.log(error)
+          this.formGroup.setErrors({ unauthenticated: true });
+          // this.incorrect = true;
         }
       });
 

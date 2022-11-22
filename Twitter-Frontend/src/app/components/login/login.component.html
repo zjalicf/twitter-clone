@@ -10,10 +10,9 @@
                         <mat-card-title class="username-title">Username</mat-card-title>
                         <input type="text" maxlength="21" class="form-control" formControlName="username"
                             [ngClass]="{ 'is-invalid': submitted && loginGroup['username'].errors}">
-                        <div *ngIf="submitted&& loginGroup['username'].errors" class="invalid-feedback">
+                        <div *ngIf="submitted && loginGroup['username'].errors" class="invalid-feedback">
                             <div *ngIf="loginGroup['username'].errors['required']">Username is required.</div>
-                            <div *ngIf="loginGroup['username'].errors['minlength']">Username must be at least 3 characters
-                                long.</div>
+                            <div *ngIf="loginGroup['username'].errors['minlength']">Username must be at least 3 characters long.</div>
                             <div *ngIf="loginGroup['username'].errors['maxlength']">Username must not exceed 20 characters.
                             </div>
                         </div>
@@ -30,7 +29,13 @@
                             <div *ngIf="loginGroup['password'].errors['maxlength']">Password must not exceed 20
                                 characters.</div>
                         </div>
+                        <!-- <div *ngIf="incorrect">
+                            <div>Incorrect Username or Password</div>
+                        </div> -->
                         <button (click)="onSubmit()" class="btn btn-primary">Login</button>
+                        <div *ngIf="formGroup.errors?.['unauthenticated']" class="incorrect-credentials">
+                            Username or Password Incorrect!
+                        </div>
                     </div>
 
                 </form>
