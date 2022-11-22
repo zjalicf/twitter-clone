@@ -1,6 +1,8 @@
 package application
 
 import (
+	"github.com/gocql/gocql"
+	"time"
 	"tweet_service/domain"
 )
 
@@ -22,8 +24,13 @@ func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 	return service.store.GetAll()
 }
 
-//func (service *TweetService) Post(tweet *domain.Tweet) error {
-//	tweet.ID = primitive.NewObjectID()
-//	tweet.CreatedOn = time.Now()
-//	return service.store.Post(tweet)
-//}
+func (service *TweetService) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
+	tweet.ID, _ = gocql.RandomUUID()
+	tweet.CreatedAt = time.Now().Unix()
+	tweet.Favorited = false
+	tweet.FavoriteCount = 0
+	tweet.Retweeted = false
+	tweet.RetweetCount = 0
+	tweet.UserID = gocql.TimeUUID() // for now its random user
+	return service.store.Post(tweet)
+}
