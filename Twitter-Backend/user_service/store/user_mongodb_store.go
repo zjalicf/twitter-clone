@@ -48,8 +48,6 @@ func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
 }
 func (store *UserMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
 	cursor, err := store.users.Find(context.TODO(), filter)
-	fmt.Println("ovde")
-	fmt.Println(cursor.Current)
 	defer cursor.Close(context.TODO())
 
 	if err != nil {

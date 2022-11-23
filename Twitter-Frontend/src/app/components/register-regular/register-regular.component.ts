@@ -16,6 +16,7 @@ export class RegisterRegularComponent implements OnInit {
     gender: new FormControl(''), 
     age: new FormControl(''),
     residence: new FormControl(''),
+    email: new FormControl(''),
     username: new FormControl(''),
     password: new FormControl('')
   });
@@ -39,8 +40,9 @@ export class RegisterRegularComponent implements OnInit {
       gender: ['', [Validators.required]],
       age: ['', [Validators.required, Validators.min(1), Validators.max(100)]],
       residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30)]],
     })
   }
 
@@ -62,6 +64,7 @@ export class RegisterRegularComponent implements OnInit {
     registerUser.gender = this.formGroup.get("gender")?.value;
     registerUser.age = this.formGroup.get("age")?.value;
     registerUser.residence = this.formGroup.get("residence")?.value;
+    registerUser.email = this.formGroup.get("email")?.value;
     registerUser.username = this.formGroup.get("username")?.value;
     registerUser.password = this.formGroup.get("password")?.value;
 

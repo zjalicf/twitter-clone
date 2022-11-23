@@ -27,11 +27,11 @@ export class RegisterBusinessComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(25)]],
-      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(25)]],
-      website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
+      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
+      website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30)]],
     })
   }
 

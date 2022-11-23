@@ -59,8 +59,11 @@ func validateUserType(user *domain.User) (*domain.User, error) {
 }
 
 func isBusiness(user *domain.User) bool {
-	if len(user.CompanyName) >= 3 && len(user.Website) >= 3 && len(user.Email) >= 3 &&
-		len(user.Username) >= 3 && len(user.Password) >= 3 {
+	if len(user.CompanyName) >= 3 && len(user.CompanyName) <= 30 &&
+		len(user.Website) >= 3 && len(user.Website) <= 35 &&
+		len(user.Email) >= 3 && len(user.Email) <= 35 &&
+		len(user.Username) >= 3 && len(user.Username) <= 30 &&
+		len(user.Password) >= 8 && len(user.Password) <= 30 {
 		return true
 	}
 
@@ -68,10 +71,13 @@ func isBusiness(user *domain.User) bool {
 }
 
 func isRegular(user *domain.User) bool {
-	if len(user.Firstname) != 0 && len(user.Lastname) != 0 &&
-		len(user.Gender) >= 3 && user.Age > 0 &&
-		len(user.Residence) >= 3 && len(user.Email) >= 3 &&
-		len(user.Username) >= 3 && len(user.Password) >= 3 {
+	if len(user.Firstname) >= 3 && len(user.Firstname) <= 20 &&
+		len(user.Lastname) >= 3 && len(user.Lastname) <= 20 &&
+		len(user.Gender) >= 3 && len(user.Gender) <= 10 &&
+		user.Age >= 1 && user.Age <= 100 &&
+		len(user.Residence) >= 3 && len(user.Residence) <= 30 &&
+		len(user.Username) >= 3 && len(user.Username) <= 30 &&
+		len(user.Password) >= 8 && len(user.Password) <= 30 {
 		return true
 	}
 
