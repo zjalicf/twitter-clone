@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
@@ -26,17 +27,17 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 	}
 }
 
-func (service *AuthService) Register(user *domain.User) error {
+func (service *AuthService) Register(user *domain.User) (int, error) {
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return 500, err
 	}
 	user.Password = string(hash)
 
 	body, err := json.Marshal(user)
 	if err != nil {
-		return err
+		return 500, err
 	}
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
@@ -44,16 +45,20 @@ func (service *AuthService) Register(user *domain.User) error {
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
 	responseUser, err := http.DefaultClient.Do(userServiceRequest)
 	if err != nil {
-		return err
+		return 500, err
 	}
 
-	response, err := io.ReadAll(responseUser.Body)
-	if err != nil {
-		return err
+	if responseUser.StatusCode != 200 {
+		buf := new(strings.Builder)
+		_, _ = io.Copy(buf, responseUser.Body)
+		return responseUser.StatusCode, fmt.Errorf(buf.String())
 	}
 
 	var newUser domain.User
-	json.Unmarshal(response, &newUser)
+	err = responseToType(responseUser.Body, newUser)
+	if err != nil {
+		return 500, err
+	}
 
 	credentials := domain.Credentials{
 		ID:       newUser.ID,
@@ -62,9 +67,27 @@ func (service *AuthService) Register(user *domain.User) error {
 		UserType: newUser.UserType,
 	}
 
-	return service.store.Register(&credentials)
+	err = service.store.Register(&credentials)
+	if err != nil {
+		return 500, err
+	}
+	return 200, nil
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) error {
+	return nil
+}
+
+func responseToType(response io.ReadCloser, any any) error {
+	responseBodyBytes, err := io.ReadAll(response)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(responseBodyBytes, &any)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

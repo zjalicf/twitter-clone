@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"user_service/domain"
+	"user_service/errors"
 )
 
 type UserService struct {
@@ -29,12 +30,12 @@ func (service *UserService) Post(user *domain.User) (*domain.User, error) {
 
 	validatedUser, err := validateUserType(user)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(errors.ValidationError)
 	}
 
 	retUser, err := service.store.Post(validatedUser)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(errors.DatabaseError)
 	}
 
 	return retUser, nil

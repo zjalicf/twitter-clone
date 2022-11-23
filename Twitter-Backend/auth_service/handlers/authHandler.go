@@ -34,9 +34,9 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	err = handler.service.Register(&request)
+	code, err := handler.service.Register(&request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		http.Error(writer, err.Error(), code)
 		return
 	}
 
