@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"user_service/application"
 	"user_service/domain"
+	"user_service/errors"
 )
 
 type UserHandler struct {
@@ -69,13 +70,20 @@ func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) 
 
 	saved, err := handler.service.Post(&user)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		if err.Error() == errors.DatabaseError {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
 		return
 	}
+
 	newUser, err := json.Marshal(saved)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writer.Write(newUser)
+
+	writer.WriteHeader(200)
+	jsonResponse(newUser, writer)
 }
