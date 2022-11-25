@@ -65,12 +65,12 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	//@Cole fja za userID iz tokena
 
-	tweet, err := handler.service.Post(&request, userID)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
+	//tweet, err := handler.service.Post(&request)
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(tweet, writer)
+	//jsonResponse(tweet, writer)
 }

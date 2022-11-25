@@ -26,7 +26,7 @@ export class LoginComponent implements OnInit {
   ) { }
 
   submitted = false;
-  // incorrect = false;
+
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
@@ -59,7 +59,6 @@ export class LoginComponent implements OnInit {
         },
         error: (error) => {
           this.formGroup.setErrors({ unauthenticated: true });
-          // this.incorrect = true;
         }
       });
 
