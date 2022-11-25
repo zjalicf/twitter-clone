@@ -105,7 +105,8 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	err := sr.session.Query(
 		`INSERT INTO tweet (id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).Exec()
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
+		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.UserID).Exec()
 	if err != nil {
 		sr.logger.Println(err)
 		return nil, err
