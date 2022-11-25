@@ -16,9 +16,9 @@ import (
 var (
 	userServiceHost = os.Getenv("USER_SERVICE_HOST")
 	userServicePort = os.Getenv("USER_SERVICE_PORT")
+	jwtKey          = []byte(os.Getenv("SECRET_KEY"))
+	//odakle povlazi GetEnv keys?
 )
-
-var jwtKey = []byte("my_secret_key")
 
 type AuthService struct {
 	store domain.AuthStore
@@ -87,7 +87,7 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	expirationTime := time.Now().Add(15 * time.Minute)
 
 	claims := &domain.Claims{
-		Username: user.Username,
+		Username: user.Username, //menjanje za userID
 		Role:     user.UserType,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -104,4 +104,32 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	}
 
 	return tokenString, nil
+}
+
+func (service *AuthService) ValidateJWT(endpoint func(writer http.ResponseWriter, request *http.Request) http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header["Token"] != nil {
+			token, err := jwt.Parse(request.Header["Token"][0], func(t *jwt.Token) (interface{}, error) {
+				_, ok := t.Method.(*jwt.SigningMethodHMAC)
+				if !ok {
+					writer.WriteHeader(http.StatusUnauthorized)
+					writer.Write([]byte("not authorized"))
+				}
+				return jwtKey, nil
+
+			})
+
+			if err != nil {
+				writer.WriteHeader(http.StatusUnauthorized)
+				writer.Write([]byte("not authorized"))
+			}
+
+			if token.Valid {
+				endpoint(writer, request)
+			}
+		} else {
+			writer.WriteHeader(http.StatusUnauthorized)
+			writer.Write([]byte("not authorized"))
+		}
+	})
 }
