@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"user_service/application"
 	"user_service/domain"
+	"user_service/errors"
 )
 
 type UserHandler struct {
@@ -68,24 +68,22 @@ func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	fmt.Println("71")
-	fmt.Println(user)
-
 	saved, err := handler.service.Post(&user)
-	fmt.Println(saved)
-	fmt.Println(err)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		if err.Error() == errors.DatabaseError {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
 		return
 	}
-	fmt.Println("79")
-	fmt.Println(saved)
+
 	newUser, err := json.Marshal(saved)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("86")
-	fmt.Println(newUser)
-	writer.Write(newUser)
+
+	writer.WriteHeader(200)
+	jsonResponse(newUser, writer)
 }

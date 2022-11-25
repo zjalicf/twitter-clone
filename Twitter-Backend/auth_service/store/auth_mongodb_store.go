@@ -3,6 +3,7 @@ package store
 import (
 	"auth_service/domain"
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -34,8 +35,16 @@ func (store *AuthMongoDBStore) Register(credentials *domain.Credentials) error {
 	return nil
 }
 
-func (store *AuthMongoDBStore) Login(credentials *domain.Credentials) (string, error) {
-	return "", nil
+func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error) {
+
+	filter := bson.M{"username": username}
+
+	user, err := store.filterOne(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {

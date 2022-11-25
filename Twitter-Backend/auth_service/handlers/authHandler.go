@@ -3,6 +3,7 @@ package handlers
 import (
 	"auth_service/application"
 	"auth_service/domain"
+	"auth_service/store"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -11,6 +12,7 @@ import (
 
 type AuthHandler struct {
 	service *application.AuthService
+	store   *store.AuthMongoDBStore
 }
 
 func NewAuthHandler(service *application.AuthService) *AuthHandler {
@@ -34,9 +36,9 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	err = handler.service.Register(&request)
+	code, err := handler.service.Register(&request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		http.Error(writer, err.Error(), code)
 		return
 	}
 
@@ -46,17 +48,17 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
+
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = handler.service.Login(&request)
+	token, err := handler.service.Login(&request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		http.Error(writer, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte(token))
 }
