@@ -63,7 +63,9 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	tweet, err := handler.service.Post(&request)
+	//@Cole fja za userID iz tokena
+
+	tweet, err := handler.service.Post(&request, userID)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
