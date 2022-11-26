@@ -69,14 +69,18 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	//@Cole fja za userID iz tokena
+	if req.Header["Token"] == nil {
+		fmt.Print("ovde")
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	UserID := handler.GetID(handler.GetClaims(req.Header["Token"][0]))
-
 	id, err := gocql.UUIDFromBytes([]byte(UserID))
-	fmt.Println(id)
+
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		return
 	}
 
 	tweet, err := handler.service.Post(&request, id)

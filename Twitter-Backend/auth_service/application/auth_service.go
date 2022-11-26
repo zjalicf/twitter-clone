@@ -180,9 +180,9 @@ func (service *AuthService) GetClaims(tokenString string) jwt.MapClaims {
 	return token.Claims.(jwt.MapClaims)
 }
 
-func (service *AuthService) GetID(claims jwt.MapClaims) interface{} {
+func (service *AuthService) GetID(claims jwt.MapClaims) string {
 
 	userId := claims["UserID"]
-	fmt.Println(userId, claims["Username"].(string))
-	return userId
+	//fmt.Println(userId, claims["Username"].(string))
+	return userId.(string)
 }

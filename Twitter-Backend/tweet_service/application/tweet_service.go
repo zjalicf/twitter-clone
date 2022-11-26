@@ -31,7 +31,7 @@ func (service *TweetService) Post(tweet *domain.Tweet, userID gocql.UUID) (*doma
 	tweet.FavoriteCount = 0
 	tweet.Retweeted = false
 	tweet.RetweetCount = 0
-	//tweet.UserID = gocql.TimeUUID() // for now its random user
 	tweet.UserID = userID
+
 	return service.store.Post(tweet)
 }
