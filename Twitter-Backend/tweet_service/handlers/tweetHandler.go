@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/gocql/gocql"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 	"tweet_service/application"
 	"tweet_service/domain"
 )
@@ -12,6 +16,8 @@ import (
 type TweetHandler struct {
 	service *application.TweetService
 }
+
+var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 func NewTweetHandler(service *application.TweetService) *TweetHandler {
 	return &TweetHandler{
@@ -65,7 +71,15 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	//@Cole fja za userID iz tokena
 
-	tweet, err := handler.service.Post(&request, userID)
+	UserID := handler.GetID(handler.GetClaims(req.Header["Token"][0]))
+
+	id, err := gocql.UUIDFromBytes([]byte(UserID))
+	fmt.Println(id)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusUnauthorized)
+	}
+
+	tweet, err := handler.service.Post(&request, id)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -73,4 +87,30 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	writer.WriteHeader(http.StatusOK)
 	jsonResponse(tweet, writer)
+}
+
+func (handler *TweetHandler) GetClaims(tokenString string) jwt.MapClaims {
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			fmt.Println(ok)
+		}
+		return token, nil
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		return nil
+
+	}
+
+	return token.Claims.(jwt.MapClaims)
+}
+
+func (handler *TweetHandler) GetID(claims jwt.MapClaims) string {
+
+	userId := claims["UserID"]
+	fmt.Println(userId, claims["Username"].(string))
+	return userId.(string)
 }
