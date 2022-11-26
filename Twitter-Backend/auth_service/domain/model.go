@@ -43,7 +43,8 @@ type Credentials struct {
 }
 
 type Claims struct {
-	Username string   `json:"username"`
-	Role     UserType `json:"userType"`
+	UserID   primitive.ObjectID `json:"user_id"`
+	Username string             `json:"username"`
+	Role     UserType           `json:"userType"`
 	jwt.RegisteredClaims
 }
