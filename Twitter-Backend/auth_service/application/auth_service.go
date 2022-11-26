@@ -96,6 +96,7 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	expirationTime := time.Now().Add(15 * time.Minute)
 
 	claims := &domain.Claims{
+		UserID:   user.ID,
 		Username: user.Username, //menjanje za userID
 		Role:     user.UserType,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -112,9 +113,26 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 		return "", err
 	}
 
+	service.GetID(service.GetClaims(tokenString))
+
 	return tokenString, nil
 }
 
+func responseToType(response io.ReadCloser, any any) error {
+	responseBodyBytes, err := io.ReadAll(response)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(responseBodyBytes, &any)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handling token
 func (service *AuthService) ValidateJWT(endpoint func(writer http.ResponseWriter, request *http.Request) http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Header["Token"] != nil {
@@ -143,16 +161,28 @@ func (service *AuthService) ValidateJWT(endpoint func(writer http.ResponseWriter
 	})
 }
 
-func responseToType(response io.ReadCloser, any any) error {
-	responseBodyBytes, err := io.ReadAll(response)
+func (service *AuthService) GetClaims(tokenString string) jwt.MapClaims {
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			fmt.Println(ok)
+		}
+		return token, nil
+	})
+
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return nil
+
 	}
 
-	err = json.Unmarshal(responseBodyBytes, &any)
-	if err != nil {
-		return err
-	}
+	return token.Claims.(jwt.MapClaims)
+}
 
-	return nil
+func (service *AuthService) GetID(claims jwt.MapClaims) string {
+
+	userId := claims["UserID"]
+	//fmt.Println(userId, claims["Username"].(string))
+	return userId.(string)
 }

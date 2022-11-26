@@ -28,11 +28,11 @@ export class RegisterBusinessComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
+      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z]*')]],
       email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
       website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), PasswordSpecialCharacterValidator()]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
     })
   }
 

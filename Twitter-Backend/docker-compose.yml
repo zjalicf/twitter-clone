@@ -82,7 +82,7 @@ services:
     restart: always
     ports:
       - "9042:9042"
-    # Docker healtcheck - checks if database is "alive"
+    # Docker healthcheck - checks if database is "alive"
     healthcheck:
       test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
       interval: 15s
