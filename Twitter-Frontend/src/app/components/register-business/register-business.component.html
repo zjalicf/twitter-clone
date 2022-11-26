@@ -14,6 +14,7 @@
                             <div *ngIf="f['companyName'].errors['required']">Company Name is required.</div>
                             <div *ngIf="f['companyName'].errors['minlength']">Company Name must be at least 3 characters long.</div>
                             <div *ngIf="f['companyName'].errors['maxlength']">Company Name must not exceed 30 characters.</div>
+                            <div *ngIf="f['companyName'].errors['pattern']">Numbers and Special Characters are not allowed.</div>
                         </div>    
                     </div>
 
@@ -48,6 +49,7 @@
                             <div *ngIf="f['username'].errors['required']">Username is required.</div>
                             <div *ngIf="f['username'].errors['minlength']">Username must be at least 3 characters long.</div>
                             <div *ngIf="f['username'].errors['maxlength']">Username must not exceed 30 characters.</div>
+                            <div *ngIf="f['username'].errors['pattern']">Special Characters are not allowed.</div>
                         </div>
                     </div>
 
@@ -60,7 +62,7 @@
                             <div *ngIf="f['password'].errors['minlength']">Password must be at least 8 characters long.</div>
                             <div *ngIf="f['password'].errors['maxlength']">Password must not exceed 30 characters.</div>
                             <div *ngIf="f['password'].errors['passwordStrength']">Your password must have lower case, upper case and numeric characters.</div>
-                            <div *ngIf="f['password'].errors['noSpecialCharacter']">Special characters not allowed!</div>
+                            <div *ngIf="f['password'].errors['pattern']">Special Characters are not allowed.</div>
                         </div>
                         <div class="form-group form-check">
                             <button type="submit" class="btn btn-primary" (click)="onSubmit()">Register</button>

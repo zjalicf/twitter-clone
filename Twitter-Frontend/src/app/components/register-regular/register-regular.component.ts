@@ -36,14 +36,14 @@ export class RegisterRegularComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
+      lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
       gender: ['', [Validators.required]],
       age: ['', [Validators.required, Validators.min(1), Validators.max(100)]],
-      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
+      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35), Validators.pattern('[-_a-zA-Z0-9]*')]],
       email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30)]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), PasswordSpecialCharacterValidator()]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
     })
   }
 
@@ -82,23 +82,3 @@ export class RegisterRegularComponent implements OnInit {
   }
 
 }
-
-// export function createPasswordStrenghtValidator(): ValidatorFn {
-//   return (control: AbstractControl) : ValidationErrors | null => {
-//     const value = control.value;
-
-//     if (!value) {
-//       return null;
-//     }
-
-//     const hasUpperCase = /[A-Z]+/.test(value)
-
-//     const hasLowerCase = /[a-z]+/.test(value);
-
-//     const hasNumeric = /[0-9]+/.test(value);
-
-//     const passwordValid = hasUpperCase && hasLowerCase && hasNumeric;
-
-//     return !passwordValid ? {passwordStrength:true}: null;
-//   }
-// }
