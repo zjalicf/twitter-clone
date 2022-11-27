@@ -118,3 +118,31 @@ func (handler *TweetHandler) GetID(claims jwt.MapClaims) string {
 	fmt.Println(userId, claims["Username"].(string))
 	return userId.(string)
 }
+
+func (service *TweetHandler) ValidateJWT(endpoint func(writer http.ResponseWriter, request *http.Request) http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header["Token"] != nil {
+			token, err := jwt.Parse(request.Header["Token"][0], func(t *jwt.Token) (interface{}, error) {
+				_, ok := t.Method.(*jwt.SigningMethodHMAC)
+				if !ok {
+					writer.WriteHeader(http.StatusUnauthorized)
+					writer.Write([]byte("not authorized"))
+				}
+				return jwtKey, nil
+
+			})
+
+			if err != nil {
+				writer.WriteHeader(http.StatusUnauthorized)
+				writer.Write([]byte("not authorized"))
+			}
+
+			if token.Valid {
+				endpoint(writer, request)
+			}
+		} else {
+			writer.WriteHeader(http.StatusUnauthorized)
+			writer.Write([]byte("not authorized"))
+		}
+	})
+}

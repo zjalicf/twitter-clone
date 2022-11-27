@@ -105,15 +105,12 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
 	tokenString, err := token.SignedString(jwtKey)
 
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
-
-	service.GetID(service.GetClaims(tokenString))
 
 	return tokenString, nil
 }

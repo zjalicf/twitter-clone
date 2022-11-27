@@ -53,6 +53,7 @@ services:
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
       USER_SERVICE_HOST: ${USER_SERVICE_HOST}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
     depends_on:
       - auth_db
     networks:
