@@ -8,5 +8,6 @@ import (
 func main() {
 	cfg := config.NewConfig()
 	server := startup.NewServer(cfg)
+	//mailerSetup()
 	server.Start()
 }

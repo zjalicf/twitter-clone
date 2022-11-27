@@ -21,26 +21,7 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 
 func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/login", handler.Login).Methods("POST")
-	router.HandleFunc("/register", handler.Register).Methods("POST")
 	http.Handle("/", router)
-}
-
-func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
-	var request domain.User
-	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	code, err := handler.service.Register(&request)
-	if err != nil {
-		http.Error(writer, err.Error(), code)
-		return
-	}
-
-	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {

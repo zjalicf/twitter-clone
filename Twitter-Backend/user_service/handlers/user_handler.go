@@ -24,7 +24,7 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	router.HandleFunc("/", handler.Post).Methods("POST")
+	router.HandleFunc("/register", handler.Register).Methods("POST")
 	http.Handle("/", router)
 }
 
@@ -59,7 +59,7 @@ func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	jsonResponse(user, writer)
 }
 
-func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) {
+func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
 	var user domain.User
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
@@ -68,7 +68,7 @@ func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	saved, err := handler.service.Post(&user)
+	_, err = handler.service.Post(&user)
 	if err != nil {
 		if err.Error() == errors.DatabaseError {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -78,12 +78,6 @@ func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	newUser, err := json.Marshal(saved)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	writer.WriteHeader(200)
-	jsonResponse(newUser, writer)
+	writer.WriteHeader(http.StatusCreated)
+	//jsonResponse(saved, writer)
 }
