@@ -25,8 +25,7 @@ func (service *UserService) GetAll() ([]*domain.User, error) {
 	return service.store.GetAll()
 }
 
-func (service *UserService) Post(user *domain.User) (*domain.User, error) {
-	user.ID = primitive.NewObjectID()
+func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 
 	validatedUser, err := validateUserType(user)
 	if err != nil {
