@@ -9,6 +9,7 @@ import (
 	"os"
 	"user_service/domain"
 	"user_service/errors"
+
 )
 
 var (
@@ -36,6 +37,7 @@ func (service *UserService) GetAll() ([]*domain.User, error) {
 	return service.store.GetAll()
 }
 
+
 func (service *UserService) Post(user *domain.User) (*domain.User, error) {
 	user.ID = primitive.NewObjectID()
 	validatedUser, err := validateUserType(user)
@@ -53,7 +55,7 @@ func (service *UserService) Post(user *domain.User) (*domain.User, error) {
 	err = sendValidationMail(validatedUser.Email)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, fmt.Errorf(errors.DatabaseError)
 	}
 
 	return retUser, nil
@@ -78,8 +80,11 @@ func validateUserType(user *domain.User) (*domain.User, error) {
 }
 
 func isBusiness(user *domain.User) bool {
-	if len(user.CompanyName) != 0 && len(user.Website) != 0 && len(user.Email) != 0 &&
-		len(user.Username) != 0 && len(user.Password) != 0 {
+	if len(user.CompanyName) >= 3 &&
+		len(user.Website) >= 3 &&
+		len(user.Email) >= 3 &&
+		len(user.Username) >= 3 &&
+		len(user.Password) >= 8 {
 		return true
 	}
 
@@ -87,10 +92,13 @@ func isBusiness(user *domain.User) bool {
 }
 
 func isRegular(user *domain.User) bool {
-	if len(user.Firstname) != 0 && len(user.Lastname) != 0 &&
-		len(user.Gender) != 0 && user.Age > 0 &&
-		len(user.Residence) != 0 && len(user.Email) != 0 &&
-		len(user.Username) != 0 && len(user.Password) != 0 {
+	if len(user.Firstname) >= 3 &&
+		len(user.Lastname) >= 3 &&
+		len(user.Gender) >= 3 &&
+		user.Age >= 1 &&
+		len(user.Residence) >= 3 &&
+		len(user.Username) >= 3 &&
+		len(user.Password) >= 8 {
 		return true
 	}
 

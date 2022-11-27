@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
+import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
 
 @Component({
   selector: 'app-register-business',
@@ -27,11 +28,11 @@ export class RegisterBusinessComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(25)]],
-      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(25)]],
-      website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      companyName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z]*')]],
+      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
+      website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
     })
   }
 
@@ -66,4 +67,24 @@ export class RegisterBusinessComponent implements OnInit {
       });
   }
 
+}
+
+export function createPasswordStrenghtValidator(): ValidatorFn {
+  return (control: AbstractControl) : ValidationErrors | null => {
+    const value = control.value;
+
+    if (!value) {
+      return null;
+    }
+
+    const hasUpperCase = /[A-Z]+/.test(value)
+
+    const hasLowerCase = /[a-z]+/.test(value);
+
+    const hasNumeric = /[0-9]+/.test(value);
+
+    const passwordValid = hasUpperCase && hasLowerCase && hasNumeric;
+
+    return !passwordValid ? {passwordStrength:true}: null;
+  }
 }

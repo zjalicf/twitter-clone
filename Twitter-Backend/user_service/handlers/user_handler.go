@@ -23,9 +23,32 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
+	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	http.Handle("/", router)
+}
+
+func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
+	var user domain.User
+	err := json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	savedUser, err := handler.service.Register(&user)
+	if err != nil {
+		if err.Error() == errors.DatabaseError {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+  writer.WriteHeader(http.StatusCreated)
+	//jsonResponse(saved, writer)
 }
 
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
@@ -57,27 +80,4 @@ func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	jsonResponse(user, writer)
-}
-
-func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
-	var user domain.User
-	err := json.NewDecoder(req.Body).Decode(&user)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	_, err = handler.service.Post(&user)
-	if err != nil {
-		if err.Error() == errors.DatabaseError {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-		}
-		return
-	}
-
-	writer.WriteHeader(http.StatusCreated)
-	//jsonResponse(saved, writer)
 }

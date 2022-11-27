@@ -2,28 +2,31 @@
     <div class="col-7 col-lg-8">
         <mat-card class="add-post-card">
             <mat-card-title class="register-title">Register as a Regular User</mat-card-title>
+            
             <div class="form-group">
                 <form [formGroup]="formGroup">
 
                     <div class="mb-3 w-50">
                         <mat-card-title class="card-title">First Name</mat-card-title>
-                        <input type="text" class="form-control" formControlName="firstName"
+                        <input type="text" maxlength="21" class="form-control" formControlName="firstName"
                             [ngClass]="{ 'is-invalid': submitted && f['firstName'].errors }">
                         <div *ngIf="submitted && f['firstName'].errors" class="invalid-feedback">
                             <div *ngIf="f['firstName'].errors['required']">First Name is required.</div>
                             <div *ngIf="f['firstName'].errors['minlength']">First Name must be at least 3 characters long.</div>
-                            <div *ngIf="f['firstName'].errors['maxlength']">First Name must not exceed 35 characters.</div>
+                            <div *ngIf="f['firstName'].errors['maxlength']">First Name must not exceed 20 characters.</div>
+                            <div *ngIf="f['firstName'].errors['pattern']">Numbers and Special Characters are not allowed.</div>
                         </div>    
                     </div>
 
                     <div class="mb-3 w-50">
                         <mat-card-title class="card-title">Last Name</mat-card-title>
-                        <input type="text" class="form-control" formControlName="lastName"
+                        <input type="text" maxlength="21" class="form-control" formControlName="lastName"
                             [ngClass]="{ 'is-invalid': submitted && f['lastName'].errors}">
                         <div *ngIf="submitted && f['lastName'].errors" class="invalid-feedback">
                             <div *ngIf="f['lastName'].errors['required']">Last Name is required.</div>
                             <div *ngIf="f['lastName'].errors['minlength']">Last Name must be at least 3 characters long.</div>
-                            <div *ngIf="f['lastName'].errors['maxlength']">Last Name must not exceed 35 characters.</div>
+                            <div *ngIf="f['lastName'].errors['maxlength']">Last Name must not exceed 20 characters.</div>
+                            <div *ngIf="f['lastName'].errors['pattern']">Numbers and Special Characters are not allowed.</div>
                         </div> 
                     </div>
 
@@ -31,7 +34,9 @@
                         <mat-card-title class="card-title">Gender</mat-card-title>
                             <mat-select class="form-control" formControlName="gender" id="gender"
                                 [ngClass]="{ 'is-invalid': submitted && f['gender'].errors}">
-                                <div *ngIf="submitted && f['gender'].errors" class="invalid-feedback"></div>
+                                <div *ngIf="submitted && f['gender'].errors" class="invalid-feedback">
+                                    <div *ngIf="f['gender'].errors['required']">Gender is required.</div>
+                                </div>
                                 <mat-option *ngFor="let gender of genders" [value]="gender">
                                     {{gender}}
                                 </mat-option>
@@ -44,41 +49,57 @@
                             [ngClass]="{ 'is-invalid': submitted && f['age'].errors}">
                         <div *ngIf="submitted && f['age'].errors" class="invalid-feedback">
                             <div *ngIf="f['age'].errors['required']">Age is required.</div>
-                            <div *ngIf="f['age'].errors['min']">Age must be at least 3 characters long.</div>
-                            <div *ngIf="f['age'].errors['max']">Age must not exceed 35 characters.</div>
+                            <div *ngIf="f['age'].errors['min']">Minimum age is 1.</div>
+                            <div *ngIf="f['age'].errors['max']">Maximum age is 100.</div>
                         </div> 
                     </div>
 
                     <div class="mb-3 w-50">
                         <mat-card-title class="card-title">Residence</mat-card-title>
-                        <input type="text" class="form-control" formControlName="residence"
+                        <input type="text" maxlength="36" class="form-control" formControlName="residence"
                             [ngClass]="{ 'is-invalid': submitted && f['residence'].errors}">
                         <div *ngIf="submitted && f['residence'].errors" class="invalid-feedback">
                             <div *ngIf="f['residence'].errors['required']">Residence is required.</div>
                             <div *ngIf="f['residence'].errors['minlength']">Residence must be at least 3 characters long.</div>
                             <div *ngIf="f['residence'].errors['maxlength']">Residence must not exceed 35 characters.</div>
+                            <div *ngIf="f['residence'].errors['pattern']">Special Characters are not allowed.</div>
                         </div> 
                     </div>
 
                     <div class="mb-3 w-50">
+                        <mat-card-title class="card-title">Email</mat-card-title>
+                        <input type="text" maxlength="36" class="form-control" formControlName="email"
+                            [ngClass]="{ 'is-invalid': submitted && f['email'].errors }">
+                        <div *ngIf="submitted && f['email'].errors" class="invalid-feedback">
+                            <div *ngIf="f['email'].errors['required']">Email is required.</div>
+                            <div *ngIf="f['email'].errors['minlength']">Email must be at least 3 characters long.</div>
+                            <div *ngIf="f['email'].errors['maxlength']">Email must not exceed 35 characters.</div>
+                            <div *ngIf="f['email'].errors['email']">Email is not in the correct format.</div>
+                        </div>    
+                    </div>
+
+                    <div class="mb-3 w-50">
                         <mat-card-title class="card-title">Username</mat-card-title>
-                        <input type="text" class="form-control" formControlName="username"
+                        <input type="text" maxlength="31" class="form-control" formControlName="username"
                             [ngClass]="{ 'is-invalid': submitted && f['username'].errors}">
                         <div *ngIf="submitted && f['username'].errors" class="invalid-feedback">
                             <div *ngIf="f['username'].errors['required']">Username is required.</div>
                             <div *ngIf="f['username'].errors['minlength']">Username must be at least 3 characters long.</div>
-                            <div *ngIf="f['username'].errors['maxlength']">Username must not exceed 35 characters.</div>
+                            <div *ngIf="f['username'].errors['maxlength']">Username must not exceed 30 characters.</div>
+                            <div *ngIf="f['username'].errors['pattern']">Special Characters are not allowed.</div>
                         </div>
                     </div>
 
                     <div class="mb-3 w-50">
                         <mat-card-title class="card-title">Password</mat-card-title>
-                        <input type="password" class="form-control" formControlName="password"
+                        <input type="password" maxlength="31" class="form-control" formControlName="password"
                             [ngClass]="{ 'is-invalid': submitted && f['password'].errors}">
                         <div *ngIf="submitted && f['password'].errors" class="invalid-feedback">
                             <div *ngIf="f['password'].errors['required']">Password is required.</div>
-                            <div *ngIf="f['password'].errors['minlength']">Password must be at least 3 characters long.</div>
-                            <div *ngIf="f['password'].errors['maxlength']">Password must not exceed 35 characters.</div>
+                            <div *ngIf="f['password'].errors['minlength']">Password must be at least 8 characters long.</div>
+                            <div *ngIf="f['password'].errors['maxlength']">Password must not exceed 30 characters.</div>
+                            <div *ngIf="f['password'].errors['passwordStrength']">Your password must have lower case, upper case and numeric characters.</div>
+                            <div *ngIf="f['password'].errors['pattern']">Special Characters are not allowed.</div>
                         </div>
                         <div class="form-group form-check">
                             <button type="submit" class="btn btn-primary" (click)="onSubmit()">Register</button>

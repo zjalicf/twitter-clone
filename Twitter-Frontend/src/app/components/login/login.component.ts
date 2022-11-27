@@ -1,8 +1,10 @@
+import { HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginDTO } from 'src/app/dto/loginDTO';
 import { AuthService } from 'src/app/services/auth.service';
+import { MainPageComponent } from '../main-page/main-page.component';
 
 @Component({
   selector: 'app-login',
@@ -19,7 +21,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    // private headers: Headers
   ) { }
 
   submitted = false;
@@ -29,6 +32,7 @@ export class LoginComponent implements OnInit {
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
       password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
     });
+    this.formGroup.setErrors({ unauthenticated: true})
   }
 
   get loginGroup(): { [key: string]: AbstractControl } {
@@ -51,9 +55,13 @@ export class LoginComponent implements OnInit {
       .subscribe({
         next: (token: string) => {
           localStorage.setItem('authToken', token);
-          this.router.navigate(['/mainPage']);
+          this.router.navigate(['/Main-Page']);
+        },
+        error: (error) => {
+          this.formGroup.setErrors({ unauthenticated: true });
+          // this.incorrect = true;
         }
-      })
+      });
 
   }
 

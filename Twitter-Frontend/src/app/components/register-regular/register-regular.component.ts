@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
+import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
 
 @Component({
   selector: 'app-register-regular',
@@ -16,6 +17,7 @@ export class RegisterRegularComponent implements OnInit {
     gender: new FormControl(''), 
     age: new FormControl(''),
     residence: new FormControl(''),
+    email: new FormControl(''),
     username: new FormControl(''),
     password: new FormControl('')
   });
@@ -34,13 +36,14 @@ export class RegisterRegularComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
+      lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
       gender: ['', [Validators.required]],
       age: ['', [Validators.required, Validators.min(1), Validators.max(100)]],
-      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-      password: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
     })
   }
 
@@ -62,6 +65,7 @@ export class RegisterRegularComponent implements OnInit {
     registerUser.gender = this.formGroup.get("gender")?.value;
     registerUser.age = this.formGroup.get("age")?.value;
     registerUser.residence = this.formGroup.get("residence")?.value;
+    registerUser.email = this.formGroup.get("email")?.value;
     registerUser.username = this.formGroup.get("username")?.value;
     registerUser.password = this.formGroup.get("password")?.value;
 
