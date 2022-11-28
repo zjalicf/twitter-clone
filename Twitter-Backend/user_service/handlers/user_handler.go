@@ -24,8 +24,27 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
+	router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	http.Handle("/", router)
+}
+
+func (handler *UserHandler) Login(writer http.ResponseWriter, request *http.Request) {
+
+	var user domain.User
+	err := json.NewDecoder(request.Body).Decode(&user)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+
+	token, err := handler.service.Login(&user)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	writer.Write([]byte(token))
+
 }
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {

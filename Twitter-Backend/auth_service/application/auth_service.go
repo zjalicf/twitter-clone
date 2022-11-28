@@ -4,16 +4,11 @@ import (
 	"auth_service/domain"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"os"
-	"time"
 )
 
-var (
-	jwtKey = []byte(os.Getenv("SECRET_KEY"))
-	//odakle povlazi GetEnv keys?
-)
+var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 type AuthService struct {
 	store domain.AuthStore
@@ -23,46 +18,6 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 	return &AuthService{
 		store: store,
 	}
-}
-
-func (service *AuthService) Login(user *domain.User) (string, error) {
-
-	user, err := service.store.GetOneUser(user.Username)
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
-
-	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(user.Password))
-
-	if passError != nil {
-		fmt.Println(passError)
-		return "", err
-	}
-
-	expirationTime := time.Now().Add(15 * time.Minute)
-
-	claims := &domain.Claims{
-		UserID:   user.ID,
-		Username: user.Username, //menjanje za userID
-		Role:     user.UserType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString(jwtKey)
-
-	if err != nil {
-		fmt.Println(err) // key is invalid
-		return "", err
-	}
-
-	service.GetID(service.GetClaims(tokenString))
-
-	return tokenString, nil
 }
 
 // handling token
