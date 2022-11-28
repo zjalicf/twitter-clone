@@ -23,9 +23,38 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
+	router.HandleFunc("/register", handler.Register).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	router.HandleFunc("/", handler.Post).Methods("POST")
 	http.Handle("/", router)
+}
+
+func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
+	var user domain.User
+	err := json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	savedUser, err := handler.service.Register(&user)
+	if err != nil {
+		if err.Error() == errors.DatabaseError {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	//retUser, err := json.Marshal(savedUser)
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+
+	writer.WriteHeader(200)
+	jsonResponse(savedUser, writer)
 }
 
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
@@ -57,33 +86,4 @@ func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	jsonResponse(user, writer)
-}
-
-func (handler *UserHandler) Post(writer http.ResponseWriter, req *http.Request) {
-	var user domain.User
-	err := json.NewDecoder(req.Body).Decode(&user)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	saved, err := handler.service.Post(&user)
-	if err != nil {
-		if err.Error() == errors.DatabaseError {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-		}
-		return
-	}
-
-	newUser, err := json.Marshal(saved)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	writer.WriteHeader(200)
-	jsonResponse(newUser, writer)
 }

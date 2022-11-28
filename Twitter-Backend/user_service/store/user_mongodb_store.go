@@ -2,11 +2,10 @@ package store
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 	"user_service/domain"
 )
 
@@ -37,15 +36,28 @@ func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) 
 }
 
 func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
-	fmt.Println(json.Marshal(user))
-	user.ID = primitive.NewObjectID()
-	result, err := store.users.InsertOne(context.TODO(), user)
+
+	pass := []byte(user.Password)
+	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+
 	if err != nil {
 		return nil, err
 	}
+
+	user.Password = string(hash)
+	user.ID = primitive.NewObjectID()
+
+	result, err := store.users.InsertOne(context.TODO(), user)
+
+	if err != nil {
+		return nil, err
+	}
+
 	user.ID = result.InsertedID.(primitive.ObjectID)
+
 	return user, nil
 }
+
 func (store *UserMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
 	cursor, err := store.users.Find(context.TODO(), filter)
 	defer cursor.Close(context.TODO())
@@ -53,6 +65,7 @@ func (store *UserMongoDBStore) filter(filter interface{}) ([]*domain.User, error
 	if err != nil {
 		return nil, err
 	}
+
 	return decode(cursor)
 }
 
