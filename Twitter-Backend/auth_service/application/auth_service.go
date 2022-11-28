@@ -38,6 +38,10 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 	}
 }
 
+func (service *AuthService) GetAll() ([]*domain.User, error) {
+	return service.store.GetAll()
+}
+
 func (service *AuthService) Register(user *domain.User) (int, error) {
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)

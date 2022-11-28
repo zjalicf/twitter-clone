@@ -17,6 +17,11 @@ type AuthMongoDBStore struct {
 	credentials *mongo.Collection
 }
 
+func (store *AuthMongoDBStore) GetAll() ([]*domain.User, error) {
+	filter := bson.D{{}}
+	return store.filter(filter)
+}
+
 func (store *AuthMongoDBStore) Register(user *domain.Credentials) error {
 	result, err := store.credentials.InsertOne(context.TODO(), user)
 	if err != nil {
