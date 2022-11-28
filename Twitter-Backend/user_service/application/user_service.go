@@ -2,19 +2,16 @@ package application
 
 import (
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
 	"log"
-	"os"
-	"github.com/golang-jwt/jwt/v4"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 	"os"
 	"time"
 	"user_service/domain"
 	"user_service/errors"
-
 )
 
 var (

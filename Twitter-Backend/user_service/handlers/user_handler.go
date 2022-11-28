@@ -56,7 +56,7 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	savedUser, err := handler.service.Register(&user)
+	_, err = handler.service.Register(&user)
 	if err != nil {
 		if err.Error() == errors.DatabaseError {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -66,7 +66,7 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-  writer.WriteHeader(http.StatusCreated)
+	writer.WriteHeader(http.StatusCreated)
 	//jsonResponse(saved, writer)
 }
 
