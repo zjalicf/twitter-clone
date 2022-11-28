@@ -36,7 +36,6 @@ func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) 
 }
 
 func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
-
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 

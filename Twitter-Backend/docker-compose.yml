@@ -33,6 +33,8 @@ services:
       USER_DB_HOST: ${USER_DB_HOST}
       USER_DB_PORT: ${USER_DB_PORT}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      SMTP_AUTH_MAIL: ${SMTP_AUTH_MAIL}
+      SMTP_AUTH_PASSWORD: ${SMTP_AUTH_PASSWORD}
     depends_on:
       - user_db
     networks:
@@ -51,8 +53,6 @@ services:
       AUTH_DB_HOST: ${AUTH_DB_HOST}
       AUTH_DB_PORT: ${AUTH_DB_PORT}
       AUTH_SERVICE_PORT: ${AUTH_SERVICE_PORT}
-      USER_SERVICE_HOST: ${USER_SERVICE_HOST}
-      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
     depends_on:
       - auth_db

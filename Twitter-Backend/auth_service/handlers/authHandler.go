@@ -27,6 +27,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
+
 	var request domain.User
 	err := json.NewDecoder(req.Body).Decode(&request)
 

@@ -66,14 +66,8 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	//retUser, err := json.Marshal(savedUser)
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-
-	writer.WriteHeader(200)
-	jsonResponse(savedUser, writer)
+  writer.WriteHeader(http.StatusCreated)
+	//jsonResponse(saved, writer)
 }
 
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
