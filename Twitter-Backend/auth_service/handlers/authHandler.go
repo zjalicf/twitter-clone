@@ -23,7 +23,7 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 
 func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/login", handler.Login).Methods("POST")
-	router.HandleFunc("/login", handler.Register).Methods("POST")
+	router.HandleFunc("/register", handler.Register).Methods("POST")
 	http.Handle("/", router)
 }
 

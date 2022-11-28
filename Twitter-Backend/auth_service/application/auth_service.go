@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/gomail.v2"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,6 +20,10 @@ import (
 var (
 	userServiceHost = os.Getenv("USER_SERVICE_HOST")
 	userServicePort = os.Getenv("USER_SERVICE_PORT")
+	smtpServer      = "smtp-mail.outlook.com"
+	smtpServerPort  = 587
+	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
+	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
 	jwtKey          = []byte(os.Getenv("SECRET_KEY"))
 	//odakle povlazi GetEnv keys?
 )
@@ -75,7 +82,32 @@ func (service *AuthService) Register(user *domain.User) (int, error) {
 	if err != nil {
 		return 500, err
 	}
+
+	err = sendValidationMail(user.Email)
+	if err != nil {
+		return 500, err
+	}
+
 	return 200, nil
+}
+
+func sendValidationMail(email string) error {
+	message := gomail.NewMessage()
+	message.SetHeader("From", smtpEmail)
+	message.SetHeader("To", email)
+	message.SetHeader("Subject", "Verify your Twitter Clone account")
+	validationID := uuid.New()
+	bodyString := fmt.Sprintf("Your validation token for twitter account is: \n %s", validationID)
+	message.SetBody("text", bodyString)
+
+	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
+
+	if err := client.DialAndSend(message); err != nil {
+		log.Fatalf("failed to send verification mail because of: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {

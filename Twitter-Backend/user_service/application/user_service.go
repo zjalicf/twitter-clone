@@ -2,20 +2,11 @@ package application
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/gomail.v2"
 	"log"
 	"os"
 	"user_service/domain"
 	"user_service/errors"
-)
-
-var (
-	smtpServer     = "smtp-mail.outlook.com"
-	smtpServerPort = 587
-	smtpEmail      = os.Getenv("SMTP_AUTH_MAIL")
-	smtpPassword   = os.Getenv("SMTP_AUTH_PASSWORD")
 )
 
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
@@ -89,12 +80,6 @@ func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 		return nil, fmt.Errorf(errors.DatabaseError)
 	}
 
-	err = sendValidationMail(validatedUser.Email)
-	if err != nil {
-		log.Println(err)
-		return nil, fmt.Errorf(errors.DatabaseError)
-	}
-
 	return retUser, nil
 }
 
@@ -140,23 +125,4 @@ func isRegular(user *domain.User) bool {
 	}
 
 	return false
-}
-
-func sendValidationMail(email string) error {
-	message := gomail.NewMessage()
-	message.SetHeader("From", smtpEmail)
-	message.SetHeader("To", email)
-	message.SetHeader("Subject", "Verify your Twitter Clone account")
-	validationID := uuid.New()
-	bodyString := fmt.Sprintf("Your validation token for twitter account is: \n %s", validationID)
-	message.SetBody("text", bodyString)
-
-	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
-
-	if err := client.DialAndSend(message); err != nil {
-		log.Fatalf("failed to send verification mail because of: %s", err)
-		return err
-	}
-
-	return nil
 }
