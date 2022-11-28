@@ -4,16 +4,11 @@ import (
 	"auth_service/domain"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"os"
-	"time"
 )
 
-var (
-	jwtKey = []byte(os.Getenv("SECRET_KEY"))
-	//odakle povlazi GetEnv keys?
-)
+var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 type AuthService struct {
 	store domain.AuthStore
@@ -24,7 +19,6 @@ func NewAuthService(store domain.AuthStore) *AuthService {
 		store: store,
 	}
 }
-
 
 func (service *AuthService) Login(user *domain.User) (string, error) {
 

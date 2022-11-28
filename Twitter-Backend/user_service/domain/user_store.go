@@ -6,4 +6,5 @@ type UserStore interface {
 	Get(id primitive.ObjectID) (*User, error)
 	GetAll() ([]*User, error)
 	Post(user *User) (*User, error)
+	GetOneUser(username string) (*User, error)
 }
