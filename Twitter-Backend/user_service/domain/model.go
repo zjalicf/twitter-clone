@@ -36,8 +36,7 @@ const (
 )
 
 type Claims struct {
-	UserID   primitive.ObjectID `json:"user_id"`
-	Username string             `json:"username"`
-	Role     UserType           `json:"userType"`
+	UserID primitive.ObjectID `json:"user_id"`
+	Role   UserType           `json:"userType"`
 	jwt.RegisteredClaims
 }
