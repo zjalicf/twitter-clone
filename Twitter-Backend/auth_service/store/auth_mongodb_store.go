@@ -3,6 +3,8 @@ package store
 import (
 	"auth_service/domain"
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -13,6 +15,28 @@ const (
 
 type AuthMongoDBStore struct {
 	credentials *mongo.Collection
+}
+
+func (store *AuthMongoDBStore) Register(user *domain.Credentials) error {
+	result, err := store.credentials.InsertOne(context.TODO(), user)
+	if err != nil {
+		return err
+	}
+
+	user.ID = result.InsertedID.(primitive.ObjectID)
+
+	return nil
+}
+
+func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error) {
+	filter := bson.M{"username": username}
+
+	user, err := store.filterOne(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func NewAuthMongoDBStore(client *mongo.Client) domain.AuthStore {
