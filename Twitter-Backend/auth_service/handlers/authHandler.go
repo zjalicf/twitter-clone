@@ -36,10 +36,4 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	token, err := handler.service.Login(&request)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusNotFound)
-		return
-	}
-	writer.Write([]byte(token))
 }

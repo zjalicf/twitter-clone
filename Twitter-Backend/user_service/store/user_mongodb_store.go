@@ -87,3 +87,15 @@ func decode(cursor *mongo.Cursor) (users []*domain.User, err error) {
 	err = cursor.Err()
 	return
 }
+
+func (store *UserMongoDBStore) GetOneUser(username string) (*domain.User, error) {
+
+	filter := bson.M{"username": username}
+
+	user, err := store.filterOne(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
