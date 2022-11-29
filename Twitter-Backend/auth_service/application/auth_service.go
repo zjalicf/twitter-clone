@@ -52,7 +52,6 @@ func (service *AuthService) Register(user *domain.User) (int, error) {
 	}
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
 	responseUser, err := http.DefaultClient.Do(userServiceRequest)
 	if err != nil {
@@ -66,7 +65,7 @@ func (service *AuthService) Register(user *domain.User) (int, error) {
 	}
 
 	var newUser domain.User
-	err = responseToType(responseUser.Body, newUser)
+	err = responseToType(responseUser.Body, &newUser)
 	if err != nil {
 		return 500, err
 	}
@@ -150,13 +149,13 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	return tokenString, nil
 }
 
-func responseToType(response io.ReadCloser, any any) error {
+func responseToType(response io.ReadCloser, user *domain.User) error {
 	responseBodyBytes, err := io.ReadAll(response)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(responseBodyBytes, &any)
+	err = json.Unmarshal(responseBodyBytes, &user)
 	if err != nil {
 		return err
 	}

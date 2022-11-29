@@ -47,7 +47,7 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
 
-	var request domain.User
+	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
 
 	if err != nil {
@@ -55,5 +55,13 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	token, err := handler.service.Login(&request)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(token, writer)
 
 }
