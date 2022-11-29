@@ -22,19 +22,9 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
-	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
 	http.Handle("/", router)
-}
-
-func (handler *AuthHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
-	users, err := handler.service.GetAll()
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	jsonResponse(users, writer)
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
@@ -68,8 +58,10 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 
 	token, err := handler.service.Login(&request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writer.Write([]byte(token))
+
+	jsonResponse(token, writer)
+
 }
