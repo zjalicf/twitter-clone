@@ -24,6 +24,7 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
+	router.HandleFunc("/validateAccount", handler.ValidateAccount).Methods("POST")
 	http.Handle("/", router)
 }
 
@@ -36,13 +37,33 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	statusCode, err := handler.service.Register(&request)
+	token, statusCode, err := handler.service.Register(&request)
 	if err != nil {
+		http.Error(writer, err.Error(), statusCode)
+		return
+	}
+
+	jsonResponse(token, writer)
+}
+
+func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *http.Request) {
+
+	var request domain.RegisterValidation
+	err := json.NewDecoder(req.Body).Decode(&request)
+	if err != nil {
+		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	writer.WriteHeader(statusCode)
+	err = handler.service.ValidateAccount(&request)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusNotAcceptable)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
