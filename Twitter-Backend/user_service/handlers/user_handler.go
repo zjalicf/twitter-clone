@@ -24,28 +24,28 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
-	router.HandleFunc("/login", handler.Login).Methods("POST")
+	//router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	http.Handle("/", router)
 }
 
-func (handler *UserHandler) Login(writer http.ResponseWriter, request *http.Request) {
-
-	var user domain.User
-	err := json.NewDecoder(request.Body).Decode(&user)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-	}
-
-	token, err := handler.service.Login(&user)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
-		return
-	}
-	writer.Write([]byte(token))
-
-}
+//func (handler *UserHandler) Login(writer http.ResponseWriter, request *http.Request) {
+//
+//	var user domain.User
+//	err := json.NewDecoder(request.Body).Decode(&user)
+//	if err != nil {
+//		log.Println(err)
+//		http.Error(writer, err.Error(), http.StatusBadRequest)
+//	}
+//
+//	token, err := handler.service.Login(&user)
+//	if err != nil {
+//		http.Error(writer, err.Error(), http.StatusUnauthorized)
+//		return
+//	}
+//	writer.Write([]byte(token))
+//
+//}<
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
 	var user domain.User
@@ -56,7 +56,7 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	savedUser, err := handler.service.Register(&user)
+	_, err = handler.service.Register(&user)
 	if err != nil {
 		if err.Error() == errors.DatabaseError {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -66,14 +66,8 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	//retUser, err := json.Marshal(savedUser)
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-
-	writer.WriteHeader(200)
-	jsonResponse(savedUser, writer)
+	writer.WriteHeader(http.StatusCreated)
+	//jsonResponse(saved, writer)
 }
 
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
