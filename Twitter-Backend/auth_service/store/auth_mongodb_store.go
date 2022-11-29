@@ -17,6 +17,11 @@ type AuthMongoDBStore struct {
 	credentials *mongo.Collection
 }
 
+func (store *AuthMongoDBStore) GetAll() ([]*domain.User, error) {
+	filter := bson.D{{}}
+	return store.filter(filter)
+}
+
 func NewAuthMongoDBStore(client *mongo.Client) domain.AuthStore {
 	auths := client.Database(DATABASE).Collection(COLLECTION)
 	return &AuthMongoDBStore{

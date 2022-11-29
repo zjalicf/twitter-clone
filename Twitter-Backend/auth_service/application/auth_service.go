@@ -41,8 +41,11 @@ func NewAuthService(store domain.AuthStore, cache domain.AuthCache) *AuthService
 	}
 }
 
-func (service *AuthService) Register(user *domain.User) (string, int, error) {
+func (service *AuthService) GetAll() ([]*domain.User, error) {
+	return service.store.GetAll()
+}
 
+func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
