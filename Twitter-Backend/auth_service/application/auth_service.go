@@ -114,7 +114,6 @@ func sendValidationMail(email string) error {
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {
-
 	user, err := service.store.GetOneUser(credentials.Username)
 	if err != nil {
 		fmt.Println(err)
@@ -122,7 +121,6 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	}
 
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
-
 	if passError != nil {
 		fmt.Println(passError)
 		return "", err
@@ -142,7 +140,6 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString(jwtKey)
-
 	if err != nil {
 		fmt.Println(err)
 		return "", err
