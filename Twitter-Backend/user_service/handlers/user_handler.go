@@ -23,7 +23,7 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/register", handler.Register).Methods("POST")
+	router.HandleFunc("/", handler.Register).Methods("POST")
 	//router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	http.Handle("/", router)
@@ -45,7 +45,7 @@ func (handler *UserHandler) Init(router *mux.Router) {
 //	}
 //	writer.Write([]byte(token))
 //
-//}<
+//}
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
 	var user domain.User
@@ -56,7 +56,7 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	_, err = handler.service.Register(&user)
+	saved, err := handler.service.Register(&user)
 	if err != nil {
 		if err.Error() == errors.DatabaseError {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -66,8 +66,7 @@ func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	writer.WriteHeader(http.StatusCreated)
-	//jsonResponse(saved, writer)
+	jsonResponse(saved, writer)
 }
 
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {

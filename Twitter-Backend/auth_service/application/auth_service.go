@@ -2,6 +2,7 @@ package application
 
 import (
 	"auth_service/domain"
+	"auth_service/errors"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -30,11 +31,13 @@ var (
 
 type AuthService struct {
 	store domain.AuthStore
+	cache domain.AuthCache
 }
 
-func NewAuthService(store domain.AuthStore) *AuthService {
+func NewAuthService(store domain.AuthStore, cache domain.AuthCache) *AuthService {
 	return &AuthService{
 		store: store,
+		cache: cache,
 	}
 }
 
@@ -42,37 +45,36 @@ func (service *AuthService) GetAll() ([]*domain.User, error) {
 	return service.store.GetAll()
 }
 
-func (service *AuthService) Register(user *domain.User) (int, error) {
+func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
-		return 500, err
+		return "", 500, err
 	}
 	user.Password = string(hash)
 
 	body, err := json.Marshal(user)
 	if err != nil {
-		return 500, err
+		return "", 500, err
 	}
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
 	responseUser, err := http.DefaultClient.Do(userServiceRequest)
-	if err != nil {
-		return 500, err
-	}
+	//if err != nil {
+	//	return "",500, err
+	//}
 
 	if responseUser.StatusCode != 200 {
 		buf := new(strings.Builder)
 		_, _ = io.Copy(buf, responseUser.Body)
-		return responseUser.StatusCode, fmt.Errorf(buf.String())
+		return "", responseUser.StatusCode, fmt.Errorf(buf.String())
 	}
 
 	var newUser domain.User
-	err = responseToType(responseUser.Body, newUser)
+	err = responseToType(responseUser.Body, &newUser)
 	if err != nil {
-		return 500, err
+		return "", 500, err
 	}
 
 	credentials := domain.Credentials{
@@ -84,24 +86,31 @@ func (service *AuthService) Register(user *domain.User) (int, error) {
 
 	err = service.store.Register(&credentials)
 	if err != nil {
-		return 500, err
+		return "", 500, err
 	}
 
-	err = sendValidationMail(user.Email)
+	validationToken := uuid.New()
+	err = sendValidationMail(validationToken, user.Email)
 	if err != nil {
-		return 500, err
+		return "", 500, err
 	}
 
-	return 200, nil
+	err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
+	if err != nil {
+		log.Fatalf("failed to post validation data to redis: %s", err)
+		return "", 500, err
+	}
+
+	return newUser.ID.Hex(), 200, nil
 }
 
-func sendValidationMail(email string) error {
+func sendValidationMail(validationToken uuid.UUID, email string) error {
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
 	message.SetHeader("To", email)
 	message.SetHeader("Subject", "Verify your Twitter Clone account")
-	validationID := uuid.New()
-	bodyString := fmt.Sprintf("Your validation token for twitter account is: \n %s", validationID)
+
+	bodyString := fmt.Sprintf("Your validation token for twitter account is:\n%s", validationToken)
 	message.SetBody("text", bodyString)
 
 	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
@@ -112,6 +121,20 @@ func sendValidationMail(email string) error {
 	}
 
 	return nil
+}
+
+func (service *AuthService) ValidateAccount(validation *domain.RegisterValidation) error {
+	token, err := service.cache.GetCachedValue(validation.UserToken)
+	if err != nil {
+		log.Fatalf("failed to get value from redis: %s", err)
+		return err
+	}
+
+	if validation.MailToken == token {
+		return nil
+	}
+
+	return fmt.Errorf(errors.InvalidTokenError)
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {
@@ -149,18 +172,18 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 		return "", err
 	}
 
-	service.GetID(service.GetClaims(tokenString))
+	//service.GetID(service.GetClaims(tokenString))
 
 	return tokenString, nil
 }
 
-func responseToType(response io.ReadCloser, any any) error {
+func responseToType(response io.ReadCloser, user *domain.User) error {
 	responseBodyBytes, err := io.ReadAll(response)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(responseBodyBytes, &any)
+	err = json.Unmarshal(responseBodyBytes, &user)
 	if err != nil {
 		return err
 	}

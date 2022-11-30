@@ -22,6 +22,13 @@ func (store *AuthMongoDBStore) GetAll() ([]*domain.User, error) {
 	return store.filter(filter)
 }
 
+func NewAuthMongoDBStore(client *mongo.Client) domain.AuthStore {
+	auths := client.Database(DATABASE).Collection(COLLECTION)
+	return &AuthMongoDBStore{
+		credentials: auths,
+	}
+}
+
 func (store *AuthMongoDBStore) Register(user *domain.Credentials) error {
 	result, err := store.credentials.InsertOne(context.TODO(), user)
 	if err != nil {
@@ -42,13 +49,6 @@ func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error)
 	}
 
 	return user, nil
-}
-
-func NewAuthMongoDBStore(client *mongo.Client) domain.AuthStore {
-	auths := client.Database(DATABASE).Collection(COLLECTION)
-	return &AuthMongoDBStore{
-		credentials: auths,
-	}
 }
 
 func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
