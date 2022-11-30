@@ -45,7 +45,7 @@ func (handler *UserHandler) Init(router *mux.Router) {
 //	}
 //	writer.Write([]byte(token))
 //
-//}<
+//}
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
 	var user domain.User
