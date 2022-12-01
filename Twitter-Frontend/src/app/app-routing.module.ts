@@ -4,6 +4,7 @@ import { LoginComponent } from './components/login/login.component';
 import { MainPageComponent } from './components/main-page/main-page.component';
 import { RegisterBusinessComponent } from './components/register-business/register-business.component';
 import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
+import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
 
 const routes: Routes = [
   {
@@ -21,6 +22,10 @@ const routes: Routes = [
   {
     path: 'Login',
     component: LoginComponent
+  },
+  {
+    path: 'Verify-Account',
+    component: VerifyAccountComponent
   }
 ];
 

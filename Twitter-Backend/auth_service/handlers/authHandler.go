@@ -3,6 +3,7 @@ package handlers
 import (
 	"auth_service/application"
 	"auth_service/domain"
+	"auth_service/errors"
 	"auth_service/store"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -24,7 +25,7 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
-	router.HandleFunc("/validateAccount", handler.ValidateAccount).Methods("POST")
+	router.HandleFunc("/verifyAccount", handler.VerifyAccount).Methods("POST")
 	http.Handle("/", router)
 }
 
@@ -46,7 +47,7 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 	jsonResponse(token, writer)
 }
 
-func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *http.Request) {
+func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.Request) {
 
 	var request domain.RegisterValidation
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -56,10 +57,20 @@ func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *htt
 		return
 	}
 
-	err = handler.service.ValidateAccount(&request)
+	if len(request.UserToken) == 0 {
+		http.Error(writer, errors.InvalidUserTokenError, http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.VerifyAccount(&request)
 	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusNotAcceptable)
+		if err.Error() == errors.InvalidTokenError {
+			log.Println(err.Error())
+			http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
+		} else if err.Error() == errors.ExpiredTokenError {
+			log.Println(err.Error())
+			http.Error(writer, errors.ExpiredTokenError, http.StatusNotFound)
+		}
 		return
 	}
 

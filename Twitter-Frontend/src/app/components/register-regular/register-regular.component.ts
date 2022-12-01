@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
+import { VerificationService } from 'src/app/services/verify.service';
 
 @Component({
   selector: 'app-register-regular',
@@ -28,7 +30,9 @@ export class RegisterRegularComponent implements OnInit {
   ];
 
   constructor(private authService: AuthService,
-              private formBuilder: FormBuilder) { }
+              private formBuilder: FormBuilder,
+              private router: Router,
+              private verificationService: VerificationService) { }
 
   // @ts-ignore
   formGroup: FormGroup;
@@ -71,9 +75,10 @@ export class RegisterRegularComponent implements OnInit {
 
     this.authService.Register(registerUser)
       .subscribe({
-        next: (data: User) => {
-          console.log(data);
-          alert("You have been successfully registered to Twitter");
+        next: (registrationToken: string) => {
+          console.log("V token is: " + registrationToken);
+          this.verificationService.updateVerificationToken(registrationToken);
+          this.router.navigate(['/Verify-Account']);
         },
         error: (error) => {
           console.log(error)

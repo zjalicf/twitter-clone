@@ -24,6 +24,7 @@ import { RegisterRegularComponent } from './components/register-regular/register
 import { RegisterBusinessComponent } from './components/register-business/register-business.component';
 import { LoginComponent } from './components/login/login.component';
 import { AuthInterceptor } from './services/auth.interceptor';
+import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
 
 @NgModule({
   declarations: [
@@ -35,7 +36,8 @@ import { AuthInterceptor } from './services/auth.interceptor';
     TweetListComponent,
     RegisterRegularComponent,
     RegisterBusinessComponent,
-    LoginComponent
+    LoginComponent,
+    VerifyAccountComponent,
   ],
   imports: [
     BrowserModule,
