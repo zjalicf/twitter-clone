@@ -78,10 +78,8 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
-
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -95,5 +93,4 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	}
 
 	jsonResponse(token, writer)
-
 }
