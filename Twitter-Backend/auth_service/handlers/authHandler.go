@@ -5,11 +5,16 @@ import (
 	"auth_service/domain"
 	"auth_service/errors"
 	"auth_service/store"
+	"context"
+
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
+
+type KeyUser struct{}
 
 type AuthHandler struct {
 	service *application.AuthService
@@ -23,13 +28,21 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
-	router.HandleFunc("/login", handler.Login).Methods("POST")
-	router.HandleFunc("/register", handler.Register).Methods("POST")
-	router.HandleFunc("/verifyAccount", handler.VerifyAccount).Methods("POST")
+	loginRouter := router.Methods(http.MethodPost).Subrouter()
+	loginRouter.HandleFunc("/login", handler.Login)
+
+	registerRouter := router.Methods(http.MethodPost).Subrouter()
+	registerRouter.HandleFunc("/register", handler.Register)
+	//registerRouter.Use(MiddlewareUserValidation)
+
+	verifyRouter := router.Methods(http.MethodPost).Subrouter()
+	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
+
 	http.Handle("/", router)
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
+	//request := req.Context().Value(domain.User{}).(domain.User)
 	var request domain.User
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -48,7 +61,6 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 }
 
 func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.Request) {
-
 	var request domain.RegisterValidation
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -93,4 +105,27 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	}
 
 	jsonResponse(token, writer)
+}
+
+func MiddlewareUserValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		user := &domain.User{}
+		err := user.FromJSON(request.Body)
+		if err != nil {
+			http.Error(responseWriter, "Unable to Decode JSON", http.StatusBadRequest)
+			return
+		}
+
+		err = user.ValidateRegular()
+
+		if err != nil {
+			http.Error(responseWriter, fmt.Sprintf("Error validation firstName: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(request.Context(), domain.User{}, user)
+		request = request.WithContext(ctx)
+
+		next.ServeHTTP(responseWriter, request)
+	})
 }

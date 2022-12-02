@@ -25,6 +25,9 @@ import { RegisterBusinessComponent } from './components/register-business/regist
 import { LoginComponent } from './components/login/login.component';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
+import { TestAuthPageComponent } from './components/test-auth-page/test-auth-page.component';
+import { MyProfileComponent } from './components/my-profile/my-profile.component';
+import { ChangePasswordComponent } from './components/change-password/change-password.component';
 
 @NgModule({
   declarations: [
@@ -38,6 +41,9 @@ import { VerifyAccountComponent } from './components/verify-account/verify-accou
     RegisterBusinessComponent,
     LoginComponent,
     VerifyAccountComponent,
+    TestAuthPageComponent,
+    MyProfileComponent,
+    ChangePasswordComponent
   ],
   imports: [
     BrowserModule,
