@@ -153,7 +153,7 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if passError != nil {
 		fmt.Println(passError)
-		return "", err
+		return "not_same", err
 	}
 
 	tokenString, err := GenerateJWT(user)

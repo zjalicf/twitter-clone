@@ -106,6 +106,11 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	if token == "not_same" {
+		http.Error(writer, "Wrong password", http.StatusUnauthorized)
+		return
+	}
+
 	jsonResponse(token, writer)
 }
 
