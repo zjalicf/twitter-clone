@@ -46,8 +46,15 @@ type Credentials struct {
 	UserType UserType           `bson:"userType" json:"userType"`
 }
 
+type PasswordChange struct {
+	OldPassword        string `json:"old_password"`
+	NewPassword        string `json:"new_password"`
+	NewPasswordConfirm string `json:"new_password_confirm"`
+}
+
 type Claims struct {
 	UserID    primitive.ObjectID `json:"user_id"`
+	Username  string             `json:"username"`
 	Role      UserType           `json:"userType"`
 	ExpiresAt time.Time          `json:"expires_at"`
 }

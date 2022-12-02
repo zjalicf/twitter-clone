@@ -38,6 +38,8 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	verifyRouter := router.Methods(http.MethodPost).Subrouter()
 	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
 
+	router.HandleFunc("/changePassword", handler.ChangePassword)
+
 	http.Handle("/", router)
 }
 
@@ -128,4 +130,31 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 
 		next.ServeHTTP(responseWriter, request)
 	})
+}
+
+func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
+
+	var password domain.PasswordChange
+	err := json.NewDecoder(request.Body).Decode(&password)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+	fmt.Println(password)
+
+	token := request.Header.Get("token")
+	fmt.Printf(token)
+
+	err = handler.service.ChangePassword(password, token)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		writer.WriteHeader(http.StatusOK)
+		_, err := writer.Write([]byte("Password successfully changed."))
+		if err != nil {
+			return
+		}
+	}
 }

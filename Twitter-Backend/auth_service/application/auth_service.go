@@ -1,6 +1,7 @@
 package application
 
 import (
+	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
 	"bytes"
@@ -156,7 +157,7 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	}
 
 	tokenString, err := GenerateJWT(user)
-	
+
 	if err != nil {
 		return "", err
 	}
@@ -190,6 +191,7 @@ func GenerateJWT(user *domain.User) (string, error) {
 
 	claims := &domain.Claims{
 		UserID:    user.ID,
+		Username:  user.Username,
 		Role:      user.UserType,
 		ExpiresAt: time.Now().Add(time.Minute * 60),
 	}
@@ -200,4 +202,49 @@ func GenerateJWT(user *domain.User) (string, error) {
 	}
 
 	return token.String(), nil
+}
+
+func (service *AuthService) ChangePassword(password domain.PasswordChange, token string) error {
+
+	parsedToken := authorization.GetToken(token)
+	claims := authorization.GetMapClaims(parsedToken.Bytes())
+
+	username := claims["username"]
+
+	fmt.Println(username)
+
+	user, err := service.store.GetOneUser(username)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password.OldPassword))
+	if err != nil {
+		return err
+	}
+
+	var validNew bool = false
+	if password.NewPassword == password.NewPasswordConfirm {
+		validNew = true
+	}
+
+	if validNew {
+		newEncryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		user.Password = string(newEncryptedPassword)
+
+		fmt.Println("Prolso sve do stvarnog upisa")
+
+		err = service.store.ChangePassword(user)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
