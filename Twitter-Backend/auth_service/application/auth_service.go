@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/cristalhq/jwt/v4"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
@@ -25,7 +25,7 @@ var (
 	smtpServerPort  = 587
 	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
 	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
-	jwtKey          = []byte(os.Getenv("SECRET_KEY"))
+	jwtKey          = []byte("SecretYouShouldHide")
 	//odakle povlazi GetEnv keys?
 )
 
@@ -152,27 +152,10 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 		return "", err
 	}
 
-	expirationTime := time.Now().Add(15 * time.Minute)
-
-	claims := &domain.Claims{
-		UserID:   user.ID,
-		Username: user.Username, //menjanje za userID
-		Role:     user.UserType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString(jwtKey)
-
+	tokenString, err := GenerateJWT(user)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
-
-	//service.GetID(service.GetClaims(tokenString))
 
 	return tokenString, nil
 }
@@ -191,57 +174,68 @@ func responseToType(response io.ReadCloser, user *domain.User) error {
 	return nil
 }
 
-// handling token
-func (service *AuthService) ValidateJWT(endpoint func(writer http.ResponseWriter, request *http.Request) http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header["Token"] != nil {
-			token, err := jwt.Parse(request.Header["Token"][0], func(t *jwt.Token) (interface{}, error) {
-				_, ok := t.Method.(*jwt.SigningMethodHMAC)
-				if !ok {
-					writer.WriteHeader(http.StatusUnauthorized)
-					writer.Write([]byte("not authorized"))
-				}
-				return jwtKey, nil
+//func (service *AuthService) GetClaims(tokenString string) jwt.MapClaims {
+//
+//	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+//		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+//		if !ok {
+//			fmt.Println(ok)
+//		}
+//		return token, nil
+//	})
+//
+//	if err != nil {
+//		fmt.Println(err)
+//		return nil
+//
+//	}
+//
+//	return token.Claims.(jwt.MapClaims)
+//}
+//
+//func (service *AuthService) GetID(claims jwt) string {
+//
+//	userId := claims["UserID"]
+//	//fmt.Println(userId, claims["Username"].(string))
+//	return userId.(string)
+//}
 
-			})
+func GenerateJWT(user *domain.User) (string, error) {
 
-			if err != nil {
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte("not authorized"))
-			}
+	//token := jwt.New(jwt.SigningMethodHS256)
+	//
+	//claims := token.Claims.(jwt.MapClaims)
+	//claims["user_id"] = user.ID
+	//claims["role"] = user.UserType
+	//claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+	//base64Secret := base64.StdEncoding.EncodeToString(jwtKey)
+	//fmt.Println(base64Secret)
+	//tokenString, err := token.SignedString([]byte(base64Secret))
+	//if err != nil {
+	//	fmt.Printf("Line 244, error = %v", err)
+	//	return "", err
+	//}
+	//
+	//return tokenString, nil
 
-			if token.Valid {
-				endpoint(writer, request)
-			}
-		} else {
-			writer.WriteHeader(http.StatusUnauthorized)
-			writer.Write([]byte("not authorized"))
-		}
-	})
-}
-
-func (service *AuthService) GetClaims(tokenString string) jwt.MapClaims {
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			fmt.Println(ok)
-		}
-		return token, nil
-	})
-
+	key := []byte(os.Getenv("SECRET_KEY"))
+	signer, err := jwt.NewSignerHS(jwt.HS256, key)
 	if err != nil {
-		fmt.Println(err)
-		return nil
-
+		log.Println(err)
 	}
 
-	return token.Claims.(jwt.MapClaims)
-}
+	builder := jwt.NewBuilder(signer)
 
-func (service *AuthService) GetID(claims jwt.MapClaims) string {
+	claims := &domain.Claims{
+		UserID:    user.ID,
+		Role:      user.UserType,
+		ExpiresAt: time.Now().Add(time.Minute * 60),
+	}
 
-	userId := claims["UserID"]
-	//fmt.Println(userId, claims["Username"].(string))
-	return userId.(string)
+	token, err := builder.Build(claims)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return token.String(), nil
 }
