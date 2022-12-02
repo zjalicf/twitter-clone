@@ -32,7 +32,7 @@ export class RegisterBusinessComponent implements OnInit {
       email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
       website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      password: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
     })
   }
 
