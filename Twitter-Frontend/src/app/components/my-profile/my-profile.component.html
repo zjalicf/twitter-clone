@@ -1,11 +1,13 @@
-<div class="container">
-
-    <divaaa>
-
-    </div>
-
-    <div>
-
-    </div>
-
+<div class="column">
+    <mat-card class="my-profile-card">
+        <mat-card-title class="username">Username</mat-card-title>
+        <mat-card-footer class="first-name"><b>First Name: </b>Neko ime</mat-card-footer>
+        <mat-card-footer class="last-name"><b>Last Name: </b>Neko prezime</mat-card-footer>
+        <mat-card-footer class="email"><b>Email: </b>email@gmail.com</mat-card-footer>
+    </mat-card>
+    <mat-card class="my-profile-options-card">
+        <mat-card-actions>
+            <button class="btn btn-danger" (click)="updatePassword()">Change Password</button>
+        </mat-card-actions>
+    </mat-card>
 </div>

@@ -5,13 +5,17 @@ import (
 	"auth_service/domain"
 	"auth_service/errors"
 	"auth_service/store"
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 )
+
+type KeyUser struct{}
 
 type AuthHandler struct {
 	service *application.AuthService
@@ -25,6 +29,16 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
+	loginRouter := router.Methods(http.MethodPost).Subrouter()
+	loginRouter.HandleFunc("/login", handler.Login)
+
+	registerRouter := router.Methods(http.MethodPost).Subrouter()
+	registerRouter.HandleFunc("/register", handler.Register)
+	registerRouter.Use(MiddlewareUserValidation)
+
+	verifyRouter := router.Methods(http.MethodPost).Subrouter()
+	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
+
 	router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/register", handler.Register).Methods("POST")
 	router.HandleFunc("/verifyAccount", handler.VerifyAccount).Methods("POST")
@@ -35,21 +49,24 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
-	var request domain.User
-	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
+	//var request domain.User
+	//err := json.NewDecoder(req.Body).Decode(&request)
+	//if err != nil {
+	//	log.Println(err)
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//id, statusCode, err := handler.service.Register(&request)
+	myUser := req.Context().Value(domain.User{}).(domain.User)
 
-	id, statusCode, err := handler.service.Register(&request)
+	token, statusCode, err := handler.service.Register(&myUser)
 	if err != nil {
 		http.Error(writer, err.Error(), statusCode)
 		return
 	}
 
-	jsonResponse(id, writer)
+	jsonResponse(token, writer)
 }
 
 func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.Request) {
@@ -173,4 +190,26 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	}
 
 	jsonResponse(token, writer)
+}
+
+func MiddlewareUserValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		user := &domain.User{}
+		err := user.FromJSON(request.Body)
+		if err != nil {
+			http.Error(responseWriter, "Unable to Decode JSON", http.StatusBadRequest)
+			return
+		}
+
+		err = user.ValidateUser()
+		if err != nil {
+			http.Error(responseWriter, fmt.Sprintf("Validation Error:\n %s.", err), http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(request.Context(), domain.User{}, *user)
+		request = request.WithContext(ctx)
+
+		next.ServeHTTP(responseWriter, request)
+	})
 }

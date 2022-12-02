@@ -28,6 +28,9 @@ import { VerifyAccountComponent } from './components/verify-account/verify-accou
 import { RecoveryEnterMailComponent } from './components/recovery-enter-mail/recovery-enter-mail.component';
 import { RecoveryEnterTokenComponent } from './components/recovery-enter-token/recovery-enter-token.component';
 import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwords/recovery-new-passwords.component';
+import { TestAuthPageComponent } from './components/test-auth-page/test-auth-page.component';
+import { MyProfileComponent } from './components/my-profile/my-profile.component';
+import { ChangePasswordComponent } from './components/change-password/change-password.component';
 
 @NgModule({
   declarations: [
@@ -44,6 +47,9 @@ import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwor
     RecoveryEnterMailComponent,
     RecoveryEnterTokenComponent,
     RecoveryNewPasswordsComponent,
+    TestAuthPageComponent,
+    MyProfileComponent,
+    ChangePasswordComponent
   ],
   imports: [
     BrowserModule,
