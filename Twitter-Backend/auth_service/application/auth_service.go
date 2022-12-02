@@ -174,49 +174,7 @@ func responseToType(response io.ReadCloser, user *domain.User) error {
 	return nil
 }
 
-//func (service *AuthService) GetClaims(tokenString string) jwt.MapClaims {
-//
-//	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-//		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-//		if !ok {
-//			fmt.Println(ok)
-//		}
-//		return token, nil
-//	})
-//
-//	if err != nil {
-//		fmt.Println(err)
-//		return nil
-//
-//	}
-//
-//	return token.Claims.(jwt.MapClaims)
-//}
-//
-//func (service *AuthService) GetID(claims jwt) string {
-//
-//	userId := claims["UserID"]
-//	//fmt.Println(userId, claims["Username"].(string))
-//	return userId.(string)
-//}
-
 func GenerateJWT(user *domain.User) (string, error) {
-
-	//token := jwt.New(jwt.SigningMethodHS256)
-	//
-	//claims := token.Claims.(jwt.MapClaims)
-	//claims["user_id"] = user.ID
-	//claims["role"] = user.UserType
-	//claims["exp"] = time.Now().Add(time.Minute * 60).Unix()
-	//base64Secret := base64.StdEncoding.EncodeToString(jwtKey)
-	//fmt.Println(base64Secret)
-	//tokenString, err := token.SignedString([]byte(base64Secret))
-	//if err != nil {
-	//	fmt.Printf("Line 244, error = %v", err)
-	//	return "", err
-	//}
-	//
-	//return tokenString, nil
 
 	key := []byte(os.Getenv("SECRET_KEY"))
 	signer, err := jwt.NewSignerHS(jwt.HS256, key)
