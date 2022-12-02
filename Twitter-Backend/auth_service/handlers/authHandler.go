@@ -6,7 +6,6 @@ import (
 	"auth_service/errors"
 	"auth_service/store"
 	"context"
-
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -33,7 +32,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 
 	registerRouter := router.Methods(http.MethodPost).Subrouter()
 	registerRouter.HandleFunc("/register", handler.Register)
-	//registerRouter.Use(MiddlewareUserValidation)
+	registerRouter.Use(MiddlewareUserValidation)
 
 	verifyRouter := router.Methods(http.MethodPost).Subrouter()
 	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
@@ -42,16 +41,9 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
-	//request := req.Context().Value(domain.User{}).(domain.User)
-	var request domain.User
-	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
+	myUser := req.Context().Value(domain.User{}).(domain.User)
 
-	token, statusCode, err := handler.service.Register(&request)
+	token, statusCode, err := handler.service.Register(&myUser)
 	if err != nil {
 		http.Error(writer, err.Error(), statusCode)
 		return
@@ -116,14 +108,13 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 			return
 		}
 
-		err = user.ValidateRegular()
-
+		err = user.ValidateUser()
 		if err != nil {
-			http.Error(responseWriter, fmt.Sprintf("Error validation firstName: %s", err), http.StatusBadRequest)
+			http.Error(responseWriter, fmt.Sprintf("Validation Error:\n %s.", err), http.StatusBadRequest)
 			return
 		}
 
-		ctx := context.WithValue(request.Context(), domain.User{}, user)
+		ctx := context.WithValue(request.Context(), domain.User{}, *user)
 		request = request.WithContext(ctx)
 
 		next.ServeHTTP(responseWriter, request)

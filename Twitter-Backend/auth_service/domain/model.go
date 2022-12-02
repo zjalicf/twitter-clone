@@ -11,18 +11,18 @@ import (
 
 type User struct {
 	ID        primitive.ObjectID `bson:"_id" json:"id"`
-	Firstname string             `bson:"firstName,omitempty" json:"firstName,omitempty" validate:"regular"`
-	Lastname  string             `bson:"lastName,omitempty" json:"lastName,omitempty"`
-	Gender    Gender             `bson:"gender,omitempty" json:"gender,omitempty"`
+	Firstname string             `bson:"firstName,omitempty" json:"firstName,omitempty" validate:"onlyChar"`
+	Lastname  string             `bson:"lastName,omitempty" json:"lastName,omitempty" validate:"onlyChar"`
+	Gender    Gender             `bson:"gender,omitempty" json:"gender,omitempty" validate:"onlyChar"`
 	Age       int                `bson:"age,omitempty" json:"age,omitempty"`
-	Residence string             `bson:"residence,omitempty" json:"residence,omitempty"`
-	Email     string             `bson:"email" json:"email"`
-	Username  string             `bson:"username" json:"username"`
-	Password  string             `bson:"password" json:"password"`
-	UserType  UserType           `bson:"userType" json:"userType"`
+	Residence string             `bson:"residence,omitempty" json:"residence,omitempty" validate:"onlyCharAndNum"`
+	Email     string             `bson:"email" json:"email" validate:"required,email"`
+	Username  string             `bson:"username" json:"username" validate:"onlyCharAndNum,required"`
+	Password  string             `bson:"password" json:"password" validate:"onlyCharAndNum,required"`
+	UserType  UserType           `bson:"userType" json:"userType" validate:"onlyChar"`
 
-	CompanyName string `bson:"companyName,omitempty" json:"companyName,omitempty"`
-	Website     string `bson:"website,omitempty" json:"website,omitempty"`
+	CompanyName string `bson:"companyName,omitempty" json:"companyName,omitempty" validation:"onlyCharAndNum"`
+	Website     string `bson:"website,omitempty" json:"website,omitempty" validate:"onlyCharAndNum"`
 }
 
 type Gender string
@@ -58,10 +58,15 @@ type RegisterValidation struct {
 	MailToken string `json:"mail_token"`
 }
 
-func (user *User) ValidateRegular() error {
+func (user *User) ValidateUser() error {
 	validate := validator.New()
 
-	err := validate.RegisterValidation("regular", regularField)
+	err := validate.RegisterValidation("onlyChar", onlyCharactersField)
+	if err != nil {
+		return err
+	}
+
+	err = validate.RegisterValidation("onlyCharAndNum", onlyCharactersAndNumbersField)
 	if err != nil {
 		return err
 	}
@@ -69,8 +74,21 @@ func (user *User) ValidateRegular() error {
 	return validate.Struct(user)
 }
 
-func regularField(fl validator.FieldLevel) bool {
+//Allows only letters [a-z]
+func onlyCharactersField(fl validator.FieldLevel) bool {
 	re := regexp.MustCompile("[-_a-zA-Z]*")
+	matches := re.FindAllString(fl.Field().String(), -1)
+
+	if len(matches) != 1 {
+		return false
+	}
+
+	return true
+}
+
+//Allows only letters [a-z] and numbers [0-9]
+func onlyCharactersAndNumbersField(fl validator.FieldLevel) bool {
+	re := regexp.MustCompile("[-_a-zA-Z0-9]*")
 	matches := re.FindAllString(fl.Field().String(), -1)
 
 	if len(matches) != 1 {
