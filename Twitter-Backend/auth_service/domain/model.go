@@ -3,10 +3,10 @@ package domain
 import (
 	"encoding/json"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io"
 	"regexp"
+	"time"
 )
 
 type User struct {
@@ -46,11 +46,17 @@ type Credentials struct {
 	UserType UserType           `bson:"userType" json:"userType"`
 }
 
+type PasswordChange struct {
+	OldPassword        string `json:"old_password"`
+	NewPassword        string `json:"new_password"`
+	NewPasswordConfirm string `json:"new_password_confirm"`
+}
+
 type Claims struct {
-	UserID   primitive.ObjectID `json:"user_id"`
-	Username string             `json:"username"`
-	Role     UserType           `json:"userType"`
-	jwt.RegisteredClaims
+	UserID    primitive.ObjectID `json:"user_id"`
+	Username  string             `json:"username"`
+	Role      UserType           `json:"userType"`
+	ExpiresAt time.Time          `json:"expires_at"`
 }
 
 type RegisterRecoverVerification struct {

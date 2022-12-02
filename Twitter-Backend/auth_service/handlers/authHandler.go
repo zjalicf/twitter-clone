@@ -34,7 +34,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 
 	registerRouter := router.Methods(http.MethodPost).Subrouter()
 	registerRouter.HandleFunc("/register", handler.Register)
-	registerRouter.Use(MiddlewareUserValidation)
+	//registerRouter.Use(MiddlewareUserValidation)
 
 	verifyRouter := router.Methods(http.MethodPost).Subrouter()
 	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
@@ -189,6 +189,11 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	if token == "not_same" {
+		http.Error(writer, "Wrong password", http.StatusUnauthorized)
+		return
+	}
+
 	jsonResponse(token, writer)
 }
 
@@ -212,4 +217,31 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 
 		next.ServeHTTP(responseWriter, request)
 	})
+}
+
+func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
+
+	var password domain.PasswordChange
+	err := json.NewDecoder(request.Body).Decode(&password)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+	fmt.Println(password)
+
+	token := request.Header.Get("token")
+	fmt.Printf(token)
+
+	err = handler.service.ChangePassword(password, token)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		writer.WriteHeader(http.StatusOK)
+		_, err := writer.Write([]byte("Password successfully changed."))
+		if err != nil {
+			return
+		}
+	}
 }

@@ -14,6 +14,7 @@ services:
     environment:
       TWEET_DB: ${TWEET_DB}
       TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
     depends_on:
        tweet_db:
          condition: service_healthy
@@ -33,6 +34,7 @@ services:
       USER_DB_HOST: ${USER_DB_HOST}
       USER_DB_PORT: ${USER_DB_PORT}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
     depends_on:
       - user_db
     networks:
