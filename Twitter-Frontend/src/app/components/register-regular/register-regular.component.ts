@@ -75,9 +75,9 @@ export class RegisterRegularComponent implements OnInit {
 
     this.authService.Register(registerUser)
       .subscribe({
-        next: (registrationToken: string) => {
-          console.log("V token is: " + registrationToken);
-          this.verificationService.updateVerificationToken(registrationToken);
+        next: (verificationToken:string) => {
+          this.verificationService.updateUserMail(registerUser.email);
+          this.verificationService.updateVerificationToken(verificationToken);
           this.router.navigate(['/Verify-Account']);
         },
         error: (error) => {

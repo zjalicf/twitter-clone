@@ -5,7 +5,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 	"user_service/domain"
 )
 
@@ -35,15 +34,12 @@ func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) 
 	return store.filterOne(filter)
 }
 
+func (store *UserMongoDBStore) GetByEmail(email string) (*domain.User, error) {
+	filter := bson.M{"email": email}
+	return store.filterOne(filter)
+}
+
 func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
-	pass := []byte(user.Password)
-	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
-
-	if err != nil {
-		return nil, err
-	}
-
-	user.Password = string(hash)
 	user.ID = primitive.NewObjectID()
 
 	result, err := store.users.InsertOne(context.TODO(), user)

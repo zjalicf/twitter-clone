@@ -13,7 +13,6 @@ type User struct {
 	Residence string             `bson:"residence,omitempty" json:"residence,omitempty"`
 	Email     string             `bson:"email" json:"email"`
 	Username  string             `bson:"username" json:"username"`
-	Password  string             `bson:"password" json:"password"`
 	UserType  UserType           `bson:"userType" json:"userType"`
 
 	CompanyName string `bson:"companyName,omitempty" json:"companyName,omitempty"`

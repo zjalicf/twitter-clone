@@ -6,13 +6,21 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class VerificationService {
 
+ private userMail = new BehaviorSubject('');
+ currentUserMail = this.userMail.asObservable();
+
  private verificationToken = new BehaviorSubject('');
  currentVerificationToken = this.verificationToken.asObservable();
 
  constructor() {
 
  }
- updateVerificationToken(message: string) {
-    this.verificationToken.next(message)
+
+ updateVerificationToken(message: string){
+   this.verificationToken.next(message)
+ }
+
+ updateUserMail(message: string) {
+    this.userMail.next(message)
  }
 }

@@ -4,6 +4,7 @@ import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { LoginDTO } from "../dto/loginDTO";
+import { ResendVerificationRequest } from "../dto/resend-verification-request";
 import { VerificationRequest } from "../dto/verificationRequest";
 import { User } from "../models/user.model";
 
@@ -21,8 +22,21 @@ export class AuthService {
     public VerifyAccount(request: VerificationRequest): Observable<void> {
         return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/verifyAccount`, request);
     }
+
+    public ResendVerificationToken(request: ResendVerificationRequest): Observable<void> {
+        return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/resendVerify`, request);
+    }
     
     public Login(loginDTO: LoginDTO): Observable<string> {
         return this.http.post(`${environment.baseApiUrl}/${this.url}/login`, loginDTO, {responseType : 'text'});
     }
+
+    public RequestRecoverPassword(email: string): Observable<string> {
+        return this.http.post<string>(`${environment.baseApiUrl}/${this.url}/recoverPasswordToken`, email);
+    }
+
+    public CheckRecoveryToken(request: VerificationRequest): Observable<void> {
+        return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/checkRecoverToken`, request);
+    }
+
 }

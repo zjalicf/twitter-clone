@@ -49,7 +49,25 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type RegisterValidation struct {
+type RegisterRecoverVerification struct {
 	UserToken string `json:"user_token"`
 	MailToken string `json:"mail_token"`
+}
+
+type ResendVerificationRequest struct {
+	UserToken string `json:"user_token"`
+	UserMail  string `json:"user_mail"`
+}
+
+type ResetPasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+	RepeatedNew string `json:"repeated_new"`
+}
+
+type RecoverPasswordRequest struct {
+	UserID      string `json:"id"`
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+	RepeatedNew string `json:"repeated_new"`
 }

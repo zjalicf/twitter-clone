@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
+import { VerificationService } from 'src/app/services/verify.service';
 
 @Component({
   selector: 'app-register-business',
@@ -20,7 +22,9 @@ export class RegisterBusinessComponent implements OnInit {
   });
 
   constructor(private authService: AuthService,
-              private formBuilder: FormBuilder) { }
+              private formBuilder: FormBuilder,
+              private router: Router,
+              private verificationService: VerificationService) { }
 
   // @ts-ignore
   formGroup: FormGroup;
@@ -57,9 +61,10 @@ export class RegisterBusinessComponent implements OnInit {
 
     this.authService.Register(registerUser)
       .subscribe({
-        next: (registrationToken: string) => {
-          console.log(registrationToken);
-          alert("V-user-token is: " + registrationToken);
+        next: (verificationToken: string) => {
+          this.verificationService.updateUserMail(registerUser.email);
+          this.verificationService.updateVerificationToken(verificationToken);
+          this.router.navigate(['/Verify-Account']);
         },
         error: (error) => {
           console.log(error)

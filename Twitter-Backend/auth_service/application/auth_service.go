@@ -60,7 +60,7 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
-	responseUser, err := http.DefaultClient.Do(userServiceRequest)
+	responseUser, _ := http.DefaultClient.Do(userServiceRequest)
 	//if err != nil {
 	//	return "",500, err
 	//}
@@ -90,14 +90,14 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	}
 
 	validationToken := uuid.New()
-	err = sendValidationMail(validationToken, user.Email)
-	if err != nil {
-		return "", 500, err
-	}
-
 	err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
 	if err != nil {
 		log.Fatalf("failed to post validation data to redis: %s", err)
+		return "", 500, err
+	}
+
+	err = sendValidationMail(validationToken, user.Email)
+	if err != nil {
 		return "", 500, err
 	}
 
@@ -123,7 +123,7 @@ func sendValidationMail(validationToken uuid.UUID, email string) error {
 	return nil
 }
 
-func (service *AuthService) VerifyAccount(validation *domain.RegisterValidation) error {
+func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVerification) error {
 	token, err := service.cache.GetCachedValue(validation.UserToken)
 	if err != nil {
 		log.Println(errors.ExpiredTokenError)
@@ -140,6 +140,101 @@ func (service *AuthService) VerifyAccount(validation *domain.RegisterValidation)
 	}
 
 	return fmt.Errorf(errors.InvalidTokenError)
+}
+
+func (service *AuthService) ResendVerificationToken(request *domain.ResendVerificationRequest) error {
+
+	if len(request.UserMail) == 0 {
+		log.Println(errors.InvalidResendMailError)
+		return fmt.Errorf(errors.InvalidResendMailError)
+	}
+
+	tokenUUID, _ := uuid.NewUUID()
+
+	err := service.cache.PostCacheData(request.UserToken, tokenUUID.String())
+	if err != nil {
+		return err
+	}
+
+	err = sendValidationMail(tokenUUID, request.UserMail)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *AuthService) SendRecoveryPasswordToken(email string) (string, int, error) {
+
+	userServiceEndpoint := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, email)
+	userServiceRequest, _ := http.NewRequest("GET", userServiceEndpoint, nil)
+	response, _ := http.DefaultClient.Do(userServiceRequest)
+	if response.StatusCode != 200 {
+		if response.StatusCode == 404 {
+			return "", 404, fmt.Errorf(errors.NotFoundMailError)
+		}
+	}
+
+	buf := new(strings.Builder)
+	_, _ = io.Copy(buf, response.Body)
+	userID := buf.String()
+
+	recoverUUID, _ := uuid.NewUUID()
+	err := sendRecoverPasswordMail(recoverUUID, email)
+	if err != nil {
+		return "", 500, err
+	}
+
+	err = service.cache.PostCacheData(userID, recoverUUID.String())
+	if err != nil {
+		return "", 500, err
+	}
+
+	return userID, 200, nil
+}
+
+func (service *AuthService) CheckRecoveryPasswordToken(request *domain.RegisterRecoverVerification) error {
+
+	if len(request.UserToken) == 0 {
+		return fmt.Errorf(errors.InvalidUserTokenError)
+	}
+
+	token, err := service.cache.GetCachedValue(request.UserToken)
+	if err != nil {
+		return fmt.Errorf(errors.InvalidTokenError)
+	}
+
+	if request.MailToken != token {
+		return fmt.Errorf(errors.InvalidTokenError)
+	}
+
+	_ = service.cache.DelCachedValue(request.UserToken)
+	return nil
+}
+
+func sendRecoverPasswordMail(validationToken uuid.UUID, email string) error {
+	message := gomail.NewMessage()
+	message.SetHeader("From", smtpEmail)
+	message.SetHeader("To", email)
+	message.SetHeader("Subject", "Recover password on your Twitter Clone account")
+
+	bodyString := fmt.Sprintf("Your recover password token is:\n%s", validationToken)
+	message.SetBody("text", bodyString)
+
+	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
+
+	if err := client.DialAndSend(message); err != nil {
+		log.Fatalf("failed to send verification mail because of: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPasswordRequest) {
+	//if resetPassword.NewPassword {
+	//
+	//}
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {

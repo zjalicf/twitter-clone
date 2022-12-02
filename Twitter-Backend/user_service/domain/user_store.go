@@ -7,4 +7,5 @@ type UserStore interface {
 	GetAll() ([]*User, error)
 	Post(user *User) (*User, error)
 	GetOneUser(username string) (*User, error)
+	GetByEmail(email string) (*User, error)
 }
