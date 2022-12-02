@@ -34,7 +34,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 
 	registerRouter := router.Methods(http.MethodPost).Subrouter()
 	registerRouter.HandleFunc("/register", handler.Register)
-	//registerRouter.Use(MiddlewareUserValidation)
+	registerRouter.Use(MiddlewareUserValidation)
 
 	verifyRouter := router.Methods(http.MethodPost).Subrouter()
 	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
