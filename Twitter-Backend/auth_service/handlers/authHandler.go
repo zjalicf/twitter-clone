@@ -3,12 +3,18 @@ package handlers
 import (
 	"auth_service/application"
 	"auth_service/domain"
+	"auth_service/errors"
 	"auth_service/store"
+	"context"
+
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
+
+type KeyUser struct{}
 
 type AuthHandler struct {
 	service *application.AuthService
@@ -22,13 +28,21 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
-	router.HandleFunc("/login", handler.Login).Methods("POST")
-	router.HandleFunc("/register", handler.Register).Methods("POST")
-	router.HandleFunc("/validateAccount", handler.ValidateAccount).Methods("POST")
+	loginRouter := router.Methods(http.MethodPost).Subrouter()
+	loginRouter.HandleFunc("/login", handler.Login)
+
+	registerRouter := router.Methods(http.MethodPost).Subrouter()
+	registerRouter.HandleFunc("/register", handler.Register)
+	//registerRouter.Use(MiddlewareUserValidation)
+
+	verifyRouter := router.Methods(http.MethodPost).Subrouter()
+	verifyRouter.HandleFunc("/verifyAccount", handler.VerifyAccount)
+
 	http.Handle("/", router)
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
+	//request := req.Context().Value(domain.User{}).(domain.User)
 	var request domain.User
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -46,8 +60,7 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 	jsonResponse(token, writer)
 }
 
-func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *http.Request) {
-
+func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.Request) {
 	var request domain.RegisterValidation
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -56,10 +69,20 @@ func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *htt
 		return
 	}
 
-	err = handler.service.ValidateAccount(&request)
+	if len(request.UserToken) == 0 {
+		http.Error(writer, errors.InvalidUserTokenError, http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.VerifyAccount(&request)
 	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusNotAcceptable)
+		if err.Error() == errors.InvalidTokenError {
+			log.Println(err.Error())
+			http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
+		} else if err.Error() == errors.ExpiredTokenError {
+			log.Println(err.Error())
+			http.Error(writer, errors.ExpiredTokenError, http.StatusNotFound)
+		}
 		return
 	}
 
@@ -67,10 +90,8 @@ func (handler *AuthHandler) ValidateAccount(writer http.ResponseWriter, req *htt
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
-
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -84,5 +105,27 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	}
 
 	jsonResponse(token, writer)
+}
 
+func MiddlewareUserValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		user := &domain.User{}
+		err := user.FromJSON(request.Body)
+		if err != nil {
+			http.Error(responseWriter, "Unable to Decode JSON", http.StatusBadRequest)
+			return
+		}
+
+		err = user.ValidateRegular()
+
+		if err != nil {
+			http.Error(responseWriter, fmt.Sprintf("Error validation firstName: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(request.Context(), domain.User{}, user)
+		request = request.WithContext(ctx)
+
+		next.ServeHTTP(responseWriter, request)
+	})
 }

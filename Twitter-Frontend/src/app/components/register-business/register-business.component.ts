@@ -57,9 +57,9 @@ export class RegisterBusinessComponent implements OnInit {
 
     this.authService.Register(registerUser)
       .subscribe({
-        next: (data: User) => {
-          console.log(data);
-          alert("You have been successfully registered to Twitter");
+        next: (registrationToken: string) => {
+          console.log(registrationToken);
+          alert("V-user-token is: " + registrationToken);
         },
         error: (error) => {
           console.log(error)

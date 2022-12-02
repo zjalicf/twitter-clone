@@ -123,14 +123,19 @@ func sendValidationMail(validationToken uuid.UUID, email string) error {
 	return nil
 }
 
-func (service *AuthService) ValidateAccount(validation *domain.RegisterValidation) error {
+func (service *AuthService) VerifyAccount(validation *domain.RegisterValidation) error {
 	token, err := service.cache.GetCachedValue(validation.UserToken)
 	if err != nil {
-		log.Fatalf("failed to get value from redis: %s", err)
-		return err
+		log.Println(errors.ExpiredTokenError)
+		return fmt.Errorf(errors.ExpiredTokenError)
 	}
 
 	if validation.MailToken == token {
+		err := service.cache.DelCachedValue(validation.UserToken)
+		if err != nil {
+			log.Printf("error in deleting cached value: %s", err)
+			return err
+		}
 		return nil
 	}
 
@@ -138,7 +143,6 @@ func (service *AuthService) ValidateAccount(validation *domain.RegisterValidatio
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {
-
 	user, err := service.store.GetOneUser(credentials.Username)
 	if err != nil {
 		fmt.Println(err)
@@ -146,13 +150,13 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 	}
 
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
-
 	if passError != nil {
 		fmt.Println(passError)
 		return "", err
 	}
 
 	tokenString, err := GenerateJWT(user)
+	
 	if err != nil {
 		return "", err
 	}
