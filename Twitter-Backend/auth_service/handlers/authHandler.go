@@ -45,6 +45,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/resendVerify", handler.ResendVerificationToken).Methods("POST")
 	router.HandleFunc("/recoverPasswordToken", handler.SendRecoveryPasswordToken).Methods("POST")
 	router.HandleFunc("/checkRecoverToken", handler.CheckRecoveryPasswordToken).Methods("POST")
+	router.HandleFunc("/changePassword", handler.ChangePassword).Methods("POST")
 	http.Handle("/", router)
 }
 
