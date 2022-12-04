@@ -7,9 +7,9 @@
                 <div class="mb-3">
                     <mat-card-title class="card-title">Type your validation token</mat-card-title>
                     <input type="text" maxlength="36" class="form-control" formControlName="verificationToken"
-                        [ngClass]="{ 'is-invalid': submitted && f['verificationToken'].errors }">
-                    <div *ngIf="submitted && f['verificationToken'].errors" class="invalid-feedback">
-                        <div *ngIf="f['verificationToken'].errors['required']">Verification token is required.</div>
+                        [ngClass]="{ 'is-invalid': submitted && form['verificationToken'].errors }">
+                    <div *ngIf="submitted && form['verificationToken'].errors" class="invalid-feedback">
+                        <div *ngIf="form['verificationToken'].errors['required']">Verification token is required.</div>
                         
                     </div>
                     <div *ngIf="formGroup.errors?.['invalidToken']" class="invalid-token">

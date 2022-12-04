@@ -10,6 +10,7 @@ import { RegisterBusinessComponent } from './components/register-business/regist
 import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
 import { TestAuthPageComponent } from './components/test-auth-page/test-auth-page.component';
 import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
+import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 
 const routes: Routes = [
   {
@@ -51,6 +52,10 @@ const routes: Routes = [
   {
     path: 'Change-Password',
     component: ChangePasswordComponent
+  },
+  {
+    path: 'New-Tweet',
+    component: TweetAddComponent
   }
 ];
 
