@@ -1,12 +1,8 @@
 .tweet-card {
-    max-width: 530px;
-    margin-top: 30px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.tweet-username-icon {
-  margin-left: 10px;
+  max-width: 530px;
+  margin-top: 50px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .tweet-user-icon {
@@ -16,15 +12,15 @@
 }
 
 .tweet-user-username {
-  font-size: 20px;
-  margin-bottom: 30px;
-  margin-left: 50px;
+  font-size: 22px;
+  margin-bottom: 20px;
+  margin-left: 35px;
   color: blue;
 }
 
 .tweet-text {
-  font-size: 22px;
-  margin-left: 60px;
+  font-size: 19px;
+  margin-left: 10px;
   color:black;
   margin-bottom: 20px;
   text-align: left;
