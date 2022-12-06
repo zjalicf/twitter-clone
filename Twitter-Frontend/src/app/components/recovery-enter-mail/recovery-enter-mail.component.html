@@ -1,0 +1,29 @@
+<div>
+    <mat-card class="recovery-pass-card">
+        <mat-card-title class="recovery-pass-title mx-auto w-50">Recover password</mat-card-title>
+        
+        <div class="form-group mx-auto w-50">
+            <form [formGroup]="formGroup">
+                <div class="mb-3">
+                    <mat-card-title class="card-title">Type email address of your account</mat-card-title>
+                    <input type="text" class="form-control" formControlName="email"
+                        [ngClass]="{ 'is-invalid': submitted && f['email'].errors }">
+                    <div *ngIf="submitted && f['email'].errors" class="invalid-feedback">
+                        <div *ngIf="f['email'].errors['required']">Email is required.</div>
+                        <div *ngIf="f['email'].errors['email']">Email is not valid.</div>
+                    </div>
+                    <div *ngIf="formGroup.errors?.['userNotExist']" class="invalid-email">
+                        User with this email not exist. Check if your email is valid.
+                    </div>
+                    <!-- <div *ngIf="formGroup.errors?.['expiredToken']" class="invalid-token"> -->
+                        <!-- Your token is expired.<br> -->
+                        <!-- <a *ngIf="!resend" (click)="resendVerifyToken()">Resend verification token.</a> -->
+                    <!-- </div>  -->
+                </div>
+                
+                <button type="submit" class="btn btn-primary" (click)="onSubmit()">Request token</button>
+                
+            </form>
+        </div>
+    </mat-card>   
+</div>

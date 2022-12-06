@@ -24,28 +24,10 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.Register).Methods("POST")
-	//router.HandleFunc("/login", handler.Login).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/mailExist/{mail}", handler.MailExist).Methods("GET")
 	http.Handle("/", router)
 }
-
-//func (handler *UserHandler) Login(writer http.ResponseWriter, request *http.Request) {
-//
-//	var user domain.User
-//	err := json.NewDecoder(request.Body).Decode(&user)
-//	if err != nil {
-//		log.Println(err)
-//		http.Error(writer, err.Error(), http.StatusBadRequest)
-//	}
-//
-//	token, err := handler.service.Login(&user)
-//	if err != nil {
-//		http.Error(writer, err.Error(), http.StatusUnauthorized)
-//		return
-//	}
-//	writer.Write([]byte(token))
-//
-//}
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
 	var user domain.User
@@ -98,4 +80,21 @@ func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 	jsonResponse(user, writer)
+}
+
+func (handler *UserHandler) MailExist(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	mail, ok := vars["mail"]
+	if !ok {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id, err := handler.service.DoesEmailExist(mail)
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	jsonResponse(id, writer)
 }

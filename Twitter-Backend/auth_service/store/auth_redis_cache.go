@@ -23,7 +23,7 @@ func (a *AuthRedisCache) PostCacheData(key string, value string) error {
 	log.Println(result.Err())
 	log.Println(result.Result())
 	if result.Err() != nil {
-		log.Fatalf("redis set error: %s", result.Err())
+		log.Printf("redis set error: %s", result.Err())
 		return result.Err()
 	}
 
@@ -34,7 +34,7 @@ func (a *AuthRedisCache) GetCachedValue(key string) (string, error) {
 	result := a.client.Get(key)
 	token, err := result.Result()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return "", err
 	}
 	return token, nil
@@ -43,7 +43,7 @@ func (a *AuthRedisCache) GetCachedValue(key string) (string, error) {
 func (a *AuthRedisCache) DelCachedValue(key string) error {
 	result := a.client.Del(key)
 	if result.Err() != nil {
-		log.Fatal(result.Err())
+		log.Println(result.Err())
 		return result.Err()
 	}
 

@@ -25,6 +25,15 @@ func (service *UserService) Get(id primitive.ObjectID) (*domain.User, error) {
 	return service.store.Get(id)
 }
 
+func (service *UserService) DoesEmailExist(email string) (string, error) {
+	user, err := service.store.GetByEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	return user.ID.Hex(), nil
+}
+
 func (service *UserService) GetAll() ([]*domain.User, error) {
 	return service.store.GetAll()
 }
@@ -105,8 +114,7 @@ func isBusiness(user *domain.User) bool {
 	if len(user.CompanyName) >= 3 &&
 		len(user.Website) >= 3 &&
 		len(user.Email) >= 3 &&
-		len(user.Username) >= 3 &&
-		len(user.Password) >= 8 {
+		len(user.Username) >= 3 {
 		return true
 	}
 
@@ -119,8 +127,7 @@ func isRegular(user *domain.User) bool {
 		len(user.Gender) >= 3 &&
 		user.Age >= 1 &&
 		len(user.Residence) >= 3 &&
-		len(user.Username) >= 3 &&
-		len(user.Password) >= 8 {
+		len(user.Username) >= 3 {
 		return true
 	}
 

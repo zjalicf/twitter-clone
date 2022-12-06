@@ -3,9 +3,11 @@ module tweet_service
 go 1.18
 
 require (
+	github.com/casbin/casbin v1.9.1
+	github.com/cristalhq/jwt/v4 v4.0.2
 	github.com/gocql/gocql v1.2.1
-	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/gorilla/mux v1.8.0
+	go.mongodb.org/mongo-driver v1.11.0
 )
 
 require (

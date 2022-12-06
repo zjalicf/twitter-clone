@@ -3,13 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gocql/gocql"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
 	"tweet_service/application"
+	"tweet_service/authorization"
 	"tweet_service/domain"
 )
 
@@ -26,10 +26,19 @@ func NewTweetHandler(service *application.TweetService) *TweetHandler {
 }
 
 func (handler *TweetHandler) Init(router *mux.Router) {
+
+	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	log.Println("sucessful init of enforcer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/", handler.Post).Methods("POST")
+	router.HandleFunc("/", Post(handler)).Methods("POST")
 	http.Handle("/", router)
+	log.Println("Successful")
+	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
 }
 
 func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
@@ -61,6 +70,7 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 //		jsonResponse(tweet, writer)
 //	}
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
+
 	var request domain.Tweet
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -75,74 +85,31 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	UserID := handler.GetID(handler.GetClaims(req.Header["Token"][0]))
-	id, err := gocql.UUIDFromBytes([]byte(UserID))
+	//ostalo je jos da se id prebaci u cassandrin format
 
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
-		return
-	}
+	//token := authorization.GetToken(req.Header.Get("token"))
+	//claims := authorization.GetMapClaims(token.Bytes())
+	//userID := claims["user_id"]
 
-	tweet, err := handler.service.Post(&request, id)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	writer.WriteHeader(http.StatusOK)
-	jsonResponse(tweet, writer)
+	//id, err := gocql.UUIDFromBytes([]byte(userID))
+	//
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusUnauthorized)
+	//	return
+	//}
+	//
+	//tweet, err := handler.service.Post(&request, id)
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//writer.WriteHeader(http.StatusOK)
+	//jsonResponse(tweet, writer)
 }
 
-func (handler *TweetHandler) GetClaims(tokenString string) jwt.MapClaims {
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			fmt.Println(ok)
-		}
-		return token, nil
-	})
-
-	if err != nil {
-		fmt.Println(err)
-		return nil
-
+func Post(handler *TweetHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler.Post(w, r)
 	}
-
-	return token.Claims.(jwt.MapClaims)
-}
-
-func (handler *TweetHandler) GetID(claims jwt.MapClaims) string {
-
-	userId := claims["UserID"]
-	fmt.Println(userId, claims["Username"].(string))
-	return userId.(string)
-}
-
-func (service *TweetHandler) ValidateJWT(endpoint func(writer http.ResponseWriter, request *http.Request) http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header["Token"] != nil {
-			token, err := jwt.Parse(request.Header["Token"][0], func(t *jwt.Token) (interface{}, error) {
-				_, ok := t.Method.(*jwt.SigningMethodHMAC)
-				if !ok {
-					writer.WriteHeader(http.StatusUnauthorized)
-					writer.Write([]byte("not authorized"))
-				}
-				return jwtKey, nil
-
-			})
-
-			if err != nil {
-				writer.WriteHeader(http.StatusUnauthorized)
-				writer.Write([]byte("not authorized"))
-			}
-
-			if token.Valid {
-				endpoint(writer, request)
-			}
-		} else {
-			writer.WriteHeader(http.StatusUnauthorized)
-			writer.Write([]byte("not authorized"))
-		}
-	})
 }
