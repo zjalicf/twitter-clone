@@ -4,6 +4,7 @@ import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { LoginDTO } from "../dto/loginDTO";
+import { RecoverPasswordDTO } from "../dto/recoverPasswordDTO";
 import { ResendVerificationRequest } from "../dto/resend-verification-request";
 import { VerificationRequest } from "../dto/verificationRequest";
 import { User } from "../models/user.model";
@@ -39,4 +40,7 @@ export class AuthService {
         return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/checkRecoverToken`, request);
     }
 
+    public RecoverPassword(request: RecoverPasswordDTO): Observable<void> {
+        return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/recoverPassword`, request);
+    }
 }

@@ -77,7 +77,6 @@ type ResetPasswordRequest struct {
 
 type RecoverPasswordRequest struct {
 	UserID      string `json:"id"`
-	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password"`
 	RepeatedNew string `json:"repeated_new"`
 }

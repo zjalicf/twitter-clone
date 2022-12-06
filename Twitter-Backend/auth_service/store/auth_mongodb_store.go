@@ -64,15 +64,15 @@ func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error)
 }
 
 func (store *AuthMongoDBStore) GetOneUserByID(id primitive.ObjectID) *domain.User {
-	filter := bson.M{"id": id}
+	filter := bson.M{"_id": id}
 
-	var user *domain.User
-	err := store.credentials.FindOne(context.TODO(), filter, nil).Decode(user)
+	var user domain.User
+	err := store.credentials.FindOne(context.TODO(), filter, nil).Decode(&user)
 	if err != nil {
 		return nil
 	}
 
-	return user
+	return &user
 }
 
 func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {

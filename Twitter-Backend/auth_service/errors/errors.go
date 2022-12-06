@@ -7,4 +7,5 @@ const (
 	ExpiredTokenError         = "verification token has expired"
 	InvalidResendMailError    = "invalid resend mail"
 	NotFoundMailError         = "mail not found in database"
+	NotMatchingPasswordsError = "passwords doesn't matching"
 )
