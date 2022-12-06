@@ -87,27 +87,18 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	//ostalo je jos da se id prebaci u cassandrin format
+	token := authorization.GetToken(req.Header.Get("token"))
+	claims := authorization.GetMapClaims(token.Bytes())
+	userID := claims["user_id"]
 
-	//token := authorization.GetToken(req.Header.Get("token"))
-	//claims := authorization.GetMapClaims(token.Bytes())
-	//userID := claims["user_id"]
+	tweet, err := handler.service.Post(&request, userID)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	//id, err := gocql.UUIDFromBytes([]byte(userID))
-	//
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusUnauthorized)
-	//	return
-	//}
-	//
-	//tweet, err := handler.service.Post(&request, id)
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//writer.WriteHeader(http.StatusOK)
-	//jsonResponse(tweet, writer)
+	writer.WriteHeader(http.StatusOK)
+	jsonResponse(tweet, writer)
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {
