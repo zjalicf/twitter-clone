@@ -79,7 +79,7 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if req.Header["Token"] == nil {
+	if req.Header.Get("Authorization") == "" {
 		fmt.Print("ovde")
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
