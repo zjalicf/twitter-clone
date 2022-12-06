@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
 	"io"
@@ -232,10 +233,30 @@ func sendRecoverPasswordMail(validationToken uuid.UUID, email string) error {
 	return nil
 }
 
-func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPasswordRequest) {
-	//if resetPassword.NewPassword {
-	//
-	//}
+func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPasswordRequest) error {
+	if recoverPassword.NewPassword != recoverPassword.RepeatedNew {
+		return fmt.Errorf(errors.NotMatchingPasswordsError)
+	}
+
+	primitiveID, err := primitive.ObjectIDFromHex(recoverPassword.UserID)
+	if err != nil {
+		return err
+	}
+	credentials := service.store.GetOneUserByID(primitiveID)
+
+	pass := []byte(recoverPassword.NewPassword)
+	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	credentials.Password = string(hash)
+
+	err = service.store.ChangePassword(credentials)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {

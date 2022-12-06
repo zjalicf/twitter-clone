@@ -45,6 +45,7 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/resendVerify", handler.ResendVerificationToken).Methods("POST")
 	router.HandleFunc("/recoverPasswordToken", handler.SendRecoveryPasswordToken).Methods("POST")
 	router.HandleFunc("/checkRecoverToken", handler.CheckRecoveryPasswordToken).Methods("POST")
+	router.HandleFunc("/recoverPassword", handler.RecoverPassword).Methods("POST")
 	http.Handle("/", router)
 }
 
@@ -169,9 +170,18 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 		log.Fatal(err.Error())
 		return
 	}
-	//
-	//err :=
-	//	writer.WriteHeader(http.StatusOK)
+
+	err = handler.service.RecoverPassword(&request)
+	if err != nil {
+		if err.Error() == errors.NotMatchingPasswordsError {
+			http.Error(writer, err.Error(), http.StatusNotAcceptable)
+			return
+		}
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {

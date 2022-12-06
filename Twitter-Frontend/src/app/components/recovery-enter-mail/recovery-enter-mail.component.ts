@@ -48,6 +48,7 @@ export class RecoveryEnterMailComponent implements OnInit {
     this.authService.RequestRecoverPassword(email).subscribe({
       next: (token: string) => {
         this.recoveryService.updateToken(token)
+        alert("ups")
         this.router.navigate(['/Recovery-Token'])
       },
       error: (error: HttpErrorResponse) => {

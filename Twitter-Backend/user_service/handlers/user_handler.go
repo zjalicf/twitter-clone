@@ -96,5 +96,10 @@ func (handler *UserHandler) MailExist(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	jsonResponse(id, writer)
+	_, err = writer.Write([]byte(id))
+	if err != nil {
+		log.Println("error in response user service")
+		log.Println(err.Error())
+		return
+	}
 }

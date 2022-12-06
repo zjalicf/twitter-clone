@@ -53,11 +53,13 @@ export class RecoveryEnterTokenComponent implements OnInit {
     console.log(req)
     this.authService.CheckRecoveryToken(req).subscribe({
       next: (v: void) => {
-        this.router.navigate([''])
+        this.router.navigate(['/Recovery-Password'])
       },
       error: (error: HttpErrorResponse) => {
         if(error.status == 404 || error.status == 406){
           this.formGroup.setErrors({invalidToken:true})
+        }else{
+          alert('an error is occured.')
         }
       }
     })
