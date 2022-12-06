@@ -41,19 +41,17 @@ export class AuthService {
         return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/checkRecoverToken`, request);
     }
 
-<<<<<<< Updated upstream
     public RecoverPassword(request: RecoverPasswordDTO): Observable<void> {
         return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/recoverPassword`, request);
-=======
+    }
 
     public ChangePassword(changePasswordDTO: ChangePasswordDTO): Observable<any> {
         let headers = new HttpHeaders({
             "Content-Type" : "application/json",
-            "Authorization" : "Bearer " + localStorage.getItem("token"),
+            "Authorization" : "Bearer " + localStorage.getItem("authToken"),
           });
-        
+    
           let options = {headers:headers};
-        return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/changePassword`, changePasswordDTO, options)
->>>>>>> Stashed changes
+        return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/changePassword`, changePasswordDTO, options)
     }
 }

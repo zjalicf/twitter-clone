@@ -1,3 +1,4 @@
+import { HttpBackend, HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,14 +18,11 @@ export class ChangePasswordComponent implements OnInit {
     newPasswordConfirm: new FormGroup('')
   });
 
-<<<<<<< Updated upstream
-  constructor(private formBuilder: FormBuilder) { }
-=======
+
   constructor(private router: Router,
               private formBuilder: FormBuilder,
               private authService: AuthService
   ) { }
->>>>>>> Stashed changes
 
   submitted = false;
 
@@ -56,10 +54,23 @@ export class ChangePasswordComponent implements OnInit {
     console.log(changePassword.new_password + changePassword.new_password_confirm + changePassword.old_password)
 
     this.authService.ChangePassword(changePassword)
-      .subscribe(
-        data => {
-          console.log(data)
+      .subscribe({
+        next: (data: string) => {
+          localStorage.clear
+          this.router.navigate(["/Login"])
+        },
+        error: (err: HttpErrorResponse) => {
+          if(err.status == 409){
+            alert("Old password not match!")
+          } else if (err.status == 406){
+              alert("New passwrod not match!")
+          } else if (err.status == 200){
+            alert("Password changed successfully!")
+          }
+          // localStorage.setItem("authToken", "")
+          // this.router.navigate(["/Login"])
         }
+      }
       )
   }
 

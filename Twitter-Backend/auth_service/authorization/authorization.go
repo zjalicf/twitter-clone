@@ -17,7 +17,11 @@ var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 
+		fmt.Println(e.GetPolicy())
+
 		fn := func(w http.ResponseWriter, r *http.Request) {
+
+			fmt.Println(r.Header.Get("Authorization"))
 
 			if r.Header.Get("Authorization") == "" {
 				res, err := e.EnforceSafe("NotLoggedIn", r.URL.Path, r.Method)
@@ -48,6 +52,8 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				}
 
 				claims := GetMapClaims(token.Bytes())
+				fmt.Println(claims)
+				fmt.Println("proslo")
 
 				res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)
 				if err != nil {

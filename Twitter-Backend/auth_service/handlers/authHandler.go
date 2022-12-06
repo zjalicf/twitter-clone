@@ -208,7 +208,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	jsonResponse(token, writer)
+	writer.Write([]byte(token))
 }
 
 func MiddlewareUserValidation(next http.Handler) http.Handler {
@@ -251,11 +251,14 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *
 	fmt.Println(password)
 	fmt.Println(tokenString)
 
-	err = handler.service.ChangePassword(password, tokenString)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
+	status := handler.service.ChangePassword(password, tokenString)
+
+	if status == "oldPassErr" {
+		writer.WriteHeader(http.StatusConflict) //409
+	} else if status == "newPassErr" {
+		writer.WriteHeader(http.StatusNotAcceptable) //406
+	} else if status == "baseErr" {
+		writer.WriteHeader(http.StatusInternalServerError)
 	} else {
 		writer.WriteHeader(http.StatusOK)
 		_, err := writer.Write([]byte("Password successfully changed."))

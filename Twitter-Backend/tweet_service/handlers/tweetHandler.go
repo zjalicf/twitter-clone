@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/casbin/casbin"
+	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"tweet_service/application"
 	"tweet_service/authorization"
 	"tweet_service/domain"
@@ -18,6 +20,7 @@ type TweetHandler struct {
 }
 
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
+var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 
 func NewTweetHandler(service *application.TweetService) *TweetHandler {
 	return &TweetHandler{
@@ -87,10 +90,24 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	token := authorization.GetToken(req.Header.Get("token"))
+	//token := authorization.GetToken(req.Header.Get("token"))
+	//claims := authorization.GetMapClaims(token.Bytes())
+
+	bearer := req.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
+	fmt.Println(tokenString)
+	token, err := jwt.Parse([]byte(tokenString), verifier)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	claims := authorization.GetMapClaims(token.Bytes())
 	userID := claims["user_id"]
-
+	fmt.Printf("type is: %s", userID)
+	fmt.Println(userID)
 	tweet, err := handler.service.Post(&request, userID)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)

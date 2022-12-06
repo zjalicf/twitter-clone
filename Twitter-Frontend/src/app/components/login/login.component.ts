@@ -53,6 +53,7 @@ export class LoginComponent implements OnInit {
     this.authService.Login(login)
       .subscribe({
         next: (token: string) => {
+          console.log(token)
           localStorage.setItem('authToken', token);
           this.router.navigate(['/Main-Page']);
         },
