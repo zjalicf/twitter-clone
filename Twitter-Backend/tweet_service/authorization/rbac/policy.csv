@@ -1,5 +1,4 @@
 p, Regular, /, POST
-p, Business, /, POST
 p, Regular, /changePassword, POST
 p, Business, /changePassword, POST
 p, NotLoggedIn, /login, *

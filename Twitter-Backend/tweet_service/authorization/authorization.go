@@ -1,11 +1,13 @@
 package authorization
 
 import (
+	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
@@ -17,31 +19,54 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
-			token, err := jwt.Parse([]byte(r.Header.Get("token")), verifier)
-			if err != nil {
-				log.Println(err)
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
-				return
-			}
+			if r.Header.Get("Authorization") == "" {
+				res, err := e.EnforceSafe("NotLoggedIn", r.URL.Path, r.Method)
+				if err != nil {
+					log.Println("enforce error")
+					http.Error(w, "unauthorized user", http.StatusUnauthorized)
+					return
+				}
+				if res {
+					log.Println("redirect")
+					next.ServeHTTP(w, r)
+				} else {
+					http.Error(w, "forbidden", http.StatusForbidden)
+					return
+				}
 
-			claims := GetMapClaims(token.Bytes())
-
-			res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)
-			if err != nil {
-				log.Println("enforce error")
-				http.Error(w, "unauthorized user", http.StatusUnauthorized)
-				return
-			}
-			log.Println(res)
-
-			if res {
-				log.Println("redirect")
-				next.ServeHTTP(w, r)
 			} else {
-				http.Error(w, "forbidden", http.StatusForbidden)
-				return
-			}
 
+				bearer := r.Header.Get("Authorization")
+				bearerToken := strings.Split(bearer, "Bearer ")
+				tokenString := bearerToken[1]
+				fmt.Println(tokenString)
+
+				token, err := jwt.Parse([]byte(tokenString), verifier)
+				if err != nil {
+					log.Println(err)
+					http.Error(w, "unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				claims := GetMapClaims(token.Bytes())
+				fmt.Println(claims["userType"])
+
+				res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)
+				if err != nil {
+					log.Println("enforce error")
+					http.Error(w, "unauthorized user", http.StatusUnauthorized)
+					return
+				}
+				log.Println(res)
+
+				if res {
+					log.Println("redirect")
+					next.ServeHTTP(w, r)
+				} else {
+					http.Error(w, "forbidden", http.StatusForbidden)
+					return
+				}
+			}
 		}
 
 		return http.HandlerFunc(fn)

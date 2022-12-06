@@ -35,7 +35,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/", Post(handler)).Methods("POST")
+	router.HandleFunc("/", handler.Post).Methods("POST")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -78,6 +78,8 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	fmt.Println(req.Header.Get("Authorization"))
 
 	if req.Header.Get("Authorization") == "" {
 		fmt.Print("ovde")

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChangePasswordDTO } from 'src/app/dto/changePasswordDTO';
+import { AuthService } from 'src/app/services/auth.service';
 import { PasswordStrenghtValidator } from 'src/app/services/customValidators';
 
 @Component({
@@ -13,16 +14,25 @@ export class ChangePasswordComponent implements OnInit {
   formGroup: FormGroup = new FormGroup({
     currentPassword: new FormGroup(''),
     newPassword: new FormGroup(''),
+    newPasswordConfirm: new FormGroup('')
   });
 
+<<<<<<< Updated upstream
   constructor(private formBuilder: FormBuilder) { }
+=======
+  constructor(private router: Router,
+              private formBuilder: FormBuilder,
+              private authService: AuthService
+  ) { }
+>>>>>>> Stashed changes
 
   submitted = false;
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
       currentPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
-      newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]]
+      newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      newPasswordConfirm: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]]
     });
   }
 
@@ -39,13 +49,18 @@ export class ChangePasswordComponent implements OnInit {
 
     let changePassword: ChangePasswordDTO = new ChangePasswordDTO();
 
-    changePassword.currentPassword = this.formGroup.get('currentPassword')?.value;
-    changePassword.newPassword = this.formGroup.get('newPassword')?.value;
+    changePassword.old_password = this.formGroup.get('currentPassword')?.value
+    changePassword.new_password = this.formGroup.get('newPassword')?.value;
+    changePassword.new_password_confirm = this.formGroup.get('newPasswordConfirm')?.value;
 
-    // this.authService.ChangePassword(changePassword)
-    //   .subscribe({
+    console.log(changePassword.new_password + changePassword.new_password_confirm + changePassword.old_password)
 
-    //   })
+    this.authService.ChangePassword(changePassword)
+      .subscribe(
+        data => {
+          console.log(data)
+        }
+      )
   }
 
 }

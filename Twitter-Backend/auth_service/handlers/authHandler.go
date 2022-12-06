@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"auth_service/application"
+	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
 	"auth_service/store"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"io"
 	"log"
@@ -29,6 +31,13 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
+
+	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	log.Println("sucessful init of enforcer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	loginRouter := router.Methods(http.MethodPost).Subrouter()
 	loginRouter.HandleFunc("/login", handler.Login)
 
@@ -48,6 +57,8 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/recoverPassword", handler.RecoverPassword).Methods("POST")
 	router.HandleFunc("/changePassword", handler.ChangePassword).Methods("POST")
 	http.Handle("/", router)
+	log.Fatal(http.ListenAndServe(":8003", authorization.Authorizer(authEnforcer)(router)))
+
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
@@ -224,6 +235,12 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 
 func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
 
+	var token string = request.Header.Get("Authorization")
+	bearerToken := strings.Split(token, "Bearer ")
+	tokenString := bearerToken[1]
+
+	fmt.Println(request.Body)
+
 	var password domain.PasswordChange
 	err := json.NewDecoder(request.Body).Decode(&password)
 	if err != nil {
@@ -231,9 +248,10 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 	}
 
-	token := request.Header.Get("token")
+	fmt.Println(password)
+	fmt.Println(tokenString)
 
-	err = handler.service.ChangePassword(password, token)
+	err = handler.service.ChangePassword(password, tokenString)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)

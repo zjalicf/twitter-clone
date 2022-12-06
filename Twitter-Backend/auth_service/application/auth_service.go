@@ -357,13 +357,13 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 
 		user.Password = string(newEncryptedPassword)
 
-		fmt.Println("Prolso sve do stvarnog upisa")
-
 		err = service.store.ChangePassword(user)
 		if err != nil {
 			return err
 		}
 
+	} else {
+		return fmt.Errorf("new password not match")
 	}
 
 	return nil
