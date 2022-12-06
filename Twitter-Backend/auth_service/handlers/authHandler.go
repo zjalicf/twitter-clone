@@ -246,24 +246,24 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
 	}
-
-	fmt.Println(password)
-	fmt.Println(tokenString)
 
 	status := handler.service.ChangePassword(password, tokenString)
 
 	if status == "oldPassErr" {
-		writer.WriteHeader(http.StatusConflict) //409
+		http.Error(writer, "Wrong old password", http.StatusConflict) //409
+		return
 	} else if status == "newPassErr" {
-		writer.WriteHeader(http.StatusNotAcceptable) //406
+		http.Error(writer, "Wrong new password", http.StatusNotAcceptable) //406
+		return
 	} else if status == "baseErr" {
-		writer.WriteHeader(http.StatusInternalServerError)
-	} else {
-		writer.WriteHeader(http.StatusOK)
-		_, err := writer.Write([]byte("Password successfully changed."))
-		if err != nil {
-			return
-		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
 	}
+	writer.WriteHeader(http.StatusOK)
+
+	//_, err = writer.Write([]byte("Password successfully changed."))
+	//if err != nil {
+	//}
 }

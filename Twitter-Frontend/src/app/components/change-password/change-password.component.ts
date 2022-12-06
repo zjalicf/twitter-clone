@@ -1,4 +1,4 @@
-import { HttpBackend, HttpErrorResponse } from '@angular/common/http';
+import { HttpBackend, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,8 +28,8 @@ export class ChangePasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
-      currentPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
-      newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      currentPassword: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      newPassword: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
       newPasswordConfirm: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]]
     });
   }
@@ -55,11 +55,12 @@ export class ChangePasswordComponent implements OnInit {
 
     this.authService.ChangePassword(changePassword)
       .subscribe({
-        next: (data: string) => {
-          localStorage.clear
-          this.router.navigate(["/Login"])
+        next: () => {
+            localStorage.clear()
+            this.router.navigate(["/Login"])
         },
         error: (err: HttpErrorResponse) => {
+          console.log("Uslo u errors")
           if(err.status == 409){
             alert("Old password not match!")
           } else if (err.status == 406){

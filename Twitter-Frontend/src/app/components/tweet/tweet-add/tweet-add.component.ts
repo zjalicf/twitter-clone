@@ -41,8 +41,8 @@ export class TweetAddComponent implements OnInit {
     addTweet.text = this.formGroup.get("text")?.value;
 
     this.tweetService.AddTweet(addTweet)
-      .subscribe({
-
+      .subscribe(data => {
+        alert("Tweet succesfully created!")
       })
   }
 

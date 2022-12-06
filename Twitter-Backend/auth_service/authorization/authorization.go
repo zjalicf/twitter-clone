@@ -17,8 +17,6 @@ var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 
-		fmt.Println(e.GetPolicy())
-
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			fmt.Println(r.Header.Get("Authorization"))
