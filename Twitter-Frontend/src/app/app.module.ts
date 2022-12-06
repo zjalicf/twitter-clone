@@ -31,6 +31,7 @@ import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwor
 import { TestAuthPageComponent } from './components/test-auth-page/test-auth-page.component';
 import { MyProfileComponent } from './components/my-profile/my-profile.component';
 import { ChangePasswordComponent } from './components/change-password/change-password.component';
+import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 
 @NgModule({
   declarations: [
@@ -49,7 +50,8 @@ import { ChangePasswordComponent } from './components/change-password/change-pas
     RecoveryNewPasswordsComponent,
     TestAuthPageComponent,
     MyProfileComponent,
-    ChangePasswordComponent
+    ChangePasswordComponent,
+    TweetAddComponent
   ],
   imports: [
     BrowserModule,

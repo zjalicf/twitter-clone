@@ -46,19 +46,12 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/recoverPasswordToken", handler.SendRecoveryPasswordToken).Methods("POST")
 	router.HandleFunc("/checkRecoverToken", handler.CheckRecoveryPasswordToken).Methods("POST")
 	router.HandleFunc("/recoverPassword", handler.RecoverPassword).Methods("POST")
+	router.HandleFunc("/changePassword", handler.ChangePassword).Methods("POST")
 	http.Handle("/", router)
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
-	//var request domain.User
-	//err := json.NewDecoder(req.Body).Decode(&request)
-	//if err != nil {
-	//	log.Println(err)
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//id, statusCode, err := handler.service.Register(&request)
+
 	myUser := req.Context().Value(domain.User{}).(domain.User)
 
 	token, statusCode, err := handler.service.Register(&myUser)
@@ -237,10 +230,8 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 	}
-	fmt.Println(password)
 
 	token := request.Header.Get("token")
-	fmt.Printf(token)
 
 	err = handler.service.ChangePassword(password, token)
 	if err != nil {

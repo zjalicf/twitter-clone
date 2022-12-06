@@ -1,6 +1,9 @@
 <mat-toolbar class="app-navbar" color="primary">
     <div class="right">
         <div>
+            <button aria-pressed="true" mat-button mat-ripple routerLink="/New-Tweet"> <!-- *ngIf="isLoggedIn()" -->
+                <span>Tweet</span>
+            </button>
             <button aria-pressed="true" mat-button mat-ripple routerLink="/Main-Page">
                 <span>Main Page</span>
             </button>

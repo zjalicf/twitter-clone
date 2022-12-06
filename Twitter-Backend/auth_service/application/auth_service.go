@@ -334,6 +334,8 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 		log.Println(err)
 	}
 
+	fmt.Printf("Old password: %s", user.Password)
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password.OldPassword))
 	if err != nil {
 		return err
@@ -350,6 +352,8 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 			log.Println(err)
 			return err
 		}
+
+		fmt.Printf("New password: %s", newEncryptedPassword)
 
 		user.Password = string(newEncryptedPassword)
 

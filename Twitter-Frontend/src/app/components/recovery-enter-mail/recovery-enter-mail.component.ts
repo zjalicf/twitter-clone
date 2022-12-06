@@ -24,15 +24,13 @@ export class RecoveryEnterMailComponent implements OnInit {
     private recoveryService: RecoveryPasswordService
   ) { }
 
-  
-
   ngOnInit(): void {
     this.formGroup = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
     })
   }
 
-  get f(): { [key: string]: AbstractControl } {
+  get form(): { [key: string]: AbstractControl } {
     return this.formGroup.controls;
   }
 

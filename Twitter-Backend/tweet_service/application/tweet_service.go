@@ -24,7 +24,7 @@ func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 	return service.store.GetAll()
 }
 
-func (service *TweetService) Post(tweet *domain.Tweet, userID gocql.UUID) (*domain.Tweet, error) {
+func (service *TweetService) Post(tweet *domain.Tweet, userID string) (*domain.Tweet, error) {
 	tweet.ID, _ = gocql.RandomUUID()
 	tweet.CreatedAt = time.Now().Unix()
 	tweet.Favorited = false

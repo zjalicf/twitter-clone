@@ -34,8 +34,6 @@ export class RegisterRegularComponent implements OnInit {
               private router: Router,
               private verificationService: VerificationService) { }
 
-  // @ts-ignore
-  formGroup: FormGroup;
   submitted = false;
 
   ngOnInit(): void {
@@ -51,7 +49,7 @@ export class RegisterRegularComponent implements OnInit {
     })
   }
 
-  get f(): { [key: string]: AbstractControl } {
+  get registerForm(): { [key: string]: AbstractControl } {
     return this.formGroup.controls;
   }
 
