@@ -33,7 +33,7 @@ export class RecoveryEnterTokenComponent implements OnInit {
     })
   }
 
-  get f(): { [key: string]: AbstractControl } {
+  get form(): { [key: string]: AbstractControl } {
     return this.formGroup.controls;
   }
 

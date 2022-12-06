@@ -12,7 +12,6 @@ import { MainPageComponent } from '../main-page/main-page.component';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
-  title = 'Login to Twitter';
   formGroup: FormGroup = new FormGroup({
     username: new FormControl(''),
     password: new FormControl('')

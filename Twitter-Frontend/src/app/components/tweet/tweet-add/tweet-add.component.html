@@ -1,0 +1,28 @@
+<div class="row">
+    <div>
+        <mat-card class="add-tweet-card">
+            <mat-card-title class="card-title">Creating a Tweet</mat-card-title>
+            <div class="form-group">
+                <form [formGroup]="formGroup">
+
+                    <div class="mb-3 w-50">
+                        <textarea type="text" class="form-control" formControlName="text" maxlength="281" id="text" rows="4"
+                            placeholder="Enter your Tweet Text here."
+                            [ngClass]="{ 'is-invalid': submitted && tweetForm['text'].errors}"></textarea>
+                        <div *ngIf="submitted && tweetForm['text'].errors" class="invalid-feedback">
+                            <div *ngIf="tweetForm['text'].errors['required']">Text is required.</div>
+                            <div *ngIf="tweetForm['text'].errors['minlength']">Text must be at least 5 characters long.</div>
+                            <div *ngIf="tweetForm['text'].errors['maxlength']">Title must not exceed 280 characters.</div>
+                            <!-- <div *ngIf="tweetForm['text'].errors['pattern']">Special Characters are not allowed.</div> -->
+                        </div>
+                        <div class="form-group form-check">
+                            <button type="submit" class="btn btn-primary" (click)="onSubmit()">Tweet</button>
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+        </mat-card>
+    </div>
+</div>

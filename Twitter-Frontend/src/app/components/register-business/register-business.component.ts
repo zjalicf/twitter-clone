@@ -40,7 +40,7 @@ export class RegisterBusinessComponent implements OnInit {
     })
   }
 
-  get f(): { [key: string]: AbstractControl } {
+  get registerForm(): { [key: string]: AbstractControl } {
     return this.formGroup.controls;
   }
 
