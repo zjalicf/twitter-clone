@@ -32,6 +32,7 @@ import { TestAuthPageComponent } from './components/test-auth-page/test-auth-pag
 import { MyProfileComponent } from './components/my-profile/my-profile.component';
 import { ChangePasswordComponent } from './components/change-password/change-password.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 
 @NgModule({
   declarations: [
@@ -51,7 +52,8 @@ import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.compon
     TestAuthPageComponent,
     MyProfileComponent,
     ChangePasswordComponent,
-    TweetAddComponent
+    TweetAddComponent,
+    UserProfileComponent
   ],
   imports: [
     BrowserModule,

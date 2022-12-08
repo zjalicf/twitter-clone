@@ -39,7 +39,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				bearer := r.Header.Get("Authorization")
 				bearerToken := strings.Split(bearer, "Bearer ")
 				tokenString := bearerToken[1]
-				fmt.Println(tokenString)
 
 				token, err := jwt.Parse([]byte(tokenString), verifier)
 				if err != nil {
@@ -49,9 +48,9 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				}
 
 				claims := GetMapClaims(token.Bytes())
-				fmt.Println(claims["userType"])
 
-				fmt.Println(e.GetPolicy())
+				//napraviti uzimanje path
+
 				fmt.Println(r.URL.Path)
 
 				res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"user_service/application"
+	"user_service/authorization"
 	"user_service/domain"
 	"user_service/errors"
 )
@@ -22,11 +24,20 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 }
 
 func (handler *UserHandler) Init(router *mux.Router) {
+
+	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	log.Println("sucessful init of enforcer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.Register).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/getOne/{username}", handler.GetOne).Methods("GET")
 	router.HandleFunc("/mailExist/{mail}", handler.MailExist).Methods("GET")
 	http.Handle("/", router)
+	log.Fatal(http.ListenAndServe(":8002", authorization.Authorizer(authEnforcer)(router)))
 }
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
@@ -61,6 +72,7 @@ func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request
 }
 
 func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
+
 	vars := mux.Vars(req)
 	id, ok := vars["id"]
 	if !ok {
@@ -102,4 +114,17 @@ func (handler *UserHandler) MailExist(writer http.ResponseWriter, req *http.Requ
 		log.Println(err.Error())
 		return
 	}
+}
+
+func (handler *UserHandler) GetOne(writer http.ResponseWriter, request *http.Request) {
+
+	vars := mux.Vars(request)
+	username := vars["username"]
+
+	user, err := handler.service.GetOneUser(username)
+	if err != nil {
+		log.Println(err)
+		writer.WriteHeader(http.StatusNotFound)
+	}
+	jsonResponse(user, writer)
 }

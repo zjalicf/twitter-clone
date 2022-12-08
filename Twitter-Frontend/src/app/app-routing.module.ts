@@ -12,6 +12,7 @@ import { TestAuthPageComponent } from './components/test-auth-page/test-auth-pag
 import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
 import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwords/recovery-new-passwords.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 
 const routes: Routes = [
   {
@@ -61,6 +62,10 @@ const routes: Routes = [
   {
     path: 'New-Tweet',
     component: TweetAddComponent
+  },
+  {
+    path: "User-Profile",
+    component: UserProfileComponent
   }
 ];
 
