@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 	"user_service/domain"
 )
 
@@ -30,7 +31,7 @@ func (store *UserMongoDBStore) GetAll() ([]*domain.User, error) {
 }
 
 func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) {
-	filter := bson.M{"id": id}
+	filter := bson.M{"_id": id}
 	return store.filterOne(filter)
 }
 
@@ -51,6 +52,16 @@ func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
 	user.ID = result.InsertedID.(primitive.ObjectID)
 
 	return user, nil
+}
+
+func (store *UserMongoDBStore) UpdateUser(user *domain.User) error {
+	_, err := store.users.UpdateOne(context.TODO(), bson.M{"_id": user.ID}, bson.M{"$set": user})
+	if err != nil {
+		log.Printf("Updating user error mongodb: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (store *UserMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
