@@ -39,14 +39,12 @@ func (service *UserService) GetAll() ([]*domain.User, error) {
 }
 
 func (service *UserService) GetOneUser(username string) (*domain.User, error) {
-
 	retUser, err := service.store.GetOneUser(username)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("User not found")
 	}
 	return retUser, nil
-
 }
 
 func (service *UserService) Register(user *domain.User) (*domain.User, error) {

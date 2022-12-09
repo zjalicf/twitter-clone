@@ -21,6 +21,9 @@ export class RegisterBusinessComponent implements OnInit {
     password: new FormControl('')
   });
 
+  aFormGroup!: FormGroup;
+  siteKey: any;
+
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
               private router: Router,
@@ -37,7 +40,12 @@ export class RegisterBusinessComponent implements OnInit {
       website: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
       password: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
-    })
+    });
+
+    this.aFormGroup = this.formBuilder.group({
+      recaptcha: ['', [Validators.required]]
+    });
+    this.siteKey = "6LcWR2ojAAAAANOQSFGgbRdboL4Z0xz98_Gpmouz"
   }
 
   get registerForm(): { [key: string]: AbstractControl } {
