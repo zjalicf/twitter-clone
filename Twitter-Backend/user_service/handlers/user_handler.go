@@ -42,7 +42,7 @@ func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", handler.Register).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/getOne/{username}", handler.GetOne).Methods("GET")
-	router.HandleFunc("/getMe", handler.GetMe).Methods("GET")
+	router.HandleFunc("/getMe/", handler.GetMe).Methods("GET")
 	router.HandleFunc("/mailExist/{mail}", handler.MailExist).Methods("GET")
 	http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(":8002", authorization.Authorizer(authEnforcer)(router)))
@@ -136,6 +136,8 @@ func (handler *UserHandler) GetOne(writer http.ResponseWriter, request *http.Req
 }
 
 func (handler *UserHandler) GetMe(writer http.ResponseWriter, request *http.Request) {
+
+	fmt.Println("uslo u getMe")
 	bearer := request.Header.Get("Authorization")
 	bearerToken := strings.Split(bearer, "Bearer ")
 	tokenString := bearerToken[1]

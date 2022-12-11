@@ -20,6 +20,7 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			fmt.Println(r.Header.Get("Authorization"))
+			fmt.Println(e.GetPolicy())
 
 			if r.Header.Get("Authorization") == "" {
 				res, err := e.EnforceSafe("NotLoggedIn", r.URL.Path, r.Method)
@@ -28,6 +29,7 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 					http.Error(w, "unauthorized user", http.StatusUnauthorized)
 					return
 				}
+				log.Println(res)
 				if res {
 					log.Println("redirect")
 					next.ServeHTTP(w, r)

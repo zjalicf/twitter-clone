@@ -40,14 +40,17 @@ export class RecoveryEnterTokenComponent implements OnInit {
   onSubmit(){
     this.submitted = true;
 
+    console.log(this.formGroup.invalid)
+
     if (this.formGroup.invalid) {
       return;
     }
 
     let userToken = ""
-    this.recoveryService.currentToken.subscribe(tok => userToken = tok)
+    this.recoveryService.currentToken.subscribe(tok => {userToken = tok; console.log(tok)})
     let token = this.formGroup.get("token")?.value
     let req = new VerificationRequest()
+    console.log(userToken)
     req.user_token = userToken
     req.mail_token = token
     console.log(req)
