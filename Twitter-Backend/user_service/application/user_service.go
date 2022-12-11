@@ -82,6 +82,7 @@ func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 		log.Println(errors.ValidationError)
 		return nil, fmt.Errorf(errors.ValidationError)
 	}
+	validatedUser.Visibility = true
 
 	retUser, err := service.store.Post(validatedUser)
 	if err != nil {
@@ -90,6 +91,29 @@ func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 	}
 
 	return retUser, nil
+}
+
+func (service *UserService) ChangeUserVisibility(userID string) error {
+	primitiveID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		log.Println("Primitive ID parsing error.")
+		return err
+	}
+
+	user, err := service.store.Get(primitiveID)
+	if err != nil {
+		log.Printf("Getting user by id error: %s", err.Error())
+		return fmt.Errorf(errors.UserNotFound)
+	}
+
+	user.Visibility = !user.Visibility
+	err = service.store.UpdateUser(user)
+	if err != nil {
+		log.Printf("Updating user error in service: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func validateUserType(user *domain.User) (*domain.User, error) {
