@@ -35,7 +35,18 @@
                     
                     <div class="row">
 
-                        <div class="mb-3 w-25">
+                    <div class="mb-3 w-25">
+                        <mat-card-title class="card-title">Gender</mat-card-title>
+                        <select class="form-control" formControlName="gender" id="gender"
+                            [ngClass]="{ 'is-invalid': submitted && registerForm['gender'].errors}">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                        </select>
+                        <div *ngIf="submitted && registerForm['gender'].errors" class="invalid-feedback">
+                            <div *ngIf="registerForm['gender'].errors['required']">Gender is required.</div>
+                        </div>
+                    </div>
+                        <!-- <div class="mb-3 w-25">
                             <mat-card-title class="card-title">Gender</mat-card-title>
                                 <mat-select class="form-control" formControlName="gender" id="gender"
                                     [ngClass]="{ 'is-invalid': submitted && registerForm['gender'].errors}">
@@ -46,7 +57,7 @@
                                         {{gender}}
                                     </mat-option>
                                 </mat-select>
-                        </div>
+                        </div> -->
 
                         <div class="mb-3 w-25">
                             <mat-card-title class="card-title">Age</mat-card-title>
@@ -114,6 +125,11 @@
                     </div>
 
                     <div class="captcha-field">
+                            <div *ngIf="!aFormGroup.valid">
+                                <h1 class="captcha-text">
+                                    Please confirm Captcha.
+                                </h1>
+                            </div>
                         <form [formGroup]="aFormGroup">
                             <ngx-recaptcha2 
                                 #captchaElem

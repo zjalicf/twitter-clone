@@ -70,6 +70,11 @@
                     </div>
 
                     <div class="captcha-field">
+                            <div *ngIf="!aFormGroup.valid">
+                                <h1 class="captcha-text">
+                                    Please confirm Captcha.
+                                </h1>
+                            </div>
                         <form [formGroup]="aFormGroup">
                             <ngx-recaptcha2 
                                 #captchaElem

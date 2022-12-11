@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {Router} from "@angular/router"
 import { User } from 'src/app/models/user.model';
+import * as fs from 'fs';
+import * as readline from 'readline';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
 import { VerificationService } from 'src/app/services/verify.service';
@@ -32,6 +34,13 @@ export class RegisterRegularComponent implements OnInit {
     'Female'
   ];
 
+  // fileName = "../../blacklist/blacklist.txt";
+
+  // rl = readline.createInterface({
+  //   input: fs.createReadStream(this.fileName),
+  //   crlfDelay: Infinity
+  // });
+
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
               private router: Router,
@@ -40,6 +49,7 @@ export class RegisterRegularComponent implements OnInit {
   submitted = false;
 
   ngOnInit(): void {
+    console.log(this.genders)
     this.formGroup = this.formBuilder.group({
       firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
       lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
