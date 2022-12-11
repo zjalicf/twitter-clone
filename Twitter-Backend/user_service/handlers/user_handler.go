@@ -136,12 +136,9 @@ func (handler *UserHandler) GetOne(writer http.ResponseWriter, request *http.Req
 }
 
 func (handler *UserHandler) GetMe(writer http.ResponseWriter, request *http.Request) {
-
-	fmt.Println("uslo u getMe")
 	bearer := request.Header.Get("Authorization")
 	bearerToken := strings.Split(bearer, "Bearer ")
 	tokenString := bearerToken[1]
-	fmt.Println("TOKEN", tokenString)
 	fmt.Println(tokenString)
 	token, err := jwt.Parse([]byte(tokenString), verifier)
 	if err != nil {
@@ -152,7 +149,6 @@ func (handler *UserHandler) GetMe(writer http.ResponseWriter, request *http.Requ
 
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
-	fmt.Println("USERNAME", username)
 
 	user, err := handler.service.GetOneUser(username)
 	if err != nil {

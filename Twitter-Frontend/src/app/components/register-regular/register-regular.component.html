@@ -35,29 +35,17 @@
                     
                     <div class="row">
 
-                    <div class="mb-3 w-25">
-                        <mat-card-title class="card-title">Gender</mat-card-title>
-                        <select class="form-control" formControlName="gender" id="gender"
-                            [ngClass]="{ 'is-invalid': submitted && registerForm['gender'].errors}">
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                        </select>
-                        <div *ngIf="submitted && registerForm['gender'].errors" class="invalid-feedback">
-                            <div *ngIf="registerForm['gender'].errors['required']">Gender is required.</div>
-                        </div>
-                    </div>
-                        <!-- <div class="mb-3 w-25">
+                        <div class="mb-3 w-25">
                             <mat-card-title class="card-title">Gender</mat-card-title>
-                                <mat-select class="form-control" formControlName="gender" id="gender"
-                                    [ngClass]="{ 'is-invalid': submitted && registerForm['gender'].errors}">
-                                    <div *ngIf="submitted && registerForm['gender'].errors" class="invalid-feedback">
-                                        <div *ngIf="registerForm['gender'].errors['required']">Gender is required.</div>
-                                    </div>
-                                    <mat-option *ngFor="let gender of genders" [value]="gender">
-                                        {{gender}}
-                                    </mat-option>
-                                </mat-select>
-                        </div> -->
+                            <select class="form-control" formControlName="gender" id="gender"
+                                [ngClass]="{ 'is-invalid': submitted && registerForm['gender'].errors}">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                            </select>
+                            <div *ngIf="submitted && registerForm['gender'].errors" class="invalid-feedback">
+                                <div *ngIf="registerForm['gender'].errors['required']">Gender is required.</div>
+                            </div>
+                        </div>
 
                         <div class="mb-3 w-25">
                             <mat-card-title class="card-title">Age</mat-card-title>

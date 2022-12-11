@@ -7,7 +7,7 @@ import { User } from '../models/user.model';
 @Injectable({
   providedIn: 'root'
 })
-export class UserServiceService {
+export class UserService {
 
   private url = "users"
   constructor(private http: HttpClient) { }
@@ -20,6 +20,10 @@ export class UserServiceService {
 
     let options = {headers:headers};
     return this.http.get<User>(`${environment.baseApiUrl}/${this.url}/getOne/${username}`,options)
+  }
+
+  public GetMe(): Observable<User> {
+    return this.http.get<User>(`${environment.baseApiUrl}/${this.url}/getMe/`,)
   }
 
 }
