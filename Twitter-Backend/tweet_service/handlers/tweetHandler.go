@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"log"
@@ -33,9 +32,11 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 		log.Fatal(err)
 	}
 
-	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	//router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
+	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/user/{id}", handler.GetTweetsByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -47,6 +48,23 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	jsonResponse(tweets, writer)
+}
+
+func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id, ok := vars["id"]
+	if !ok {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tweets, err := handler.service.GetTweetsByUser(id)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	jsonResponse(tweets, writer)
 }
 
@@ -80,7 +98,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	}
 
 	if req.Header["Token"] == nil {
-		fmt.Print("ovde")
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}

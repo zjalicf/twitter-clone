@@ -24,6 +24,10 @@ func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 	return service.store.GetAll()
 }
 
+func (service *TweetService) GetTweetsByUser(userID string) ([]*domain.Tweet, error) {
+	return service.store.GetTweetsByUser(userID)
+}
+
 func (service *TweetService) Post(tweet *domain.Tweet, userID string) (*domain.Tweet, error) {
 	tweet.ID, _ = gocql.RandomUUID()
 	tweet.CreatedAt = time.Now().Unix()
