@@ -1,1 +1,3 @@
-p, Regular, /, POST
+p, Regular, /, *
+p, Regular, /user/*, GET
+p, Business, /user/*, GET
