@@ -39,6 +39,7 @@ export class VerifyAccountComponent implements OnInit {
   onSubmit() {
     this.submitted = true;
 
+
     if (this.formGroup.invalid) {
       return;
     }
@@ -51,6 +52,7 @@ export class VerifyAccountComponent implements OnInit {
     let request = new VerificationRequest();
     request.user_token = userToken;
     request.mail_token = mailToken;
+    console.log(request)
     
     this.authService.VerifyAccount(request)
       .subscribe({

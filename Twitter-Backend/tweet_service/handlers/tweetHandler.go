@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"tweet_service/application"
 	"tweet_service/authorization"
 	"tweet_service/domain"
@@ -99,13 +101,17 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-
 	if req.Header.Get("Authorization") == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	token := authorization.GetToken(req.Header.Get("token"))
+	fmt.Println("stiglo do uzimanja username iz tokena")
+
+	bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
+	tokenString := bearerToken[1]
+	token := authorization.GetToken(tokenString)
+
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
