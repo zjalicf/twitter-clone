@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"tweet_service/application"
 	"tweet_service/authorization"
 	"tweet_service/domain"
@@ -38,7 +36,9 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/", handler.Post).Methods("POST")
+	router.HandleFunc("/", Post(handler)).Methods("POST")
+	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -50,6 +50,23 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	jsonResponse(tweets, writer)
+}
+
+func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	username, ok := vars["username"]
+	if !ok {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tweets, err := handler.service.GetTweetsByUser(username)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	jsonResponse(tweets, writer)
 }
 
@@ -82,33 +99,17 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	fmt.Println(req.Header.Get("Authorization"))
 
 	if req.Header.Get("Authorization") == "" {
-		fmt.Print("ovde")
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	//token := authorization.GetToken(req.Header.Get("token"))
-	//claims := authorization.GetMapClaims(token.Bytes())
-
-	bearer := req.Header.Get("Authorization")
-	bearerToken := strings.Split(bearer, "Bearer ")
-	tokenString := bearerToken[1]
-	fmt.Println(tokenString)
-	token, err := jwt.Parse([]byte(tokenString), verifier)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
+	token := authorization.GetToken(req.Header.Get("token"))
 	claims := authorization.GetMapClaims(token.Bytes())
-	userID := claims["user_id"]
-	fmt.Printf("type is: %s", userID)
-	fmt.Println(userID)
-	tweet, err := handler.service.Post(&request, userID)
+	username := claims["username"]
+
+	tweet, err := handler.service.Post(&request, username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
