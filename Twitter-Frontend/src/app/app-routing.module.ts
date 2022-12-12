@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { AuthGuard } from './services/auth-guard.service';
 import { RouterModule, Routes } from '@angular/router';
 import { ChangePasswordComponent } from './components/change-password/change-password.component';
 import { LoginComponent } from './components/login/login.component';
@@ -13,11 +14,14 @@ import { VerifyAccountComponent } from './components/verify-account/verify-accou
 import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwords/recovery-new-passwords.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { RoleGuard } from './services/role-guard.service';
+import { NotFoundComponent } from './components/not-found/not-found.component';
 
 const routes: Routes = [
   {
-    path: 'Main-Page',
-    component: MainPageComponent
+    path: "Main-Page",
+    component: MainPageComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'Register-Regular',
@@ -49,23 +53,41 @@ const routes: Routes = [
   },
   {
     path: 'Auth-Test',
-    component: TestAuthPageComponent
+    component: TestAuthPageComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'My-Profile',
-    component: MyProfileComponent
+    component: MyProfileComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'View-Profile/:username',
+    component: UserProfileComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'Change-Password',
-    component: ChangePasswordComponent
+    component: ChangePasswordComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'New-Tweet',
-    component: TweetAddComponent
+    component: TweetAddComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: "User-Profile",
-    component: UserProfileComponent
+    component: UserProfileComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: '404',
+    component: NotFoundComponent
+  },
+  {
+    path: '**',
+    component: NotFoundComponent
   }
 ];
 

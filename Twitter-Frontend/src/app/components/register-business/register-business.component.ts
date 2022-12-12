@@ -29,8 +29,6 @@ export class RegisterBusinessComponent implements OnInit {
               private router: Router,
               private verificationService: VerificationService) { }
 
-  // @ts-ignore
-  formGroup: FormGroup;
   submitted = false;
 
   ngOnInit(): void {

@@ -59,7 +59,6 @@ export class LoginComponent implements OnInit {
         },
         error: (error) => {
           this.formGroup.setErrors({ unauthenticated: true });
-          // this.incorrect = true;
         }
       });
 
