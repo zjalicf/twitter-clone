@@ -38,6 +38,8 @@ func (handler *UserHandler) Init(router *mux.Router) {
 		log.Fatal(err)
 	}
 
+	//test
+
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.Register).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
