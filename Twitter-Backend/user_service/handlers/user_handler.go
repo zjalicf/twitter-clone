@@ -129,7 +129,6 @@ func (handler *UserHandler) ChangeVisibility(writer http.ResponseWriter, req *ht
 		http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
 		return
 	}
-	log.Println("Claims unmarshal successfully.")
 
 	err = handler.service.ChangeUserVisibility(claimsMap["user_id"])
 	if err != nil {
