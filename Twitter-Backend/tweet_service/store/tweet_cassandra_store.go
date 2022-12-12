@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	DATABASE   = "tweet"
-	COLLECTION = "tweet"
+	DATABASE           = "tweet"
+	COLLECTION         = "tweet"
+	COLLECTION_BY_USER = "tweets_by_user"
 )
 
 type TweetRepo struct {
@@ -63,16 +64,24 @@ func (sr *TweetRepo) CreateTables() {
 	err := sr.session.Query(
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
 					(id UUID, text text, created_at time, favorited boolean, favorite_count int, retweeted boolean,
-					retweet_count int, user_id text,
+					retweet_count int, username text,
 					PRIMARY KEY ((id)))`, //for now there is no clustering order!!
 			COLLECTION)).Exec()
+
+	err = sr.session.Query(
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
+					(id UUID, text text, created_at time, favorited boolean, favorite_count int, retweeted boolean,
+					retweet_count int, username text,
+					PRIMARY KEY ((username), created_at))
+					WITH CLUSTERING ORDER BY (created_at DESC)`, //clustering key by creating date and pk for tweet id and user_id
+			COLLECTION_BY_USER)).Exec()
 
 	//err := sr.session.Query(
 	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, text text, PRIMARY KEY ((tweet_id)))",
 	//		COLLECTION)).Exec()
 
 	if err != nil {
-		sr.logger.Println(err)
+		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
 	}
 }
 
@@ -86,7 +95,7 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	for scanner.Next() {
 		var tweet domain.Tweet
 		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.RetweetCount,
-			&tweet.Retweeted, &tweet.Text, &tweet.UserID)
+			&tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
 			sr.logger.Println(err)
 			return nil, err
@@ -102,11 +111,47 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	return tweets, nil
 }
 
+func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
+	query := fmt.Sprintf(`SELECT * FROM tweets_by_user WHERE username = '%s'`, username)
+	fmt.Println(query)
+	scanner := sr.session.Query(query).Iter().Scanner()
+
+	var tweets []*domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.ID,
+			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
+		if err != nil {
+			sr.logger.Println(err)
+			return nil, err
+		}
+
+		tweets = append(tweets, &tweet)
+	}
+
+	if err := scanner.Err(); err != nil {
+		sr.logger.Println(err)
+		return nil, err
+	}
+	return tweets, nil
+}
+
 func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
+	insertGeneral := fmt.Sprintf("INSERT INTO %s "+
+		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
+
+	insertByUser := fmt.Sprintf("INSERT INTO %s "+
+		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
+
 	err := sr.session.Query(
-		`INSERT INTO tweet (id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
-		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.UserID).Exec()
+		insertGeneral, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
+		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
+
+	err = sr.session.Query(
+		insertByUser, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
+		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
 	if err != nil {
 		sr.logger.Println(err)
 		return nil, err

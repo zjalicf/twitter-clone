@@ -17,12 +17,14 @@ import (
 	"user_service/errors"
 )
 
+var (
+	jwtKey      = []byte(os.Getenv("SECRET_KEY"))
+	verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
+)
+
 type UserHandler struct {
 	service *application.UserService
 }
-
-var jwtKey = []byte(os.Getenv("SECRET_KEY"))
-var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 
 func NewUserHandler(service *application.UserService) *UserHandler {
 	return &UserHandler{
@@ -46,6 +48,7 @@ func (handler *UserHandler) Init(router *mux.Router) {
 	router.HandleFunc("/getOne/{username}", handler.GetOne).Methods("GET")
 	router.HandleFunc("/getMe/", handler.GetMe).Methods("GET")
 	router.HandleFunc("/mailExist/{mail}", handler.MailExist).Methods("GET")
+	router.HandleFunc("/visibility", handler.ChangeVisibility).Methods("PUT")
 	http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(":8002", authorization.Authorizer(authEnforcer)(router)))
 }
@@ -123,6 +126,38 @@ func (handler *UserHandler) MailExist(writer http.ResponseWriter, req *http.Requ
 		log.Println(err.Error())
 		return
 	}
+}
+
+func (handler *UserHandler) ChangeVisibility(writer http.ResponseWriter, req *http.Request) {
+	token := req.Header.Get("Authorization")
+	parsedToken, err := jwt.Parse([]byte(token), verifier)
+	if err != nil {
+		log.Println(errors.InvalidTokenError)
+		http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
+		return
+	}
+
+	claims := parsedToken.Claims()
+	var claimsMap map[string]string
+	err = json.Unmarshal(claims, &claimsMap)
+	if err != nil {
+		log.Printf("Unmarshal claims error occured: %s", err.Error())
+		http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
+		return
+	}
+
+	err = handler.service.ChangeUserVisibility(claimsMap["user_id"])
+	if err != nil {
+		log.Printf("Error occured in change user visibility: %s", err.Error())
+		if err.Error() == errors.UserNotFound {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *UserHandler) GetOne(writer http.ResponseWriter, request *http.Request) {
