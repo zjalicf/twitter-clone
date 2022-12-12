@@ -1,8 +1,9 @@
 import { VerticalConnectionPos } from "@angular/cdk/overlay";
-import { HttpClient, HttpResponse } from "@angular/common/http";
+import { HttpClient, HttpHeaders, HttpResponse } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs";
+import { Observable, retry } from "rxjs";
 import { environment } from "src/environments/environment";
+import { ChangePasswordDTO } from "../dto/changePasswordDTO";
 import { LoginDTO } from "../dto/loginDTO";
 import { RecoverPasswordDTO } from "../dto/recoverPasswordDTO";
 import { ResendVerificationRequest } from "../dto/resend-verification-request";
@@ -42,5 +43,15 @@ export class AuthService {
 
     public RecoverPassword(request: RecoverPasswordDTO): Observable<void> {
         return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/recoverPassword`, request);
+    }
+
+    public ChangePassword(changePasswordDTO: ChangePasswordDTO): Observable<any> {
+        let headers = new HttpHeaders({
+            "Content-Type" : "application/json",
+            "Authorization" : "Bearer " + localStorage.getItem("authToken"),
+          });
+    
+          let options = {headers:headers};
+        return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/changePassword`, changePasswordDTO, options)
     }
 }

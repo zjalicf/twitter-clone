@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"auth_service/application"
+	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
 	"auth_service/store"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"io"
 	"log"
@@ -29,6 +31,13 @@ func NewAuthHandler(service *application.AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
+
+	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	log.Println("sucessful init of enforcer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	loginRouter := router.Methods(http.MethodPost).Subrouter()
 	loginRouter.HandleFunc("/login", handler.Login)
 
@@ -48,6 +57,8 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 	router.HandleFunc("/recoverPassword", handler.RecoverPassword).Methods("POST")
 	router.HandleFunc("/changePassword", handler.ChangePassword).Methods("POST")
 	http.Handle("/", router)
+	log.Fatal(http.ListenAndServe(":8003", authorization.Authorizer(authEnforcer)(router)))
+
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
@@ -197,7 +208,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	jsonResponse(token, writer)
+	writer.Write([]byte(token))
 }
 
 func MiddlewareUserValidation(next http.Handler) http.Handler {
@@ -224,25 +235,35 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 
 func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
 
+	var token string = request.Header.Get("Authorization")
+	bearerToken := strings.Split(token, "Bearer ")
+	tokenString := bearerToken[1]
+
+	fmt.Println(request.Body)
+
 	var password domain.PasswordChange
 	err := json.NewDecoder(request.Body).Decode(&password)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
-	}
-
-	token := request.Header.Get("token")
-
-	err = handler.service.ChangePassword(password, token)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
-	} else {
-		writer.WriteHeader(http.StatusOK)
-		_, err := writer.Write([]byte("Password successfully changed."))
-		if err != nil {
-			return
-		}
 	}
+
+	status := handler.service.ChangePassword(password, tokenString)
+
+	if status == "oldPassErr" {
+		http.Error(writer, "Wrong old password", http.StatusConflict) //409
+		return
+	} else if status == "newPassErr" {
+		http.Error(writer, "Wrong new password", http.StatusNotAcceptable) //406
+		return
+	} else if status == "baseErr" {
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+
+	//_, err = writer.Write([]byte("Password successfully changed."))
+	//if err != nil {
+	//}
 }

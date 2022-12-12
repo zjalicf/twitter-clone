@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgxCaptchaModule } from 'ngx-captcha';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule} from '@angular/material/button';
@@ -15,7 +16,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { MainPageComponent } from './components/main-page/main-page.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HeaderComponent } from './components/header/header.component';
 import { TweetViewComponent } from './components/tweet/tweet-view/tweet-view.component';
 import { TweetItemComponent } from './components/tweet/tweet-item/tweet-item.component';
@@ -32,6 +32,7 @@ import { TestAuthPageComponent } from './components/test-auth-page/test-auth-pag
 import { MyProfileComponent } from './components/my-profile/my-profile.component';
 import { ChangePasswordComponent } from './components/change-password/change-password.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 
 @NgModule({
   declarations: [
@@ -51,15 +52,16 @@ import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.compon
     TestAuthPageComponent,
     MyProfileComponent,
     ChangePasswordComponent,
-    TweetAddComponent
+    TweetAddComponent,
+    UserProfileComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    BrowserAnimationsModule,
     FormsModule,
     ReactiveFormsModule,
+    NgxCaptchaModule,
     MatButtonModule,
     MatMenuModule,
     MatToolbarModule,

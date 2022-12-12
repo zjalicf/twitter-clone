@@ -2,13 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"user_service/application"
+	"user_service/authorization"
 	"user_service/domain"
 	"user_service/errors"
 )
@@ -29,12 +33,24 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 }
 
 func (handler *UserHandler) Init(router *mux.Router) {
+
+	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	log.Println("sucessful init of enforcer")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//test
+
 	router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.Register).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/getOne/{username}", handler.GetOne).Methods("GET")
+	router.HandleFunc("/getMe/", handler.GetMe).Methods("GET")
 	router.HandleFunc("/mailExist/{mail}", handler.MailExist).Methods("GET")
 	router.HandleFunc("/visibility", handler.ChangeVisibility).Methods("PUT")
 	http.Handle("/", router)
+	log.Fatal(http.ListenAndServe(":8002", authorization.Authorizer(authEnforcer)(router)))
 }
 
 func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
@@ -142,4 +158,39 @@ func (handler *UserHandler) ChangeVisibility(writer http.ResponseWriter, req *ht
 	}
 
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *UserHandler) GetOne(writer http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	username := vars["username"]
+
+	user, err := handler.service.GetOneUser(username)
+	if err != nil {
+		log.Println(err)
+		writer.WriteHeader(http.StatusNotFound)
+	}
+	jsonResponse(user, writer)
+}
+
+func (handler *UserHandler) GetMe(writer http.ResponseWriter, request *http.Request) {
+	bearer := request.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
+	fmt.Println(tokenString)
+	token, err := jwt.Parse([]byte(tokenString), verifier)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	user, err := handler.service.GetOneUser(username)
+	if err != nil {
+		log.Println(err)
+		writer.WriteHeader(http.StatusNotFound)
+	}
+	jsonResponse(user, writer)
 }

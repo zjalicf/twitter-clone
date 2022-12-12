@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/casbin/casbin"
+	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -17,6 +18,7 @@ type TweetHandler struct {
 }
 
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
+var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 
 func NewTweetHandler(service *application.TweetService) *TweetHandler {
 	return &TweetHandler{
@@ -32,7 +34,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 		log.Fatal(err)
 	}
 
-	//router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
@@ -97,7 +99,8 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if req.Header["Token"] == nil {
+
+	if req.Header.Get("Authorization") == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}

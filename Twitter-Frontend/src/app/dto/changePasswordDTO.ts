@@ -1,9 +1,11 @@
 export class ChangePasswordDTO {
-    currentPassword: string = "";
-    newPassword: string = "";
+    old_password: string = "";
+    new_password: string = "";
+    new_password_confirm: string = "";
 
-    ChangePasswordDTO(currentPassword: string, newPassword: string) {
-        this.currentPassword = currentPassword;
-        this.newPassword = newPassword;
+    ChangePasswordDTO(old_password: string, new_password: string, new_password_confirm: string) {
+        this.old_password = old_password;
+        this.new_password = new_password;
+        this.new_password_confirm = new_password_confirm;
     }
 }

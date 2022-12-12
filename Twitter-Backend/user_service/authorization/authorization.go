@@ -1,6 +1,7 @@
 package authorization
 
 import (
+	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"log"
@@ -18,6 +19,8 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
+			log.Println(r.Header.Get("Authorization"))
+
 			if r.Header.Get("Authorization") == "" {
 				res, err := e.EnforceSafe("NotLoggedIn", r.URL.Path, r.Method)
 				if err != nil {
@@ -25,6 +28,7 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 					http.Error(w, "unauthorized user", http.StatusUnauthorized)
 					return
 				}
+				log.Println(res)
 				if res {
 					log.Println("redirect")
 					next.ServeHTTP(w, r)
@@ -47,6 +51,10 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				}
 
 				claims := GetMapClaims(token.Bytes())
+
+				//napraviti uzimanje path
+
+				fmt.Println(r.URL.Path)
 
 				res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)
 				if err != nil {

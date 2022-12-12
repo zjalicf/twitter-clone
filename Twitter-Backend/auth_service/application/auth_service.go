@@ -320,7 +320,7 @@ func GenerateJWT(user *domain.User) (string, error) {
 	return token.String(), nil
 }
 
-func (service *AuthService) ChangePassword(password domain.PasswordChange, token string) error {
+func (service *AuthService) ChangePassword(password domain.PasswordChange, token string) string {
 
 	parsedToken := authorization.GetToken(token)
 	claims := authorization.GetMapClaims(parsedToken.Bytes())
@@ -338,10 +338,11 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password.OldPassword))
 	if err != nil {
-		return err
+		return "oldPassErr"
 	}
 
 	var validNew bool = false
+	fmt.Println(password)
 	if password.NewPassword == password.NewPasswordConfirm {
 		validNew = true
 	}
@@ -350,21 +351,22 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 		newEncryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password.NewPassword), bcrypt.DefaultCost)
 		if err != nil {
 			log.Println(err)
-			return err
+			return "hashErr"
 		}
 
 		fmt.Printf("New password: %s", newEncryptedPassword)
 
 		user.Password = string(newEncryptedPassword)
 
-		fmt.Println("Prolso sve do stvarnog upisa")
-
 		err = service.store.ChangePassword(user)
 		if err != nil {
-			return err
+			return "baseErr"
 		}
+
+	} else {
+		return "newPassErr"
 
 	}
 
-	return nil
+	return "ok"
 }

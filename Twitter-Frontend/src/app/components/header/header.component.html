@@ -1,11 +1,11 @@
 <mat-toolbar class="app-navbar" color="primary">
     <div class="right">
         <div>
-            <button aria-pressed="true" mat-button mat-ripple routerLink="/New-Tweet"> <!-- *ngIf="isLoggedIn()" -->
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/New-Tweet">
                 <span>Tweet</span>
             </button>
-            <button aria-pressed="true" mat-button mat-ripple routerLink="/Main-Page">
-                <span>Main Page</span>
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Main-Page">
+                <span>Feed</span>
             </button>
             <button *ngIf="!isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Register-Regular">
                 <span>Register</span>
