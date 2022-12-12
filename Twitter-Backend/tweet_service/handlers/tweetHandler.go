@@ -36,7 +36,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	router.HandleFunc("/user/{id}", handler.GetTweetsByUser).Methods("GET")
+	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -53,13 +53,13 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 
 func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	id, ok := vars["id"]
+	username, ok := vars["username"]
 	if !ok {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	tweets, err := handler.service.GetTweetsByUser(id)
+	tweets, err := handler.service.GetTweetsByUser(username)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -104,9 +104,9 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	token := authorization.GetToken(req.Header.Get("token"))
 	claims := authorization.GetMapClaims(token.Bytes())
-	userID := claims["user_id"]
+	username := claims["username"]
 
-	tweet, err := handler.service.Post(&request, userID)
+	tweet, err := handler.service.Post(&request, username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return

@@ -13,5 +13,5 @@ type Tweet struct {
 	FavoriteCount int    `json:"favorite_count"`
 	Retweeted     bool   `json:"retweeted"`
 	RetweetCount  int    `json:"retweet_count"`
-	UserID        string `json:"user_id"`
+	Username      string `json:"username"`
 }
