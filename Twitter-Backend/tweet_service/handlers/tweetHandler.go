@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
+	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -71,25 +72,31 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 	jsonResponse(tweets, writer)
 }
 
-//	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
-//		vars := mux.Vars(req)
-//		id, ok := vars["id"]
-//		if !ok {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		objectId, err := primitive.ObjectIDFromHex(id)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		tweet, err := handler.service.Get(objectId)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusNotFound)
-//			return
-//		}
-//		jsonResponse(tweet, writer)
-//	}
+func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id, ok := vars["id"]
+
+	if !ok {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	uuid, err := gocql.ParseUUID(id)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tweets, err := handler.service.Favorite(&uuid)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(tweets, writer)
+}
+
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
 
 	var request domain.Tweet
