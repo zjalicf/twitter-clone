@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { Tweet } from 'src/app/models/tweet.model';
 
 @Component({
   selector: 'app-tweet-list',
@@ -8,6 +9,8 @@ import { Component, OnInit } from '@angular/core';
 export class TweetListComponent implements OnInit {
 
   constructor() { }
+
+  @Input() tweets: Tweet[] = []
 
   ngOnInit(): void {
   }

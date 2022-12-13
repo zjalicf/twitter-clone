@@ -129,8 +129,11 @@ func (handler *UserHandler) MailExist(writer http.ResponseWriter, req *http.Requ
 }
 
 func (handler *UserHandler) ChangeVisibility(writer http.ResponseWriter, req *http.Request) {
-	token := req.Header.Get("Authorization")
-	parsedToken, err := jwt.Parse([]byte(token), verifier)
+
+	bearer := req.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
+	parsedToken, err := jwt.Parse([]byte(tokenString), verifier)
 	if err != nil {
 		log.Println(errors.InvalidTokenError)
 		http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)

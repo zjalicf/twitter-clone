@@ -77,11 +77,6 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
-    path: "User-Profile",
-    component: UserProfileComponent,
-    canActivate: [AuthGuard]
-  },
-  {
     path: '404',
     component: NotFoundComponent
   },

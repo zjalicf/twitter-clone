@@ -5,6 +5,18 @@
     <h2 class="email"><b>Email: </b>{{user.email}}</h2>
     <h2 class="role"><b>Role: </b>{{user.userType}}</h2>
     <mat-card-actions class="my-profile-options-card">
-        <button class="btn btn-danger" (click)="updatePassword()">Change Password</button>
+        <div>
+            <button class="btn btn-danger" (click)="updatePassword()">Change Password</button>
+        </div>
+        <div class="toggle">
+            <b>Public</b>
+            <label class="switch">
+                <input type="checkbox" (click)="UpdateVisibility()" [checked]="user.visibility">
+                <span class="slider round"></span>
+            </label>
+            <b>Private</b>
+        </div>
+        
     </mat-card-actions>
+    
 </mat-card>

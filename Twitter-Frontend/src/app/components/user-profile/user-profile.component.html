@@ -15,6 +15,6 @@
         <div class="col">Last name: {{user.lastName}}</div>
     </div>
     <div class="row">
-        <b>Tweets</b>
+        <app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
     </div>
 </div>

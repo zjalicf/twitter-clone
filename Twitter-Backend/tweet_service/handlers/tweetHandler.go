@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
@@ -105,8 +104,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		writer.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
-	fmt.Println("stiglo do uzimanja username iz tokena")
 
 	bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
 	tokenString := bearerToken[1]

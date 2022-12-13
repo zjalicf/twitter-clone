@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
+import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
@@ -11,10 +13,12 @@ import { UserService } from 'src/app/services/user.service';
 export class UserProfileComponent implements OnInit {
 
   user: User = new User();
+  tweets: Tweet[] = []
   
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
-              private router: Router) { }
+              private router: Router,
+              private TweetService: TweetService) { }
 
   ngOnInit(): void {
     this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
@@ -31,6 +35,12 @@ export class UserProfileComponent implements OnInit {
     //     this.user = data
     //   }
     // )
+
+    this.TweetService.GetTweetsForUser(String(this.route.snapshot.paramMap.get("username"))).subscribe(
+      data => {
+        this.tweets = data        
+      }
+    )
 
   }
 
