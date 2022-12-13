@@ -33,6 +33,7 @@ import { MyProfileComponent } from './components/my-profile/my-profile.component
 import { ChangePasswordComponent } from './components/change-password/change-password.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
+import { NotFoundComponent } from './components/not-found/not-found.component';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { UserProfileComponent } from './components/user-profile/user-profile.com
     MyProfileComponent,
     ChangePasswordComponent,
     TweetAddComponent,
-    UserProfileComponent
+    UserProfileComponent,
+    NotFoundComponent
   ],
   imports: [
     BrowserModule,

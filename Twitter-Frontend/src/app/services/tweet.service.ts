@@ -23,4 +23,19 @@ import { Tweet } from "../models/tweet.model";
 
             return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, tweet, options);
         }
+
+        public GetAllTweets(): Observable<any> {
+            let headers = new HttpHeaders({
+                "Content-Type":"application/json",
+                "Authorization": "" + localStorage.getItem("authToken")
+            })
+            let options = {headers: headers}
+            console.log(localStorage.getItem("authToken"))
+            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/`, options);
+        }
+    
+        public GetTweetsForUser(username: string): Observable<any> {
+            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/user/` + username)
+        }
+
     }

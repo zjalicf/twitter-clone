@@ -26,4 +26,8 @@ export class UserService {
     return this.http.get<User>(`${environment.baseApiUrl}/${this.url}/getMe/`,)
   }
 
+  public ChangeVisibility(): Observable<any> {
+    return this.http.put<any>(`${environment.baseApiUrl}/${this.url}/visibility`, null)
+  }
+
 }

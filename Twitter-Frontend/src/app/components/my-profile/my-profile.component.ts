@@ -32,4 +32,8 @@ export class MyProfileComponent implements OnInit {
     this.router.navigateByUrl("Change-Password")
   }
 
+  UpdateVisibility() {
+    this.userService.ChangeVisibility().subscribe()
+  }
+
 }
