@@ -18,17 +18,28 @@ export class MainPageComponent implements OnInit {
     private userService: UserService) { }
 
 
-  //treba napraviti da se prikazu samo tvitovi usera koje pratimo
+  //treba napraviti da se prikazu samo tvitovi usera koje pratimo i tvitovi ulogovanog usera
 
   ngOnInit(): void {
-    
-    this.userService.GetMe().subscribe(response => {
-      this.user = response
-      this.tweetService.GetTweetsForUser(this.user.username).subscribe( data => {
-        this.tweets = data
-      })
-    })
-    
+    this.userService.GetMe()
+      .subscribe({
+        next: (data) => {
+          this.user = data;
+        },
+        error: (error) => {
+          console.log(error);
+        },
+        complete: () => {
+          this.tweetService.GetTweetsForUser(this.user.username)
+            .subscribe({
+              next: (data) => {
+                this.tweets = data;
+              },
+              error: (error) => {
+                console.log(error);
+              }
+            });
+        }
+      });
   }
-
 }

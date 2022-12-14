@@ -9,14 +9,14 @@
             <button class="btn btn-danger" (click)="updatePassword()">Change Password</button>
         </div>
         <div class="toggle">
-            <b>Public</b>
+            <b class="public-text">Public</b>
             <label class="switch">
                 <input type="checkbox" (click)="UpdateVisibility()" [checked]="user.visibility">
                 <span class="slider round"></span>
             </label>
-            <b>Private</b>
+            <b class="private-text">Private</b>
         </div>
-        
     </mat-card-actions>
-    
 </mat-card>
+<h1 class="your-posts-text">Your Tweets</h1>
+<app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
