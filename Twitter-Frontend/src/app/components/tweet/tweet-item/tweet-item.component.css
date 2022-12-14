@@ -5,17 +5,12 @@
   margin-right: auto;
 }
 
-/* .tweet-user-icon {
-  height: 50px;
-  width: 50px;
-  float: left;
-} */
-
 .tweet-user-username {
   font-size: 22px;
   margin-bottom: 20px;
   margin-left: 10px;
   color: blue;
+  cursor: pointer;
 }
 
 .tweet-text {
