@@ -6,8 +6,8 @@ import (
 
 type FollowRequest struct {
 	ID        primitive.ObjectID `bson:"_id" json:"id,omitempty"`
-	Receiver  string             `bson:"receiver_id" json:"receiver_id"`
-	Requester string             `bson:"requester_id" json:"requester_id"`
+	Receiver  string             `bson:"receiver" json:"receiver"`
+	Requester string             `bson:"requester" json:"requester"`
 	Status    Status             `bson:"status" json:"status,omitempty"`
 }
 

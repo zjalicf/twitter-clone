@@ -7,6 +7,7 @@ import (
 	"follow_service/domain"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 )
@@ -30,8 +31,10 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	}
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", handler.CreateRequest).Methods("POST")
+	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
+	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
+
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8004", authorization.Authorizer(authEnforcer)(router)))
@@ -111,4 +114,38 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 
 	writer.WriteHeader(http.StatusOK)
 	jsonResponse(followRequest, writer)
+}
+
+func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *http.Request) {
+
+	vars := mux.Vars(req)
+	followId, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+
+	err = handler.service.AcceptRequest(followId)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+
+	writer.WriteHeader(http.StatusOK)
+
+}
+
+func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *http.Request) {
+
+	vars := mux.Vars(req)
+	followId, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+
+	err = handler.service.DeclineRequest(followId)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+	}
+
+	writer.WriteHeader(http.StatusOK)
+
 }

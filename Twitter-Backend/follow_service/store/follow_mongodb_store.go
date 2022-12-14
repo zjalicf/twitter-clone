@@ -41,14 +41,29 @@ func (store *FollowMongoDBStore) SaveRequest(request *domain.FollowRequest) (*do
 	return request, nil
 }
 
-func (store *FollowMongoDBStore) AcceptRequest() (*domain.FollowRequest, error) {
-	//TODO implement me
-	panic("implement me")
+func (store *FollowMongoDBStore) AcceptRequest(id primitive.ObjectID) error {
+
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{"status", 3}}}}
+
+	_, err := store.follows.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (store *FollowMongoDBStore) DeclineRequest(request *domain.FollowRequest) (*domain.FollowRequest, error) {
-	//TODO implement me
-	panic("implement me")
+func (store *FollowMongoDBStore) DeclineRequest(id primitive.ObjectID) error {
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{"status", 2}}}}
+
+	_, err := store.follows.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (store *FollowMongoDBStore) HandleRequest() {
