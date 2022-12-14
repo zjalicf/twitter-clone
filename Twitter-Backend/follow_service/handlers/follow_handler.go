@@ -3,24 +3,19 @@ package handlers
 import (
 	"encoding/json"
 	"follow_service/application"
+	"follow_service/authorization"
 	"follow_service/domain"
 	"github.com/casbin/casbin"
-	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 )
 
 type FollowHandler struct {
 	service *application.FollowService
 }
 
-var jwtKey = []byte(os.Getenv("SECRET_KEY"))
-var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
-
-func NewTweetHandler(service *application.FollowService) *FollowHandler {
+func NewFollowHandler(service *application.FollowService) *FollowHandler {
 	return &FollowHandler{
 		service: service,
 	}
@@ -36,11 +31,10 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/", Post(handler)).Methods("POST")
-	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/", handler.CreateRequest).Methods("POST")
 	http.Handle("/", router)
 	log.Println("Successful")
-	//log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
+	log.Fatal(http.ListenAndServe(":8004", authorization.Authorizer(authEnforcer)(router)))
 }
 
 func (handler *FollowHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
@@ -52,22 +46,22 @@ func (handler *FollowHandler) GetAll(writer http.ResponseWriter, req *http.Reque
 	jsonResponse(tweets, writer)
 }
 
-func (handler *FollowHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	username, ok := vars["username"]
-	if !ok {
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	tweets, err := handler.service.GetTweetsByUser(username)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	jsonResponse(tweets, writer)
-}
+//func (handler *FollowHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
+//	vars := mux.Vars(req)
+//	username, ok := vars["username"]
+//	if !ok {
+//		writer.WriteHeader(http.StatusBadRequest)
+//		return
+//	}
+//
+//	tweets, err := handler.service.GetTweetsByUser(username)
+//	if err != nil {
+//		writer.WriteHeader(http.StatusInternalServerError)
+//		return
+//	}
+//
+//	jsonResponse(tweets, writer)
+//}
 
 //	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
 //		vars := mux.Vars(req)
@@ -88,7 +82,7 @@ func (handler *FollowHandler) GetTweetsByUser(writer http.ResponseWriter, req *h
 //		}
 //		jsonResponse(tweet, writer)
 //	}
-func (handler *FollowHandler) Post(writer http.ResponseWriter, req *http.Request) {
+func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *http.Request) {
 
 	var request domain.FollowRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -103,25 +97,28 @@ func (handler *FollowHandler) Post(writer http.ResponseWriter, req *http.Request
 		return
 	}
 
-	bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
-	tokenString := bearerToken[1]
-	token := authorization.GetToken(tokenString)
+	//bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
+	//tokenString := bearerToken[1]
+	//token := authorization.GetToken(tokenString)
+	//
+	//claims := authorization.GetMapClaims(token.Bytes())
+	//username := claims["username"]
 
-	claims := authorization.GetMapClaims(token.Bytes())
-	username := claims["username"]
+	//mozda treba promeniti na username?
+	//tweet, err := handler.service.Post(&request, username)
 
-	tweet, err := handler.service.Post(&request, username)
+	followRequest, err := handler.service.CreateRequest(&request)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(tweet, writer)
+	jsonResponse(followRequest, writer)
 }
 
-func Post(handler *TweetHandler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler.Post(w, r)
-	}
-}
+//func Post(handler *FollowHandler) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		handler.Post(w, r)
+//	}
+//}

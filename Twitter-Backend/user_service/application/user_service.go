@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
-	"os"
 	"user_service/domain"
 	"user_service/errors"
 )
-
-var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 
 type UserService struct {
 	store domain.UserStore
