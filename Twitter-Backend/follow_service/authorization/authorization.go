@@ -36,10 +36,7 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 
 			} else {
 
-				bearer := r.Header.Get("Authorization")
-				bearerToken := strings.Split(bearer, "Bearer ")
-				tokenString := bearerToken[1]
-				token, err := jwt.Parse([]byte(tokenString), verifier)
+				token, err := GetToken(r)
 				if err != nil {
 					log.Println(err)
 					http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -71,12 +68,16 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 	}
 }
 
-func GetToken(tokenString string) *jwt.Token {
+func GetToken(r *http.Request) (*jwt.Token, error) {
+	bearer := r.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
 	token, err := jwt.Parse([]byte(tokenString), verifier)
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
-	return token
+	return token, nil
 }
 
 func GetMapClaims(tokenBytes []byte) map[string]string {

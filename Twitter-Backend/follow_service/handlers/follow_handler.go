@@ -97,17 +97,13 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 		return
 	}
 
-	//bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
-	//tokenString := bearerToken[1]
-	//token := authorization.GetToken(tokenString)
-	//
-	//claims := authorization.GetMapClaims(token.Bytes())
-	//username := claims["username"]
+	token, err := authorization.GetToken(req)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusUnauthorized)
+	}
+	claims := authorization.GetMapClaims(token.Bytes())
 
-	//mozda treba promeniti na username?
-	//tweet, err := handler.service.Post(&request, username)
-
-	followRequest, err := handler.service.CreateRequest(&request)
+	followRequest, err := handler.service.CreateRequest(&request, claims["username"])
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -116,9 +112,3 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 	writer.WriteHeader(http.StatusOK)
 	jsonResponse(followRequest, writer)
 }
-
-//func Post(handler *FollowHandler) http.HandlerFunc {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		handler.Post(w, r)
-//	}
-//}

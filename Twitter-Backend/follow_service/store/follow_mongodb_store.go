@@ -41,7 +41,7 @@ func (store *FollowMongoDBStore) SaveRequest(request *domain.FollowRequest) (*do
 	return request, nil
 }
 
-func (store *FollowMongoDBStore) SendRequest() (*domain.FollowRequest, error) {
+func (store *FollowMongoDBStore) AcceptRequest() (*domain.FollowRequest, error) {
 	//TODO implement me
 	panic("implement me")
 }

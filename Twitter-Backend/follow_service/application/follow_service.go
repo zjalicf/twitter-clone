@@ -21,11 +21,13 @@ func (service *FollowService) GetAll() ([]*domain.FollowRequest, error) {
 	return service.store.GetAll()
 }
 
-func (service *FollowService) CreateRequest(request *domain.FollowRequest) (*domain.FollowRequest, error) {
+func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string) (*domain.FollowRequest, error) {
 
 	//todo insert in follow_db
 
 	request.ID = primitive.NewObjectID()
+	request.Requester = username
+	request.Status = 1
 
 	//pozivanje upisa ka bazi
 	retFollow, err := service.store.SaveRequest(request)
@@ -36,8 +38,8 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest) (*dom
 	return retFollow, nil
 }
 
-func (service *FollowService) SendRequest() (*domain.FollowRequest, error) {
-	return service.store.SendRequest()
+func (service *FollowService) AcceptRequest() (*domain.FollowRequest, error) {
+	return service.store.AcceptRequest()
 }
 
 func (service *FollowService) DeclineRequest(followRequest *domain.FollowRequest) (*domain.FollowRequest, error) {
