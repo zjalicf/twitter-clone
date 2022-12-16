@@ -25,11 +25,16 @@ func (service *FollowService) GetRequestsForUser(username string) ([]*domain.Fol
 	return service.store.GetRequestsForUser(username)
 }
 
-func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string) (*domain.FollowRequest, error) {
+func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string, visibility bool) (*domain.FollowRequest, error) {
 
 	request.ID = primitive.NewObjectID()
 	request.Requester = username
-	request.Status = 1
+
+	if visibility {
+		request.Status = 1
+	} else {
+		request.Status = 3
+	}
 
 	retFollow, err := service.store.SaveRequest(request)
 	if err != nil {

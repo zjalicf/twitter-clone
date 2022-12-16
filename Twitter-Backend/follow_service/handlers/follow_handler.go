@@ -32,7 +32,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
-	router.HandleFunc("/", handler.CreateRequest).Methods("POST")
+	router.HandleFunc("/{visibility}", handler.CreateRequest).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 
@@ -126,7 +126,15 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 	}
 	claims := authorization.GetMapClaims(token.Bytes())
 
-	followRequest, err := handler.service.CreateRequest(&request, claims["username"])
+	vars := mux.Vars(req)
+	var visibility bool
+	if vars["visibility"] == "private" {
+		visibility = true
+	} else {
+		visibility = false
+	}
+
+	followRequest, err := handler.service.CreateRequest(&request, claims["username"], visibility)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
