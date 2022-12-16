@@ -152,6 +152,7 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	err = sr.session.Query(
 		insertByUser, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
+
 	if err != nil {
 		sr.logger.Println(err)
 		return nil, err
@@ -159,70 +160,38 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	return tweet, nil
 }
 
-//
-//func (sr *TweetRepo) InsertIspitByPredmetAndSmer(predmetSmerIspit *IspitByPredmetAndSmer) error {
-//	ispitId, _ := gocql.RandomUUID()
-//	err := sr.session.Query(
-//		`INSERT INTO ispiti_by_predmet_and_smer (predmet_id, smer_id, predmet_naziv, smer_naziv, indeks, ocena, ispit_id, datum, ime, prezime)
-//		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//		predmetSmerIspit.PredmetId, predmetSmerIspit.SmerId, predmetSmerIspit.PredmetNaziv, predmetSmerIspit.SmerNaziv,
-//		predmetSmerIspit.Indeks, predmetSmerIspit.Ocena, ispitId, predmetSmerIspit.Datum, predmetSmerIspit.Ime, predmetSmerIspit.Prezime).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// Zadatak 1
-//func (sr *TweetRepo) InsertStudentBySmer(studentSmer *StudentBySmer) error {
-//	studentId, _ := gocql.RandomUUID()
-//	err := sr.session.Query(
-//		`INSERT INTO studenti_by_smer (smer_id, student_id, indeks, ime, prezime, smer_naziv, stepeni_studija)
-//		VALUES (?, ?, ?, ?, ?, ?, ?)`,
-//		studentSmer.SmerId, studentId, studentSmer.Indeks, studentSmer.Ime, studentSmer.Prezime, studentSmer.SmerNaziv,
-//		studentSmer.StepeniStudija).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// Zadatak 4: dodavanje informacije o zavrsenom stepenu studija studenta
-//func (sr *TweetRepo) UpdateIspitByPredmetAddStepenStudija(smerId string, studentId string, indeks string, stepenStudija string) error {
-//	// za Update je neophodno da pronadjemo vrednost po PRIMARNOM KLJUCU = PK + CK (ukljucuje sve kljuceve particije i klastera)
-//	// u ovom slucaju: PK = smerId, CK = student_id, indeks
-//	err := sr.session.Query(
-//		`UPDATE studenti_by_smer SET stepeni_studija=stepeni_studija+? where smer_id = ? and student_id = ? and indeks = ?`,
-//		[]string{stepenStudija}, smerId, studentId, indeks).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// NoSQL: Performance issue, we never want to fetch all the data
-//// (In order to get all student ids we need to contact every partition which are usually located on different servers!)
-//// Here we are doing it for demonstration purposes (so we can see all student/predmet ids)
-//func (sr *TweetRepo) GetDistinctIds(idColumnName string, tableName string) ([]string, error) {
-//	scanner := sr.session.Query(
-//		fmt.Sprintf(`SELECT DISTINCT %s FROM %s`, idColumnName, tableName)).
-//		Iter().Scanner()
-//	var ids []string
-//	for scanner.Next() {
-//		var id string
-//		err := scanner.Scan(&id)
-//		if err != nil {
-//			sr.logger.Println(err)
-//			return nil, err
-//		}
-//		ids = append(ids, id)
-//	}
-//	if err := scanner.Err(); err != nil {
-//		sr.logger.Println(err)
-//		return nil, err
-//	}
-//	return ids, nil
-//}
+func (sr *TweetRepo) Favorite(id *gocql.UUID) (int, error) {
+
+	err := sr.session.Query(
+		`UPDATE tweet SET favorited=true, favorite_count=favorite_count+1 where id = ?`, id.String()).Exec()
+
+	if err != nil {
+		sr.logger.Println(err)
+		return 400, err
+	}
+
+	query := fmt.Sprintf(`SELECT * FROM tweet WHERE id = '%s'`, id.String())
+	var tweet domain.Tweet
+	err = sr.session.Query(query).Scan(&tweet)
+
+	if err != nil {
+		sr.logger.Println(err)
+		return 400, err
+	}
+
+	username := tweet.Username
+	createdAt := tweet.CreatedAt
+	err = sr.session.Query(
+		`UPDATE tweet_by_user SET favorited=true, favorite_count=favorite_count+1 where username = ? and 
+		 	  created_at = ?`, username, createdAt).Exec()
+
+	if err != nil {
+		sr.logger.Println(err)
+		return 400, err
+	}
+
+	//upisati u kasandru u novu tabelu
+	// id_tvita | lista idjeva
+
+	return 200, nil
+}
