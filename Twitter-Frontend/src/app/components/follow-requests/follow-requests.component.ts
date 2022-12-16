@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { User } from 'src/app/models/user.model';
+import { FollowService } from 'src/app/services/follow.service';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
@@ -12,9 +13,11 @@ import { UserService } from 'src/app/services/user.service';
 export class FollowRequestsComponent implements OnInit {
 
   constructor(private userService: UserService,
-              private router: Router) { }
+              private router: Router,
+              private followService: FollowService) { }
 
   user: User = new User();
+  requests: FollowRequest[] = []
   firstFollowRequest: FollowRequest = new FollowRequest();
   secondFollowRequest: FollowRequest = new FollowRequest();
 
@@ -30,16 +33,39 @@ export class FollowRequestsComponent implements OnInit {
           console.log(error);
         } 
       });
-      this.firstFollowRequest.sender = "Milan";
+      this.firstFollowRequest.requester = "Milan";
       this.firstFollowRequest.receiver = "Petar";
       this.firstFollowRequest.status = "Pending";
 
-      this.secondFollowRequest.sender = "Filip";
+      this.secondFollowRequest.requester = "Filip";
       this.secondFollowRequest.receiver = "Petar";
       this.secondFollowRequest.status = "Pending";
 
       this.followRequests.push(this.firstFollowRequest);
       this.followRequests.push(this.secondFollowRequest);
+
+      this.followService.GetRequestsForUser().subscribe(
+        data => {
+          this.requests = data
+        }
+      )
   }
+
+
+AcceptRequest(id: string){
+  this.followService.AcceptRequest(id).subscribe(
+    data => {
+      alert("Follow request accepted!")
+    }
+  )
+}
+
+DeclineRequest(id: string){
+  this.followService.DeclineRequest(id).subscribe(
+    data => {
+      alert("Follow request rejected!")
+    }
+  )
+}
 
 }

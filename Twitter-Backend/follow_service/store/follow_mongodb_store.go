@@ -29,6 +29,16 @@ func (store *FollowMongoDBStore) GetAll() ([]*domain.FollowRequest, error) {
 	return store.filter(filter)
 }
 
+func (store *FollowMongoDBStore) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
+	filter := bson.D{{"receiver", username}, {"status", 1}}
+	result, err := store.filter(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (store *FollowMongoDBStore) SaveRequest(request *domain.FollowRequest) (*domain.FollowRequest, error) {
 
 	result, err := store.follows.InsertOne(context.TODO(), request)
@@ -55,10 +65,10 @@ func (store *FollowMongoDBStore) AcceptRequest(id primitive.ObjectID) error {
 }
 
 func (store *FollowMongoDBStore) DeclineRequest(id primitive.ObjectID) error {
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"status", 2}}}}
 
-	_, err := store.follows.UpdateOne(context.TODO(), filter, update)
+	filter := bson.D{{"_id", id}}
+
+	_, err := store.follows.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,12 @@
 export class FollowRequest {
-    sender: string = "";
+    id: string = "";
+    requester: string = "";
     receiver: string = "";
     status: string = "";
 
-    FollowRequest(sender: string, receiver: string, status: string) {
-        this.sender = sender;
+    FollowRequest(id: string, requester: string, receiver: string, status: string) {
+        this.id = id
+        this.requester = requester;
         this.receiver = receiver;
         this.status = status;
     }
