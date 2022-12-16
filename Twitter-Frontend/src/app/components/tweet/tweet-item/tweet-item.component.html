@@ -2,7 +2,7 @@
   <mat-card class="tweet-card">
     <mat-card-title class="tweet-username-icon">
       <!-- <img class="tweet-user-icon" mat-card-image src="https://cdn-icons-png.flaticon.com/512/147/147142.png"> -->
-      <mat-card-title class="tweet-user-username" [routerLink]="['/View-Profile', tweet.username]" style="cursor: pointer;"> {{tweet.username}}</mat-card-title>
+      <mat-card-title class="tweet-user-username" [routerLink]="['/View-Profile', tweet.username]"> {{tweet.username}}</mat-card-title>
     </mat-card-title>
     <mat-card-subtitle class="tweet-text">{{tweet.text}}</mat-card-subtitle>
     <img class="tweet-image" mat-card-image
@@ -10,4 +10,4 @@
 </mat-card>
 </div>
 
-<router-outlet></router-outlet>
+<!-- <router-outlet></router-outlet> -->
