@@ -40,7 +40,14 @@ export class UserProfileComponent implements OnInit {
           console.log(error);
         }
       })
-  
+  }
+
+  isPrivate(): boolean {
+    if (this.user.visibility == true) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }

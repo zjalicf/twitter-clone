@@ -11,5 +11,10 @@
         </div>
     </mat-card-actions>
 </mat-card>
-<h1 class="user-posts-text">User Tweets</h1>
-<app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
+<div *ngIf="isPrivate()">
+    <h1 class="private-text">You cannot see this Users Tweets because their profile is <b>Private</b></h1>
+</div>
+<div *ngIf="!isPrivate()">
+    <h1 class="user-posts-text">User Tweets</h1>
+    <app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
+</div>
