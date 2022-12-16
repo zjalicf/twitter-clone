@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FollowRequest } from 'src/app/models/followRequest.model';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
+import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -19,7 +21,8 @@ export class UserProfileComponent implements OnInit {
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
-              private TweetService: TweetService) { }
+              private TweetService: TweetService,
+              private followService: FollowService) { }
 
   ngOnInit(): void {
     this.UserService.GetOneUserByUsername(this.profileUsername)
@@ -41,6 +44,16 @@ export class UserProfileComponent implements OnInit {
         }
       })
   
+  }
+
+  SendRequest(user: User){
+    var followReq = new FollowRequest()
+    followReq.receiver = user.username
+    if (user.visibility){
+      this.followService.SendRequest("private", followReq).subscribe()
+    }else {
+      this.followService.SendRequest("public", followReq).subscribe()
+    }
   }
 
 }

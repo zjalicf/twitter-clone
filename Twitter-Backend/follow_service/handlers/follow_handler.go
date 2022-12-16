@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"follow_service/application"
 	"follow_service/authorization"
 	"follow_service/domain"
@@ -32,7 +33,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
-	router.HandleFunc("/{visibility}", handler.CreateRequest).Methods("POST")
+	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 
@@ -65,6 +66,7 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	fmt.Println(returnRequests)
 
 	jsonResponse(returnRequests, writer)
 }
@@ -127,6 +129,7 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 	claims := authorization.GetMapClaims(token.Bytes())
 
 	vars := mux.Vars(req)
+	fmt.Println(vars)
 	var visibility bool
 	if vars["visibility"] == "private" {
 		visibility = true
