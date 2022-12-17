@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { FollowRequest } from '../models/followRequest.model';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,10 @@ export class FollowService {
 
   public DeclineRequest(id: string): Observable<any> {
     return this.http.put(`${environment.baseApiUrl}/${this.url}/declineRequest/` + id, null)
+  }
+
+  public SendRequest(visibility: string, receiver: FollowRequest): Observable<any>{
+    return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/requests/` + visibility, receiver)
   }
 
 }

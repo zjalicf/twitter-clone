@@ -33,16 +33,6 @@ export class FollowRequestsComponent implements OnInit {
           console.log(error);
         } 
       });
-      this.firstFollowRequest.requester = "Milan";
-      this.firstFollowRequest.receiver = "Petar";
-      this.firstFollowRequest.status = "Pending";
-
-      this.secondFollowRequest.requester = "Filip";
-      this.secondFollowRequest.receiver = "Petar";
-      this.secondFollowRequest.status = "Pending";
-
-      this.followRequests.push(this.firstFollowRequest);
-      this.followRequests.push(this.secondFollowRequest);
 
       this.followService.GetRequestsForUser().subscribe(
         data => {
@@ -67,5 +57,7 @@ DeclineRequest(id: string){
     }
   )
 }
+
+
 
 }

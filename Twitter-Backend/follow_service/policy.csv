@@ -1,6 +1,7 @@
 p, Regular, /*, POST
 p, Regular, /*, GET
 p, Regular, /requests/*, GET
+p, Regular, /requests/*, POST
 p, Regular, /, POST
 p, Regular, /, GET
 p, Regular, /acceptRequest/*, PUT
