@@ -103,7 +103,7 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 	//	return
 	//}
 
-	tweets, err := handler.service.Favorite(&tweetID.ID, &username)
+	tweets, err := handler.service.Favorite(tweetID.ID, username)
 
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

@@ -161,12 +161,20 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	return tweet, nil
 }
 
-func (sr *TweetRepo) Favorite(tweet_id *gocql.UUID, username *string) (int, error) {
+func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 
-	query_favorite := fmt.Sprintf(`SELECT count(*) FROM favorite WHERE tweet_id = '%s' AND username = '%s'`,
-		tweet_id.String(), username)
-	log.Printf(query_favorite)
-	log.Printf("tu sam")
+	log.Println(tweetID)
+	id, err := gocql.ParseUUID(tweetID)
+	if err != nil {
+		return -1, nil
+	}
+
+	log.Println("1: ", id)
+	log.Println("2: ", username)
+
+	queryFavorite := fmt.Sprintf(`SELECT count(*) FROM favorite WHERE tweet_id = '%s' AND username = '%s'`,
+		id, username)
+	log.Printf(queryFavorite)
 	return 1, nil
 	//var favorite domain.Favorite
 	//err := sr.session.Query(query_favorite).Scan(&favorite)

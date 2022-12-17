@@ -22,5 +22,5 @@ type Favorite struct {
 }
 
 type TweetID struct {
-	ID gocql.UUID `json:"id"`
+	ID string `json:"id"`
 }
