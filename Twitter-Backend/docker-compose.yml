@@ -2,24 +2,24 @@ version: '3.8'
 
 services:
 
-#  tweet_service:
-#    image: tweet_service
-#    container_name: tweet_service
-#    build:
-#      context: .
-#      dockerfile: ./tweet_service/Dockerfile
-#    restart: always
-#    ports:
-#      - ${TWEET_SERVICE_PORT}:${TWEET_SERVICE_PORT}
-#    environment:
-#      TWEET_DB: ${TWEET_DB}
-#      TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
-#      SECRET_KEY: ${SECRET_KEY}
-#    depends_on:
-#       tweet_db:
-#         condition: service_healthy
-#    networks:
-#      - network
+  tweet_service:
+    image: tweet_service
+    container_name: tweet_service
+    build:
+      context: .
+      dockerfile: ./tweet_service/Dockerfile
+    restart: always
+    ports:
+      - ${TWEET_SERVICE_PORT}:${TWEET_SERVICE_PORT}
+    environment:
+      TWEET_DB: ${TWEET_DB}
+      TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+       tweet_db:
+         condition: service_healthy
+    networks:
+      - network
 
   user_service:
     image: user_service
@@ -103,22 +103,22 @@ services:
 #    networks:
 #      - network
 
-#  tweet_db:
-#    image: cassandra
-#    container_name: tweet_db
-#    restart: always
-#    ports:
-#      - "9042:9042"
-#    # Docker healthcheck - checks if database is "alive"
-#    healthcheck:
-#      test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
-#      interval: 15s
-#      timeout: 5s
-#      retries: 15
-#    volumes:
-#      - cassandra_store:/var/lib/cassandra/data
-#    networks:
-#      - network
+  tweet_db:
+    image: cassandra
+    container_name: tweet_db
+    restart: always
+    ports:
+      - "9042:9042"
+    # Docker healthcheck - checks if database is "alive"
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - cassandra_store:/var/lib/cassandra/data
+    networks:
+      - network
 
   user_db:
     image: mongo

@@ -15,6 +15,7 @@ import { UserService } from 'src/app/services/user.service';
 export class UserProfileComponent implements OnInit {
 
   user: User = new User();
+  loggedInUser = new User();
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
   
@@ -22,7 +23,8 @@ export class UserProfileComponent implements OnInit {
               private route: ActivatedRoute,
               private router: Router,
               private TweetService: TweetService,
-              private followService: FollowService) { }
+              private followService: FollowService,
+              private userService: UserService) { }
 
   ngOnInit(): void {
     this.UserService.GetOneUserByUsername(this.profileUsername)
@@ -32,8 +34,10 @@ export class UserProfileComponent implements OnInit {
         },
         error: (error) => {
           console.log(error);
+          this.router.navigate(["/404"])
         }
-      })
+      });
+
     this.TweetService.GetTweetsForUser(this.profileUsername)
       .subscribe({
         next: (data: Tweet[]) => {
@@ -42,7 +46,25 @@ export class UserProfileComponent implements OnInit {
         error: (error) => {
           console.log(error);
         }
-      })
+      });
+
+    this.userService.GetMe()
+    .subscribe({
+      next: (data: User) => {
+        this.loggedInUser = data;
+      },
+      error: (error) => {
+        console.log(error);
+      }
+      });
+  }
+
+  isThatMe(): boolean {
+    if (this.user.username == this.loggedInUser.username) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   isPrivate(): boolean {
