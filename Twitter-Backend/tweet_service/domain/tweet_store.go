@@ -7,6 +7,6 @@ type TweetStore interface {
 	GetAll() ([]Tweet, error)
 	GetTweetsByUser(username string) ([]*Tweet, error)
 	Post(tweet *Tweet) (*Tweet, error)
-	Favorite(id *gocql.UUID) (int, error)
+	Favorite(id *gocql.UUID, username *string) (int, error)
 	//DeleteAll()
 }

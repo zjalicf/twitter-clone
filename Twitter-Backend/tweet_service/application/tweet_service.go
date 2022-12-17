@@ -40,6 +40,6 @@ func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain
 	return service.store.Post(tweet)
 }
 
-func (service *TweetService) Favorite(id *gocql.UUID) (int, error) {
-	return service.store.Favorite(id)
+func (service *TweetService) Favorite(id *gocql.UUID, username *string) (int, error) {
+	return service.store.Favorite(id, username)
 }
