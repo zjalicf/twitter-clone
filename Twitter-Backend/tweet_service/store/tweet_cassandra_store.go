@@ -78,7 +78,7 @@ func (sr *TweetRepo) CreateTables() {
 			COLLECTION_BY_USER)).Exec()
 
 	err = sr.session.Query(
-		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((id)))",
 			COLLECTION_FAVORITE)).Exec()
 
 	if err != nil {
@@ -163,46 +163,52 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 
 func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 
-	log.Println(tweetID)
 	id, err := gocql.ParseUUID(tweetID)
+
 	if err != nil {
 		return -1, nil
 	}
 
-	log.Println("1: ", id)
-	log.Println("2: ", username)
+	scanner := sr.session.Query(`SELECT count(*) FROM favorite WHERE tweet_id = ? AND username = ?`,
+		id.String(), username).Iter().Scanner()
 
-	queryFavorite := fmt.Sprintf(`SELECT count(*) FROM favorite WHERE tweet_id = '%s' AND username = '%s'`,
-		id, username)
-	log.Printf(queryFavorite)
-	return 1, nil
-	//var favorite domain.Favorite
-	//err := sr.session.Query(query_favorite).Scan(&favorite)
-	//
-	//if err != nil {
-	//	sr.logger.Println(err)
-	//	return 502, err
-	//}
-	//
-	//
-	//
-	//query := fmt.Sprintf(`SELECT * FROM tweet WHERE tweet_id = '%s'`, tweet_id.String())
+	var favorites []*domain.Favorite
+
+	for scanner.Next() {
+		var favorite domain.Favorite
+		err = scanner.Scan(&favorite.TweetID, &favorite.Username)
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+		favorites = append(favorites, &favorite)
+	}
+
+	log.Println(favorites[0])
+
+	//query := fmt.Sprintf(`SELECT * FROM tweet WHERE tweet_id = '%s'`, id.String())
 	//var tweet domain.Tweet
 	//err = sr.session.Query(query).Scan(&tweet)
 	//
+	//log.Println(tweet)
+	//
 	//if err != nil {
+	//	log.Println("Drugi")
+	//
 	//	sr.logger.Println(err)
 	//	return 502, err
 	//}
 	//
-	//username := tweet.Username
+	//username = tweet.Username
 	//createdAt := tweet.CreatedAt
 	//favoriteCount := tweet.FavoriteCount + 1
 	//
 	//err = sr.session.Query(
-	//	`UPDATE tweet SET favorited=true, favorite_count=? where tweet_id=?`, favoriteCount, tweet_id.String()).Exec()
+	//	`UPDATE tweet SET favorited=true, favorite_count=? where tweet_id=?`, favoriteCount, id.String()).Exec()
 	//
 	//if err != nil {
+	//	log.Println("Treci")
+	//
 	//	sr.logger.Println(err)
 	//	return 502, err
 	//}
@@ -212,6 +218,7 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	//	favoriteCount, username, createdAt).Exec()
 	//
 	//if err != nil {
+	//	log.Println("Cetvrti")
 	//	sr.logger.Println(err)
 	//	return 502, err
 	//}
@@ -219,12 +226,13 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	//insert := fmt.Sprintf("INSERT INTO %s "+"(id, username) "+"VALUES (?, ?)", COLLECTION_FAVORITE)
 	//
 	//err = sr.session.Query(
-	//	insert, tweet.ID, username).Exec()
+	//	insert, tweet.ID.String(), username).Exec()
 	//
 	//if err != nil {
+	//	log.Println("Peti")
 	//	sr.logger.Println(err)
 	//	return 502, err
 	//}
-	//
-	//return 200, nil
+
+	return 200, nil
 }
