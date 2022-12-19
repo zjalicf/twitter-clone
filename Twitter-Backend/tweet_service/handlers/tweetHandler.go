@@ -39,6 +39,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/favorite", handler.Favorite).Methods("POST")
 	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
@@ -71,25 +72,47 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 	jsonResponse(tweets, writer)
 }
 
-//	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
-//		vars := mux.Vars(req)
-//		id, ok := vars["id"]
-//		if !ok {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		objectId, err := primitive.ObjectIDFromHex(id)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		tweet, err := handler.service.Get(objectId)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusNotFound)
-//			return
-//		}
-//		jsonResponse(tweet, writer)
-//	}
+func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Request) {
+
+	bearer := req.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
+
+	token, err := jwt.Parse([]byte(tokenString), verifier)
+
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	var tweetID domain.TweetID
+	err = json.NewDecoder(req.Body).Decode(&tweetID)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	//
+	//uuid, err := gocql.ParseUUID(tweet.)
+	//if err != nil {
+	//	writer.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
+
+	tweets, err := handler.service.Favorite(tweetID.ID, username)
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(tweets, writer)
+}
+
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
 
 	var request domain.Tweet

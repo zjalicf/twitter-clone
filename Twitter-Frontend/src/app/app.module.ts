@@ -34,6 +34,9 @@ import { ChangePasswordComponent } from './components/change-password/change-pas
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
+import { FollowRequestsComponent } from './components/my-follow-requests/follow-requests.component';
+import { FollowRequestItemComponent } from './components/follow-request/follow-request-item/follow-request-item.component';
+import { FollowRequestListComponent } from './components/follow-request/follow-request-list/follow-request-list.component';
 
 @NgModule({
   declarations: [
@@ -55,7 +58,10 @@ import { NotFoundComponent } from './components/not-found/not-found.component';
     ChangePasswordComponent,
     TweetAddComponent,
     UserProfileComponent,
-    NotFoundComponent
+    NotFoundComponent,
+    FollowRequestsComponent,
+    FollowRequestItemComponent,
+    FollowRequestListComponent
   ],
   imports: [
     BrowserModule,

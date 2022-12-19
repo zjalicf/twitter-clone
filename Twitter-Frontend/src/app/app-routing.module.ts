@@ -16,6 +16,7 @@ import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.compon
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { RoleGuard } from './services/role-guard.service';
 import { NotFoundComponent } from './components/not-found/not-found.component';
+import { FollowRequestsComponent } from './components/my-follow-requests/follow-requests.component';
 
 const routes: Routes = [
   {
@@ -60,6 +61,10 @@ const routes: Routes = [
     path: 'My-Profile',
     component: MyProfileComponent,
     canActivate: [AuthGuard]
+  },
+  {
+    path: 'Follow-Requests',
+    component: FollowRequestsComponent
   },
   {
     path: 'View-Profile/:username',

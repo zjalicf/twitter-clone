@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	DATABASE           = "tweet"
-	COLLECTION         = "tweet"
-	COLLECTION_BY_USER = "tweets_by_user"
+	DATABASE            = "tweet"
+	COLLECTION          = "tweet"
+	COLLECTION_BY_USER  = "tweets_by_user"
+	COLLECTION_FAVORITE = "favorite"
 )
 
 type TweetRepo struct {
@@ -76,9 +77,9 @@ func (sr *TweetRepo) CreateTables() {
 					WITH CLUSTERING ORDER BY (created_at DESC)`, //clustering key by creating date and pk for tweet id and user_id
 			COLLECTION_BY_USER)).Exec()
 
-	//err := sr.session.Query(
-	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, text text, PRIMARY KEY ((tweet_id)))",
-	//		COLLECTION)).Exec()
+	err = sr.session.Query(
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
+			COLLECTION_FAVORITE)).Exec()
 
 	if err != nil {
 		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
@@ -152,6 +153,7 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	err = sr.session.Query(
 		insertByUser, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
+
 	if err != nil {
 		sr.logger.Println(err)
 		return nil, err
@@ -159,70 +161,103 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	return tweet, nil
 }
 
-//
-//func (sr *TweetRepo) InsertIspitByPredmetAndSmer(predmetSmerIspit *IspitByPredmetAndSmer) error {
-//	ispitId, _ := gocql.RandomUUID()
-//	err := sr.session.Query(
-//		`INSERT INTO ispiti_by_predmet_and_smer (predmet_id, smer_id, predmet_naziv, smer_naziv, indeks, ocena, ispit_id, datum, ime, prezime)
-//		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//		predmetSmerIspit.PredmetId, predmetSmerIspit.SmerId, predmetSmerIspit.PredmetNaziv, predmetSmerIspit.SmerNaziv,
-//		predmetSmerIspit.Indeks, predmetSmerIspit.Ocena, ispitId, predmetSmerIspit.Datum, predmetSmerIspit.Ime, predmetSmerIspit.Prezime).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// Zadatak 1
-//func (sr *TweetRepo) InsertStudentBySmer(studentSmer *StudentBySmer) error {
-//	studentId, _ := gocql.RandomUUID()
-//	err := sr.session.Query(
-//		`INSERT INTO studenti_by_smer (smer_id, student_id, indeks, ime, prezime, smer_naziv, stepeni_studija)
-//		VALUES (?, ?, ?, ?, ?, ?, ?)`,
-//		studentSmer.SmerId, studentId, studentSmer.Indeks, studentSmer.Ime, studentSmer.Prezime, studentSmer.SmerNaziv,
-//		studentSmer.StepeniStudija).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// Zadatak 4: dodavanje informacije o zavrsenom stepenu studija studenta
-//func (sr *TweetRepo) UpdateIspitByPredmetAddStepenStudija(smerId string, studentId string, indeks string, stepenStudija string) error {
-//	// za Update je neophodno da pronadjemo vrednost po PRIMARNOM KLJUCU = PK + CK (ukljucuje sve kljuceve particije i klastera)
-//	// u ovom slucaju: PK = smerId, CK = student_id, indeks
-//	err := sr.session.Query(
-//		`UPDATE studenti_by_smer SET stepeni_studija=stepeni_studija+? where smer_id = ? and student_id = ? and indeks = ?`,
-//		[]string{stepenStudija}, smerId, studentId, indeks).Exec()
-//	if err != nil {
-//		sr.logger.Println(err)
-//		return err
-//	}
-//	return nil
-//}
-//
-//// NoSQL: Performance issue, we never want to fetch all the data
-//// (In order to get all student ids we need to contact every partition which are usually located on different servers!)
-//// Here we are doing it for demonstration purposes (so we can see all student/predmet ids)
-//func (sr *TweetRepo) GetDistinctIds(idColumnName string, tableName string) ([]string, error) {
-//	scanner := sr.session.Query(
-//		fmt.Sprintf(`SELECT DISTINCT %s FROM %s`, idColumnName, tableName)).
-//		Iter().Scanner()
-//	var ids []string
-//	for scanner.Next() {
-//		var id string
-//		err := scanner.Scan(&id)
-//		if err != nil {
-//			sr.logger.Println(err)
-//			return nil, err
-//		}
-//		ids = append(ids, id)
-//	}
-//	if err := scanner.Err(); err != nil {
-//		sr.logger.Println(err)
-//		return nil, err
-//	}
-//	return ids, nil
-//}
+func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
+
+	id, err := gocql.ParseUUID(tweetID)
+
+	if err != nil {
+		return -1, nil
+	}
+	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
+	fmt.Println(query)
+	scanner := sr.session.Query(query).Iter().Scanner()
+
+	var favorites []*domain.Favorite
+
+	for scanner.Next() {
+		var favorite domain.Favorite
+		err = scanner.Scan(&favorite.TweetID, &favorite.Username)
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+		favorites = append(favorites, &favorite)
+	}
+
+	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
+
+	var tweets []*domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.RetweetCount,
+			&tweet.Retweeted, &tweet.Text, &tweet.Username)
+		if err != nil {
+			sr.logger.Println(err)
+			return 500, err
+		}
+
+		tweets = append(tweets, &tweet)
+	}
+
+	if len(tweets) == 0 {
+		sr.logger.Println("No such tweet")
+		return 500, nil
+	}
+
+	username = tweets[0].Username
+	favorited := false
+	create := false
+	favoriteCount := 0
+	createdAt := tweets[0].CreatedAt
+
+	if len(favorites) != 0 {
+		favoriteCount = tweets[0].FavoriteCount - 1
+		favorited = false
+		create = false
+	} else {
+		favoriteCount = tweets[0].FavoriteCount + 1
+		favorited = true
+		create = true
+	}
+
+	if create {
+		insert := fmt.Sprintf("INSERT INTO %s "+"(tweet_id, username) "+"VALUES (?, ?)", COLLECTION_FAVORITE)
+
+		err = sr.session.Query(
+			insert, tweets[0].ID.String(), username).Exec()
+
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+	} else {
+		delete := fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s", COLLECTION_FAVORITE, id)
+
+		err = sr.session.Query(delete).Exec()
+
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+	}
+
+	err = sr.session.Query(
+		`UPDATE tweet SET favorited= ?, favorite_count=? where id=?`, favorited, favoriteCount, id.String()).Exec()
+
+	if err != nil {
+
+		sr.logger.Println(err)
+		return 502, err
+	}
+
+	err = sr.session.Query(
+		`UPDATE tweets_by_user SET favorited= ?, favorite_count=? where username=? and created_at=?`,
+		favorited, favoriteCount, username, createdAt).Exec()
+
+	if err != nil {
+		sr.logger.Println(err)
+		return 502, err
+	}
+
+	return 200, nil
+}

@@ -1,20 +1,20 @@
-<div class="container">
-    <div class="row">
-        <div class="col">Slika</div>
-        <div class="col col-lg-5">
-            <div class="row">Username: {{user.username}}</div>
-            <div class="row">Followers: 999</div>
+<mat-card class="my-profile-card">
+    <mat-card-title class="username">{{user.username}}</mat-card-title>
+    <h2 class="first-name"><b>First Name: </b>{{user.firstName}}</h2>
+    <h2 class="last-name"><b>Last Name: </b>{{user.lastName}}</h2>
+    <h2 class="residence"><b>Residence: </b>{{user.residence}}</h2>
+    <h2 class="gender"><b>Gender: </b>{{user.gender}}</h2>
+    <h2 class="age"><b>Age: </b>{{user.age}}</h2>
+    <mat-card-actions class="user-profile-options-card">
+        <div>
+            <button *ngIf="!isThatMe()" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
         </div>
-        <div class="col">
-            <button type="button" class="btn btn-primary">Follow</button>
-            <button type="button" class="btn btn-primary">Unfollow</button>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col">First name: {{user.firstName}}</div>
-        <div class="col">Last name: {{user.lastName}}</div>
-    </div>
-    <div class="row">
-        <app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
-    </div>
+    </mat-card-actions>
+</mat-card>
+<div *ngIf="isPrivate()">
+    <h1 class="private-text">You cannot see this Users Tweets because their profile is <b>Private</b></h1>
+</div>
+<div *ngIf="!isPrivate()">
+    <h1 class="user-posts-text">User Tweets</h1>
+    <app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
 </div>

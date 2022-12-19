@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FollowRequest } from 'src/app/models/followRequest.model';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
+import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -13,35 +15,74 @@ import { UserService } from 'src/app/services/user.service';
 export class UserProfileComponent implements OnInit {
 
   user: User = new User();
+  loggedInUser = new User();
   tweets: Tweet[] = []
+  profileUsername = String(this.route.snapshot.paramMap.get("username"));
   
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
-              private TweetService: TweetService) { }
+              private TweetService: TweetService,
+              private followService: FollowService,
+              private userService: UserService) { }
 
   ngOnInit(): void {
-    this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
+    this.UserService.GetOneUserByUsername(this.profileUsername)
       .subscribe({
         next: (data: User) => {
           this.user = data;
         },
         error: (error) => {
           console.log(error);
+          this.router.navigate(["/404"])
         }
-      })
-    // this.UserService.GetOneUserByUsername("nani13051411").subscribe(
-    //   data => {
-    //     this.user = data
-    //   }
-    // )
+      });
 
-    this.TweetService.GetTweetsForUser(String(this.route.snapshot.paramMap.get("username"))).subscribe(
-      data => {
-        this.tweets = data        
+    this.TweetService.GetTweetsForUser(this.profileUsername)
+      .subscribe({
+        next: (data: Tweet[]) => {
+          this.tweets = data;
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      });
+
+    this.userService.GetMe()
+    .subscribe({
+      next: (data: User) => {
+        this.loggedInUser = data;
+      },
+      error: (error) => {
+        console.log(error);
       }
-    )
+      });
+  }
 
+  isThatMe(): boolean {
+    if (this.user.username == this.loggedInUser.username) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  isPrivate(): boolean {
+    if (this.user.visibility == true) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  SendRequest(user: User){
+    var followReq = new FollowRequest()
+    followReq.receiver = user.username
+    if (user.visibility){
+      this.followService.SendRequest("private", followReq).subscribe()
+    }else {
+      this.followService.SendRequest("public", followReq).subscribe()
+    }
   }
 
 }

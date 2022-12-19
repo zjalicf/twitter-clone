@@ -14,14 +14,7 @@ import { Tweet } from "../models/tweet.model";
     
 
         public AddTweet(tweet: Tweet): Observable<Tweet> {
-            let headers = new HttpHeaders({
-                "Content-Type":"application/json",
-                "Authorization": "" + localStorage.getItem("authToken")
-            })
-            let options = {headers: headers}
-            console.log(localStorage.getItem("authToken"))
-
-            return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, tweet, options);
+            return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, tweet);
         }
 
         public GetAllTweets(): Observable<any> {

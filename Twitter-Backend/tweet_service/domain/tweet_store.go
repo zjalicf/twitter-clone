@@ -5,5 +5,6 @@ type TweetStore interface {
 	GetAll() ([]Tweet, error)
 	GetTweetsByUser(username string) ([]*Tweet, error)
 	Post(tweet *Tweet) (*Tweet, error)
+	Favorite(id string, username string) (int, error)
 	//DeleteAll()
 }

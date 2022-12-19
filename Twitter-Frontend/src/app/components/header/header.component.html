@@ -13,13 +13,16 @@
             <button *ngIf="!isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Login">
                 <span>Login</span>
             </button>
-            <button *ngIf="isLoggedIn()" mat-button mat-ripple routerLink="/Auth-Test">
+            <!-- <button *ngIf="isLoggedIn()" mat-button mat-ripple routerLink="/Auth-Test">
                 <span>Auth Test</span>
+            </button> -->
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Follow-Requests">
+                <span>Follow Requests</span>
             </button>
-            <button *ngIf="isLoggedIn()" mat-button mat-ripple routerLink="/My-Profile">
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/My-Profile">
                 <span>My Profile</span>
             </button>
-            <button *ngIf="isLoggedIn()" (click)="logout()" mat-button mat-ripple>
+            <button *ngIf="isLoggedIn()" aria-pressed="true" (click)="logout()" mat-button mat-ripple>
                 <span>Logout</span>
             </button>
         </div>
