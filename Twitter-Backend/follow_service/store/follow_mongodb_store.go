@@ -29,6 +29,21 @@ func (store *FollowMongoDBStore) GetAll() ([]*domain.FollowRequest, error) {
 	return store.filter(filter)
 }
 
+func (store *FollowMongoDBStore) FollowExist(followRequest *domain.FollowRequest) (bool, error) {
+
+	filter := bson.D{{"receiver", followRequest.Receiver}, {"requester", followRequest.Requester}}
+	result, err := store.filter(filter)
+	if err != nil {
+		return false, err
+	}
+	if len(result) == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+
+}
+
 func (store *FollowMongoDBStore) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
 	filter := bson.D{{"receiver", username}, {"status", 1}}
 	result, err := store.filter(filter)

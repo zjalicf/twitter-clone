@@ -21,6 +21,10 @@ func (service *FollowService) GetAll() ([]*domain.FollowRequest, error) {
 	return service.store.GetAll()
 }
 
+func (service *FollowService) FollowExist(followRequest *domain.FollowRequest) (bool, error) {
+	return service.store.FollowExist(followRequest)
+}
+
 func (service *FollowService) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
 	return service.store.GetRequestsForUser(username)
 }
@@ -34,6 +38,15 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 		request.Status = 1
 	} else {
 		request.Status = 3
+	}
+
+	isExist, err := service.FollowExist(request)
+	if err != nil {
+		return nil, err
+	}
+
+	if isExist {
+		return nil, fmt.Errorf("You already follow this user!")
 	}
 
 	retFollow, err := service.store.SaveRequest(request)

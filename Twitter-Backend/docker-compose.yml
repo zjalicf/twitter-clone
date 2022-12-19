@@ -96,6 +96,13 @@ services:
     networks:
       - network
 
+#  tweet_db:
+#    image: mongo
+#    container_name: tweet_db
+#    restart: on-failure
+#    networks:
+#      - network
+
   tweet_db:
     image: cassandra
     container_name: tweet_db
