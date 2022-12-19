@@ -1,3 +1,4 @@
+import { HttpBackend } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
@@ -79,9 +80,29 @@ export class UserProfileComponent implements OnInit {
     var followReq = new FollowRequest()
     followReq.receiver = user.username
     if (user.visibility){
-      this.followService.SendRequest("private", followReq).subscribe()
+      this.followService.SendRequest("private", followReq).subscribe(
+        data => {
+          console.log(data.status)
+        }, 
+        error => {
+          if (error.status == 400) {
+            alert("You already follow this user")
+          
+          }
+        }
+        )
     }else {
-      this.followService.SendRequest("public", followReq).subscribe()
+      this.followService.SendRequest("public", followReq).subscribe(
+        data => {
+          console.log(data.status)
+        }, 
+        error => {
+          if (error.status == 400) {
+            alert("You already follow this user")
+          
+          }
+        }
+      )
     }
   }
 
