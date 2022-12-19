@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Tweet } from 'src/app/models/tweet.model';
 import { TweetService } from 'src/app/services/tweet.service';
 
@@ -15,7 +16,8 @@ export class TweetAddComponent implements OnInit {
   });
 
   constructor(private formBuilder: FormBuilder,
-              private tweetService: TweetService) { }
+              private tweetService: TweetService,
+              private router: Router) { }
 
   submitted = false;
 
@@ -41,8 +43,13 @@ export class TweetAddComponent implements OnInit {
     addTweet.text = this.formGroup.get("text")?.value;
 
     this.tweetService.AddTweet(addTweet)
-      .subscribe(data => {
-        alert("Tweet succesfully created!")
+      .subscribe({
+        next: (data: Tweet) => {
+          this.router.navigate(['/Main-Page']);
+        },
+        error: (error) => {
+          console.log(error);
+        }
       })
   }
 
