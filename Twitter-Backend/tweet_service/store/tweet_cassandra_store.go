@@ -45,6 +45,7 @@ func New(logger *log.Logger) (*TweetRepo, error) {
 	cluster.Keyspace = DATABASE
 	cluster.Consistency = gocql.One
 	session, err = cluster.CreateSession()
+
 	if err != nil {
 		logger.Println(err)
 		return nil, err
@@ -86,9 +87,6 @@ func (sr *TweetRepo) CreateTables() {
 	}
 }
 
-//insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
-//(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
-
 func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
 
@@ -101,7 +99,6 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 			sr.logger.Println(err)
 			return nil, err
 		}
-
 		tweets = append(tweets, tweet)
 	}
 
@@ -109,12 +106,12 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 		sr.logger.Println(err)
 		return nil, err
 	}
+
 	return tweets, nil
 }
 
 func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 	query := fmt.Sprintf(`SELECT * FROM tweets_by_user WHERE username = '%s'`, username)
-	fmt.Println(query)
 	scanner := sr.session.Query(query).Iter().Scanner()
 
 	var tweets []*domain.Tweet
@@ -126,7 +123,6 @@ func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 			sr.logger.Println(err)
 			return nil, err
 		}
-
 		tweets = append(tweets, &tweet)
 	}
 
@@ -134,11 +130,12 @@ func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 		sr.logger.Println(err)
 		return nil, err
 	}
+
 	return tweets, nil
 }
 
 func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
-	insertGeneral := fmt.Sprintf("INSERT INTO %s "+
+	insert := fmt.Sprintf("INSERT INTO %s "+
 		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
 
@@ -147,7 +144,7 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
 
 	err := sr.session.Query(
-		insertGeneral, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
+		insert, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
 
 	err = sr.session.Query(
@@ -168,8 +165,8 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	if err != nil {
 		return -1, nil
 	}
+
 	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
-	fmt.Println(query)
 	scanner := sr.session.Query(query).Iter().Scanner()
 
 	var favorites []*domain.Favorite
@@ -242,16 +239,15 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	}
 
 	err = sr.session.Query(
-		`UPDATE tweet SET favorited= ?, favorite_count=? where id=?`, favorited, favoriteCount, id.String()).Exec()
+		`UPDATE tweet SET favorited=?, favorite_count=? where id=?`, favorited, favoriteCount, id.String()).Exec()
 
 	if err != nil {
-
 		sr.logger.Println(err)
 		return 502, err
 	}
 
 	err = sr.session.Query(
-		`UPDATE tweets_by_user SET favorited= ?, favorite_count=? where username=? and created_at=?`,
+		`UPDATE tweets_by_user SET favorited=?, favorite_count=? where username=? and created_at=?`,
 		favorited, favoriteCount, username, createdAt).Exec()
 
 	if err != nil {
