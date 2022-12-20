@@ -78,7 +78,7 @@ func (sr *TweetRepo) CreateTables() {
 			COLLECTION_BY_USER)).Exec()
 
 	err = sr.session.Query(
-		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((id)))",
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
 			COLLECTION_FAVORITE)).Exec()
 
 	if err != nil {
@@ -168,9 +168,9 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	if err != nil {
 		return -1, nil
 	}
-
-	scanner := sr.session.Query(`SELECT count(*) FROM favorite WHERE tweet_id = ? AND username = ?`,
-		id.String(), username).Iter().Scanner()
+	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
+	fmt.Println(query)
+	scanner := sr.session.Query(query).Iter().Scanner()
 
 	var favorites []*domain.Favorite
 
@@ -184,55 +184,80 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 		favorites = append(favorites, &favorite)
 	}
 
-	log.Println(favorites[0])
+	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
 
-	//query := fmt.Sprintf(`SELECT * FROM tweet WHERE tweet_id = '%s'`, id.String())
-	//var tweet domain.Tweet
-	//err = sr.session.Query(query).Scan(&tweet)
-	//
-	//log.Println(tweet)
-	//
-	//if err != nil {
-	//	log.Println("Drugi")
-	//
-	//	sr.logger.Println(err)
-	//	return 502, err
-	//}
-	//
-	//username = tweet.Username
-	//createdAt := tweet.CreatedAt
-	//favoriteCount := tweet.FavoriteCount + 1
-	//
-	//err = sr.session.Query(
-	//	`UPDATE tweet SET favorited=true, favorite_count=? where tweet_id=?`, favoriteCount, id.String()).Exec()
-	//
-	//if err != nil {
-	//	log.Println("Treci")
-	//
-	//	sr.logger.Println(err)
-	//	return 502, err
-	//}
-	//
-	//err = sr.session.Query(
-	//	`UPDATE tweet_by_user SET favorited=true, favorite_count=? where username=? and created_at=?`,
-	//	favoriteCount, username, createdAt).Exec()
-	//
-	//if err != nil {
-	//	log.Println("Cetvrti")
-	//	sr.logger.Println(err)
-	//	return 502, err
-	//}
-	//
-	//insert := fmt.Sprintf("INSERT INTO %s "+"(id, username) "+"VALUES (?, ?)", COLLECTION_FAVORITE)
-	//
-	//err = sr.session.Query(
-	//	insert, tweet.ID.String(), username).Exec()
-	//
-	//if err != nil {
-	//	log.Println("Peti")
-	//	sr.logger.Println(err)
-	//	return 502, err
-	//}
+	var tweets []*domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.RetweetCount,
+			&tweet.Retweeted, &tweet.Text, &tweet.Username)
+		if err != nil {
+			sr.logger.Println(err)
+			return 500, err
+		}
+
+		tweets = append(tweets, &tweet)
+	}
+
+	if len(tweets) == 0 {
+		sr.logger.Println("No such tweet")
+		return 500, nil
+	}
+
+	username = tweets[0].Username
+	favorited := false
+	create := false
+	favoriteCount := 0
+	createdAt := tweets[0].CreatedAt
+
+	if len(favorites) != 0 {
+		favoriteCount = tweets[0].FavoriteCount - 1
+		favorited = false
+		create = false
+	} else {
+		favoriteCount = tweets[0].FavoriteCount + 1
+		favorited = true
+		create = true
+	}
+
+	if create {
+		insert := fmt.Sprintf("INSERT INTO %s "+"(tweet_id, username) "+"VALUES (?, ?)", COLLECTION_FAVORITE)
+
+		err = sr.session.Query(
+			insert, tweets[0].ID.String(), username).Exec()
+
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+	} else {
+		delete := fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s", COLLECTION_FAVORITE, id)
+
+		err = sr.session.Query(delete).Exec()
+
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+	}
+
+	err = sr.session.Query(
+		`UPDATE tweet SET favorited= ?, favorite_count=? where id=?`, favorited, favoriteCount, id.String()).Exec()
+
+	if err != nil {
+
+		sr.logger.Println(err)
+		return 502, err
+	}
+
+	err = sr.session.Query(
+		`UPDATE tweets_by_user SET favorited= ?, favorite_count=? where username=? and created_at=?`,
+		favorited, favoriteCount, username, createdAt).Exec()
+
+	if err != nil {
+		sr.logger.Println(err)
+		return 502, err
+	}
 
 	return 200, nil
 }
