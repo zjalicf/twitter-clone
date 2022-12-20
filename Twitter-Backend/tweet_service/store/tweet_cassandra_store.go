@@ -136,6 +136,35 @@ func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 	return tweets, nil
 }
 
+func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error) {
+	//uuid, err := gocql.RandomUUID()
+	//if err != nil {
+	//	log.Println("ERR IN UUID RANDOMIZE")
+	//	return nil, err
+	//}
+	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ?`, followings)
+	scanner := query.Iter().Scanner()
+	//	.Iter().Scanner()
+	var tweets []*domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.ID,
+			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
+		if err != nil {
+			sr.logger.Println(err)
+			return nil, err
+		}
+
+		tweets = append(tweets, &tweet)
+	}
+
+	if err := scanner.Err(); err != nil {
+		sr.logger.Println(err)
+		return nil, err
+	}
+	return tweets, nil
+}
+
 func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	insertGeneral := fmt.Sprintf("INSERT INTO %s "+
 		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+

@@ -41,6 +41,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
+	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -133,4 +134,14 @@ func Post(handler *TweetHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler.Post(w, r)
 	}
+}
+
+func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
+	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
+	if err != nil {
+		log.Printf("error: %s", err.Error())
+		return
+	}
+
+	jsonResponse(feed, writer)
 }

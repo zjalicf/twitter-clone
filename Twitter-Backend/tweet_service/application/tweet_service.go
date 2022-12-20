@@ -1,9 +1,20 @@
 package application
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gocql/gocql"
+	"io"
+	"log"
+	"net/http"
+	"os"
 	"time"
 	"tweet_service/domain"
+)
+
+var (
+	followServiceHost = os.Getenv("FOLLOW_SERVICE_HOST")
+	followServicePort = os.Getenv("FOLLOW_SERVICE_PORT")
 )
 
 type TweetService struct {
@@ -26,6 +37,35 @@ func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 
 func (service *TweetService) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 	return service.store.GetTweetsByUser(username)
+}
+
+func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error) {
+
+	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
+	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
+	followServiceRequest.Header.Add("Authorization", token)
+	responseFservice, _ := http.DefaultClient.Do(followServiceRequest)
+
+	responseBodyBytes, err := io.ReadAll(responseFservice.Body)
+	if err != nil {
+		log.Printf("error in readAll: %s", err.Error())
+		return nil, err
+	}
+
+	var followingsList []string
+	err = json.Unmarshal(responseBodyBytes, &followingsList)
+	if err != nil {
+		log.Printf("error in unmarshal: %s", err.Error())
+		return nil, err
+	}
+
+	userFeed, err := service.store.GetFeedByUser(followingsList)
+	if err != nil {
+		log.Printf("Error in getting feed by user: %s", err.Error())
+		return nil, err
+	}
+
+	return userFeed, nil
 }
 
 func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain.Tweet, error) {
