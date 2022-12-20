@@ -182,6 +182,8 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 		favorites = append(favorites, &favorite)
 	}
 
+	log.Println(len(favorites))
+
 	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
 
 	var tweets []*domain.Tweet
@@ -202,17 +204,18 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 		return 500, nil
 	}
 
-	username = tweets[0].Username
 	favorited := false
 	create := false
 	favoriteCount := 0
 	createdAt := tweets[0].CreatedAt
 
 	if len(favorites) != 0 {
+		log.Println(214)
 		favoriteCount = tweets[0].FavoriteCount - 1
 		favorited = false
 		create = false
 	} else {
+		log.Println(218)
 		favoriteCount = tweets[0].FavoriteCount + 1
 		favorited = true
 		create = true
@@ -230,9 +233,11 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 			return 502, err
 		}
 	} else {
-		delete := fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE, id, username)
+		log.Println("u delete sam")
+		log.Println(username)
+		deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE, id, username)
 
-		err = sr.session.Query(delete).Exec()
+		err = sr.session.Query(deleteQuery).Exec()
 
 		if err != nil {
 			sr.logger.Println(err)
