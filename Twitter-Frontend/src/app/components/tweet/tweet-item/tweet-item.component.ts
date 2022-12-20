@@ -37,4 +37,8 @@ export class TweetItemComponent implements OnInit {
     }
   }
 
+  likeTweet() {
+    alert("Tweet Liked")
+  }
+
 }
