@@ -69,6 +69,8 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 		return
 	}
 
+	log.Println(tweets)
+
 	jsonResponse(tweets, writer)
 }
 
