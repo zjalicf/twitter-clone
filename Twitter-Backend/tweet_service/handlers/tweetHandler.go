@@ -96,12 +96,6 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//
-	//uuid, err := gocql.ParseUUID(tweet.)
-	//if err != nil {
-	//	writer.WriteHeader(http.StatusInternalServerError)
-	//	return
-	//}
 
 	tweets, err := handler.service.Favorite(tweetID.ID, username)
 
