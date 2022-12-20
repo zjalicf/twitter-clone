@@ -1,4 +1,3 @@
-import { HttpBackend } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
@@ -19,16 +18,14 @@ export class UserProfileComponent implements OnInit {
   loggedInUser = new User();
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
-  
+
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
-              private TweetService: TweetService,
-              private followService: FollowService,
-              private userService: UserService) { }
+              private TweetService: TweetService) { }
 
   ngOnInit(): void {
-    this.UserService.GetOneUserByUsername(this.profileUsername)
+    this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
       .subscribe({
         next: (data: User) => {
           this.user = data;
@@ -83,11 +80,11 @@ export class UserProfileComponent implements OnInit {
       this.followService.SendRequest("private", followReq).subscribe(
         data => {
           console.log(data.status)
-        }, 
+        },
         error => {
           if (error.status == 400) {
             alert("You already follow this user")
-          
+
           }
         }
         )
@@ -95,11 +92,11 @@ export class UserProfileComponent implements OnInit {
       this.followService.SendRequest("public", followReq).subscribe(
         data => {
           console.log(data.status)
-        }, 
+        },
         error => {
           if (error.status == 400) {
             alert("You already follow this user")
-          
+
           }
         }
       )

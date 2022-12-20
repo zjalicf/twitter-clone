@@ -199,7 +199,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 
 	token, err := handler.service.Login(&request)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "Username not exist!", http.StatusBadRequest)
 		return
 	}
 

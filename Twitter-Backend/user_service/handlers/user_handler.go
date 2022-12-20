@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
@@ -179,7 +178,7 @@ func (handler *UserHandler) GetMe(writer http.ResponseWriter, request *http.Requ
 	bearer := request.Header.Get("Authorization")
 	bearerToken := strings.Split(bearer, "Bearer ")
 	tokenString := bearerToken[1]
-	fmt.Println(tokenString)
+
 	token, err := jwt.Parse([]byte(tokenString), verifier)
 	if err != nil {
 		log.Println(err)
