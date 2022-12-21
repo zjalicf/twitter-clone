@@ -15,3 +15,13 @@ type Tweet struct {
 	RetweetCount  int    `json:"retweet_count"`
 	Username      string `json:"username"`
 }
+
+type Favorite struct {
+	TweetID  gocql.UUID `json:"tweet_id"`
+	Username string     `json:"username"`
+	ID       gocql.UUID `json:"id"`
+}
+
+type TweetID struct {
+	ID string `json:"id"`
+}

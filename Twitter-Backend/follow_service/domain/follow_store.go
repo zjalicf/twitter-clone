@@ -9,4 +9,5 @@ type FollowRequestStore interface {
 	AcceptRequest(id primitive.ObjectID) error
 	DeclineRequest(id primitive.ObjectID) error
 	HandleRequest()
+	FollowExist(followRequest *FollowRequest) (bool, error)
 }
