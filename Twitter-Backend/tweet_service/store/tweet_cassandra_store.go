@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	DATABASE           = "tweet"
-	COLLECTION         = "tweet"
-	COLLECTION_BY_USER = "tweets_by_user"
+	DATABASE                = "tweet"
+	COLLECTION              = "tweet"
+	COLLECTION_BY_USER      = "tweets_by_user"
+	COLLECTION_FEED_BY_USER = "feed_by_user"
 )
 
 type TweetRepo struct {
@@ -24,6 +25,7 @@ func New(logger *log.Logger) (*TweetRepo, error) {
 
 	cluster := gocql.NewCluster(db)
 	cluster.Keyspace = "system"
+	cluster.PageSize = 65535
 	session, err := cluster.CreateSession()
 	if err != nil {
 		logger.Println(err)
@@ -48,6 +50,11 @@ func New(logger *log.Logger) (*TweetRepo, error) {
 		logger.Println(err)
 		return nil, err
 	}
+	//err = session.Query(`PAGING OFF`).Exec()
+	//if err != nil {
+	//	log.Println("pagging off cassandra err.")
+	//	return nil, err
+	//}
 
 	return &TweetRepo{
 		session: session,
@@ -68,6 +75,8 @@ func (sr *TweetRepo) CreateTables() {
 					PRIMARY KEY ((id)))`, //for now there is no clustering order!!
 			COLLECTION)).Exec()
 
+	log.Printf("tweet ERROR IN CREATE TABLE EXECUTION : %s", err)
+
 	err = sr.session.Query(
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
 					(id UUID, text text, created_at time, favorited boolean, favorite_count int, retweeted boolean,
@@ -75,6 +84,19 @@ func (sr *TweetRepo) CreateTables() {
 					PRIMARY KEY ((username), created_at))
 					WITH CLUSTERING ORDER BY (created_at DESC)`, //clustering key by creating date and pk for tweet id and user_id
 			COLLECTION_BY_USER)).Exec()
+
+	log.Printf("tweets_by_user ERROR IN CREATE TABLE EXECUTION : %s", err)
+
+	err = sr.session.Query(
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
+					(id UUID, text text, created_at time, favorited boolean, favorite_count int, retweeted boolean,
+					retweet_count int, username text,
+					PRIMARY KEY (username, created_at))
+					WITH CLUSTERING ORDER BY (created_at DESC)`,
+			COLLECTION_FEED_BY_USER)).Exec()
+	if err != nil {
+		log.Printf("feed_by_user ERROR IN CREATE TABLE EXECUTION : %s", err)
+	}
 
 	//err := sr.session.Query(
 	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, text text, PRIMARY KEY ((tweet_id)))",
@@ -85,8 +107,8 @@ func (sr *TweetRepo) CreateTables() {
 	}
 }
 
-//insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
-//(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
+//insert into tweet (id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) values
+//(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', 'test123') ;
 
 func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
@@ -142,9 +164,10 @@ func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error)
 	//	log.Println("ERR IN UUID RANDOMIZE")
 	//	return nil, err
 	//}
-	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ?`, followings)
+	query := sr.session.Query(`SELECT * FROM feed_by_user WHERE username IN ? ORDER BY created_at DESC`, followings)
+	query.PageSize(0)
 	scanner := query.Iter().Scanner()
-	//	.Iter().Scanner()
+
 	var tweets []*domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
@@ -174,12 +197,20 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
 
+	insertFeedByUser := fmt.Sprintf("INSERT INTO %s "+
+		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_FEED_BY_USER)
+
 	err := sr.session.Query(
 		insertGeneral, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
 
 	err = sr.session.Query(
 		insertByUser, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
+		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
+
+	err = sr.session.Query(
+		insertFeedByUser, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username).Exec()
 
 	if err != nil {
