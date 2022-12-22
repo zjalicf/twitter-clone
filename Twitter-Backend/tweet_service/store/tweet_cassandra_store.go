@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	DATABASE            = "tweet"
-	COLLECTION          = "tweet"
-	COLLECTION_BY_USER  = "tweets_by_user"
-	COLLECTION_FAVORITE = "favorite"
+	DATABASE                     = "tweet"
+	COLLECTION                   = "tweet"
+	COLLECTION_BY_USER           = "tweets_by_user"
+	COLLECTION_FAVORITE          = "favorite"
+	COLLECTION_FAVORITE_BY_TWEET = "favorite_by_tweet"
 )
 
 type TweetRepo struct {
@@ -81,6 +82,10 @@ func (sr *TweetRepo) CreateTables() {
 	err = sr.session.Query(
 		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id, username), id))",
 			COLLECTION_FAVORITE)).Exec()
+
+	err = sr.session.Query(
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
+			COLLECTION_FAVORITE_BY_TWEET)).Exec()
 
 	if err != nil {
 		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
@@ -159,14 +164,11 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 }
 
 func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
-
 	id, err := gocql.ParseUUID(tweetID)
-
 	if err != nil {
 		return -1, nil
 	}
 
-	log.Println(username)
 	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
 	scanner := sr.session.Query(query).Iter().Scanner()
 
@@ -182,7 +184,14 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 		favorites = append(favorites, &favorite)
 	}
 
-	log.Println(len(favorites))
+	//Nekako proslediti idList u funkciju GetLikesByTweet
+	//var idList []string
+	//for favorite in favorites
+	//id, err := gocql.ParseUUID(tweetID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//idList[] = append(idList, favorite.id)
 
 	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
 
@@ -231,7 +240,16 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 
 		err = sr.session.Query(
 			insert, idFav.String(), tweets[0].ID.String(), username).Exec()
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
 
+		insert = fmt.Sprintf("INSERT INTO %s "+"(id, tweet_id, username) "+"VALUES (?, ?, ?)", COLLECTION_FAVORITE_BY_TWEET)
+		idFav, _ = gocql.RandomUUID()
+
+		err = sr.session.Query(
+			insert, idFav.String(), tweets[0].ID.String(), username).Exec()
 		if err != nil {
 			sr.logger.Println(err)
 			return 502, err
@@ -247,6 +265,16 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 			sr.logger.Println(err)
 			return 502, err
 		}
+
+		deleteQuery = fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE_BY_TWEET, id, username)
+
+		err = sr.session.Query(deleteQuery).Exec()
+
+		if err != nil {
+			sr.logger.Println(err)
+			return 502, err
+		}
+
 		isDeleted = true
 	}
 
@@ -272,4 +300,32 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	}
 
 	return 201, nil
+}
+
+func (sr *TweetRepo) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error) {
+	id, err := gocql.ParseUUID(tweetID)
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf(`SELECT * FROM favorite_by_tweet WHERE tweet_id = %s`, id.String())
+	scanner := sr.session.Query(query).Iter().Scanner()
+
+	var favorites []*domain.Favorite
+	for scanner.Next() {
+		var favorite domain.Favorite
+		err := scanner.Scan(&favorite.TweetID, &favorite.Username, &favorite.ID)
+		if err != nil {
+			sr.logger.Println(err)
+			return nil, err
+		}
+		favorites = append(favorites, &favorite)
+	}
+
+	if err := scanner.Err(); err != nil {
+		sr.logger.Println(err)
+		return nil, err
+	}
+
+	return favorites, nil
 }

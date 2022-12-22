@@ -9,9 +9,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatFormFieldControl, MatFormFieldModule} from '@angular/material/form-field';
 import {MatSelectModule} from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -37,6 +38,8 @@ import { NotFoundComponent } from './components/not-found/not-found.component';
 import { FollowRequestsComponent } from './components/my-follow-requests/follow-requests.component';
 import { FollowRequestItemComponent } from './components/follow-request/follow-request-item/follow-request-item.component';
 import { FollowRequestListComponent } from './components/follow-request/follow-request-list/follow-request-list.component';
+import { TweetLikesDialogComponent } from './components/tweet/tweet-likes-dialog/tweet-likes-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   declarations: [
@@ -61,7 +64,8 @@ import { FollowRequestListComponent } from './components/follow-request/follow-r
     NotFoundComponent,
     FollowRequestsComponent,
     FollowRequestItemComponent,
-    FollowRequestListComponent
+    FollowRequestListComponent,
+    TweetLikesDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -77,7 +81,9 @@ import { FollowRequestListComponent } from './components/follow-request/follow-r
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatDividerModule
+    MatDividerModule,
+    MatDialogModule,
+    BrowserAnimationsModule,
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,

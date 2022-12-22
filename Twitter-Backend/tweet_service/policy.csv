@@ -3,3 +3,4 @@ p, Business, /, POST
 p, Regular, /, GET
 p, Regular, /user/*, GET
 p, Regular, /favorite, POST
+p, Regular, /whoLiked/*, GET

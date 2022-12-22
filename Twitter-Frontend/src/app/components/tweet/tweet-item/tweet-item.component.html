@@ -11,7 +11,8 @@
       <button (click)="likeTweet(tweet)" mat-icon-button color="warn">
         <mat-icon class="favorite-icon">favorite</mat-icon>
       </button>
-      <b>{{tweet.favorite_count}}</b>
+      <b class="total-likes">{{tweet.favorite_count}}</b>
+      <button mat-icon-button color="warn" class="who-liked" (click)="openDialog()">Likes</button>
       <!-- <button mat-icon-button class="favorite-border-icon">
         <mat-icon>favorite_border</mat-icon>
       </button> -->
