@@ -80,17 +80,19 @@ func (sr *TweetRepo) CreateTables() {
 			COLLECTION_BY_USER)).Exec()
 
 	err = sr.session.Query(
-		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id, username), id))",
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
 			COLLECTION_FAVORITE)).Exec()
 
-	err = sr.session.Query(
-		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
-			COLLECTION_FAVORITE_BY_TWEET)).Exec()
+	//err = sr.session.Query(
+	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
+	//		COLLECTION_FAVORITE_BY_TWEET)).Exec()
 
 	if err != nil {
 		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
 	}
 }
+
+//CREATE TABLE IF NOT EXISTS test1 (id int, tweet_id int, username text, PRIMARY KEY ((tweet_id, username)))
 
 func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
@@ -245,15 +247,15 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 			return 502, err
 		}
 
-		insert = fmt.Sprintf("INSERT INTO %s "+"(id, tweet_id, username) "+"VALUES (?, ?, ?)", COLLECTION_FAVORITE_BY_TWEET)
-		idFav, _ = gocql.RandomUUID()
-
-		err = sr.session.Query(
-			insert, idFav.String(), tweets[0].ID.String(), username).Exec()
-		if err != nil {
-			sr.logger.Println(err)
-			return 502, err
-		}
+		//insert = fmt.Sprintf("INSERT INTO %s "+"(id, tweet_id, username) "+"VALUES (?, ?, ?)", COLLECTION_FAVORITE_BY_TWEET)
+		//idFav, _ = gocql.RandomUUID()
+		//
+		//err = sr.session.Query(
+		//	insert, idFav.String(), tweets[0].ID.String(), username).Exec()
+		//if err != nil {
+		//	sr.logger.Println(err)
+		//	return 502, err
+		//}
 	} else {
 		log.Println("u delete sam")
 		log.Println(username)
@@ -266,14 +268,14 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 			return 502, err
 		}
 
-		deleteQuery = fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE_BY_TWEET, id, username)
-
-		err = sr.session.Query(deleteQuery).Exec()
-
-		if err != nil {
-			sr.logger.Println(err)
-			return 502, err
-		}
+		//deleteQuery = fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE_BY_TWEET, id, username)
+		//
+		//err = sr.session.Query(deleteQuery).Exec()
+		//
+		//if err != nil {
+		//	sr.logger.Println(err)
+		//	return 502, err
+		//}
 
 		isDeleted = true
 	}
@@ -308,7 +310,7 @@ func (sr *TweetRepo) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error)
 		return nil, err
 	}
 
-	query := fmt.Sprintf(`SELECT * FROM favorite_by_tweet WHERE tweet_id = %s`, id.String())
+	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s`, id.String())
 	scanner := sr.session.Query(query).Iter().Scanner()
 
 	var favorites []*domain.Favorite
