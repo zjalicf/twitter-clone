@@ -1,10 +1,10 @@
 <mat-card class="my-profile-card">
     <mat-card-title class="username">{{user.username}}</mat-card-title>
-    <h2 class="first-name"><b>First Name: </b>{{user.firstName}}</h2>
-    <h2 class="last-name"><b>Last Name: </b>{{user.lastName}}</h2>
-    <h2 class="residence"><b>Residence: </b>{{user.residence}}</h2>
-    <h2 class="gender"><b>Gender: </b>{{user.gender}}</h2>
-    <h2 class="age"><b>Age: </b>{{user.age}}</h2>
+    <h2 class="first-name" *ngIf="user.userType == 'Regular'"><b>First Name: </b>{{user.firstName}}</h2>
+    <h2 class="last-name" *ngIf="user.userType == 'Regular'"><b>Last Name: </b>{{user.lastName}}</h2>
+    <h2 class="first-name" *ngIf="user.userType == 'Business'"><b>Company Name: </b>{{user.companyName}}</h2>
+    <h2 class="last-name" *ngIf="user.userType == 'Business'"><b>Website: </b>{{user.website}}</h2>
+    <h2 class="residence" *ngIf="user.userType == 'Regular'"><b>Residence: </b>{{user.residence}}</h2>
     <mat-card-actions class="user-profile-options-card">
         <div>
             <button *ngIf="!isThatMe()" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
