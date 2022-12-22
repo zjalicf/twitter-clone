@@ -4,6 +4,7 @@ import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { AddTweetDTO } from "../dto/addTweetDTO";
 import { TweetID } from "../dto/tweetIdDTO";
+import { Favorite } from "../models/favorite.model";
 import { Tweet } from "../models/tweet.model";
 
 @Injectable({
@@ -20,13 +21,7 @@ import { Tweet } from "../models/tweet.model";
         }
 
         public GetAllTweets(): Observable<any> {
-            let headers = new HttpHeaders({
-                "Content-Type":"application/json",
-                "Authorization": "" + localStorage.getItem("authToken")
-            })
-            let options = {headers: headers}
-            console.log(localStorage.getItem("authToken"))
-            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/`, options);
+            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/`);
         }
     
         public GetTweetsForUser(username: string): Observable<any> {
@@ -35,6 +30,10 @@ import { Tweet } from "../models/tweet.model";
 
         public LikeTweet(tweetID: TweetID): Observable<any> {
             return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/favorite`, tweetID)
+        }
+
+        public GetLikesByTweet(tweetID: string): Observable<Favorite[]> {
+            return this.http.get<Favorite[]>(`${environment.baseApiUrl}/${this.url}/whoLiked/` + tweetID)
         }
 
     }

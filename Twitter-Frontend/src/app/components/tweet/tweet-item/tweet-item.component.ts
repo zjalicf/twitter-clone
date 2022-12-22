@@ -7,6 +7,8 @@ import { UserService } from 'src/app/services/user.service';
 import {MatDialog} from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
+import { Favorite } from 'src/app/models/favorite.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tweet-item',
@@ -21,15 +23,14 @@ export class TweetItemComponent implements OnInit {
 
    @Input() tweet: Tweet = new Tweet();
 
-   @Input() testUsers: User[] = [];
+   likesByTweet: Favorite[] = [];
 
    loggedInUser: User = new User();
    tweetID: TweetID = new TweetID();
-   usernames: string[] = ["Milan", "Petar"]
    totalLikes: number = 0
 
   ngOnInit(): void {
-    this.totalLikes = this.tweet.favorite_count
+    this.totalLikes = this.tweet.favorite_count;
 
     this.userService.GetMe()
       .subscribe({
@@ -41,8 +42,25 @@ export class TweetItemComponent implements OnInit {
         }
       });
 
-      this.testUsers.push(this.loggedInUser);
+      this.tweetService.GetLikesByTweet(this.tweet.id)
+        .subscribe({
+          next: (data) => {
+            this.likesByTweet = data;
+          },
+          error: (error) => {
+            console.log(error);
+          }
+        })
   }
+
+  // isLiked(): boolean {
+  //   for (let favorite of this.likesByTweet) {
+  //     if (favorite.username == this.loggedInUser.username) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 
   isThatMe(): boolean {
     if (this.tweet.username == this.loggedInUser.username) {
@@ -54,27 +72,26 @@ export class TweetItemComponent implements OnInit {
 
   likeTweet(tweet: Tweet) {
     this.tweetID.id = tweet.id
-    console.log(this.tweetID)
-    console.log(tweet)
     this.tweetService.LikeTweet(this.tweetID).subscribe(
       {next : (data) => {
+        console.log(data)
           if (data == 201) {
-            this.totalLikes =+ 1
-            alert("Tweet Liked")
+            this.tweet.favorite_count++
 
           }else{
-            this.totalLikes =- 1
-            alert("Tweet Unliked")
+            this.tweet.favorite_count--
           } 
       }});
   }
 
   openDialog(): void {
     const dialogRef = this.dialog.open(TweetLikesDialogComponent, {
-      data: this.loggedInUser,
+      data: this.likesByTweet,
     });
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
+      if (result == "username") {
+        this.dialog.closeAll();
+      }
     });
   }
 }
