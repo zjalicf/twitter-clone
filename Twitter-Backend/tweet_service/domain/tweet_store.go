@@ -1,7 +1,5 @@
 package domain
 
-import "github.com/gocql/gocql"
-
 type TweetStore interface {
 	//Get(id primitive.ObjectID) (*Tweet, error)
 	GetAll() ([]Tweet, error)
