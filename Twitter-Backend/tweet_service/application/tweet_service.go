@@ -28,6 +28,10 @@ func (service *TweetService) GetTweetsByUser(username string) ([]*domain.Tweet, 
 	return service.store.GetTweetsByUser(username)
 }
 
+func (service *TweetService) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error) {
+	return service.store.GetLikesByTweet(tweetID)
+}
+
 func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain.Tweet, error) {
 	tweet.ID, _ = gocql.RandomUUID()
 	tweet.CreatedAt = time.Now().Unix()

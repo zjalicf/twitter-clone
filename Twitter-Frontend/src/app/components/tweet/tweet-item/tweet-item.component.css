@@ -29,3 +29,12 @@
 .favorite-icon {
   transform: scale(1.5);
 }
+
+.total-likes {
+  margin-left: 10px;
+}
+
+.who-liked {
+  font-size: 15px;
+  margin-left: 10px;
+}
