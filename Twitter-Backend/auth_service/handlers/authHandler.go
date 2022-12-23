@@ -199,7 +199,12 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 
 	token, err := handler.service.Login(&request)
 	if err != nil {
+		if err.Error() == errors.NotVerificatedUser {
+			http.Error(writer, token, http.StatusLocked)
+			return
+		}
 		http.Error(writer, "Username not exist!", http.StatusBadRequest)
+
 		return
 	}
 

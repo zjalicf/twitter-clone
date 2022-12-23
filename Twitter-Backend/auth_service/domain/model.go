@@ -10,16 +10,17 @@ import (
 )
 
 type User struct {
-	ID        primitive.ObjectID `bson:"_id" json:"id"`
-	Firstname string             `bson:"firstName,omitempty" json:"firstName,omitempty" validate:"onlyChar"`
-	Lastname  string             `bson:"lastName,omitempty" json:"lastName,omitempty" validate:"onlyChar"`
-	Gender    Gender             `bson:"gender,omitempty" json:"gender,omitempty" validate:"onlyChar"`
-	Age       int                `bson:"age,omitempty" json:"age,omitempty"`
-	Residence string             `bson:"residence,omitempty" json:"residence,omitempty" validate:"onlyCharAndNum"`
-	Email     string             `bson:"email" json:"email" validate:"required,email"`
-	Username  string             `bson:"username" json:"username" validate:"onlyCharAndNum,required"`
-	Password  string             `bson:"password" json:"password" validate:"onlyCharAndNum,required"`
-	UserType  UserType           `bson:"userType" json:"userType" validate:"onlyChar"`
+	ID         primitive.ObjectID `bson:"_id" json:"id"`
+	Firstname  string             `bson:"firstName,omitempty" json:"firstName,omitempty" validate:"onlyChar"`
+	Lastname   string             `bson:"lastName,omitempty" json:"lastName,omitempty" validate:"onlyChar"`
+	Gender     Gender             `bson:"gender,omitempty" json:"gender,omitempty" validate:"onlyChar"`
+	Age        int                `bson:"age,omitempty" json:"age,omitempty"`
+	Residence  string             `bson:"residence,omitempty" json:"residence,omitempty" validate:"onlyCharAndNum"`
+	Email      string             `bson:"email" json:"email" validate:"required,email"`
+	Username   string             `bson:"username" json:"username" validate:"onlyCharAndNum,required"`
+	Password   string             `bson:"password" json:"password" validate:"onlyCharAndNum,required"`
+	UserType   UserType           `bson:"userType" json:"userType" validate:"onlyChar"`
+	Visibility bool               `bson:"visibility" json:"visibility"`
 
 	CompanyName string `bson:"companyName,omitempty" json:"companyName,omitempty" validation:"onlyCharAndNum"`
 	Website     string `bson:"website,omitempty" json:"website,omitempty" validate:"onlyCharAndNum"`
@@ -44,6 +45,7 @@ type Credentials struct {
 	Username string             `bson:"username" json:"username"`
 	Password string             `bson:"password" json:"password"`
 	UserType UserType           `bson:"userType" json:"userType"`
+	Verified bool               `bson:"verified" json:"verified"`
 }
 
 type PasswordChange struct {

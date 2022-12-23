@@ -43,11 +43,23 @@ func NewAuthService(store domain.AuthStore, cache domain.AuthCache) *AuthService
 	}
 }
 
-func (service *AuthService) GetAll() ([]*domain.User, error) {
+func (service *AuthService) GetAll() ([]*domain.Credentials, error) {
 	return service.store.GetAll()
 }
 
 func (service *AuthService) Register(user *domain.User) (string, int, error) {
+	_, err := service.store.GetOneUser(user.Username)
+	if err == nil {
+		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
+	}
+
+	userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
+	userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
+	response, _ := http.DefaultClient.Do(userServiceRequestMail)
+	if response.StatusCode != 404 {
+		return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
+	}
+
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
@@ -63,9 +75,6 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
 	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
 	responseUser, _ := http.DefaultClient.Do(userServiceRequest)
-	//if err != nil {
-	//	return "",500, err
-	//}
 
 	if responseUser.StatusCode != 200 {
 		buf := new(strings.Builder)
@@ -84,6 +93,7 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 		Username: user.Username,
 		Password: user.Password,
 		UserType: newUser.UserType,
+		Verified: false,
 	}
 
 	err = service.store.Register(&credentials)
@@ -133,11 +143,22 @@ func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVeri
 	}
 
 	if validation.MailToken == token {
-		err := service.cache.DelCachedValue(validation.UserToken)
+		err = service.cache.DelCachedValue(validation.UserToken)
 		if err != nil {
 			log.Printf("error in deleting cached value: %s", err)
 			return err
 		}
+
+		userID, err := primitive.ObjectIDFromHex(validation.UserToken)
+		user := service.store.GetOneUserByID(userID)
+		user.Verified = true
+
+		err = service.store.UpdateUser(user)
+		if err != nil {
+			log.Printf("error in updating user after changing status of verify: %s", err.Error())
+			return err
+		}
+
 		return nil
 	}
 
@@ -145,7 +166,6 @@ func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVeri
 }
 
 func (service *AuthService) ResendVerificationToken(request *domain.ResendVerificationRequest) error {
-
 	if len(request.UserMail) == 0 {
 		log.Println(errors.InvalidResendMailError)
 		return fmt.Errorf(errors.InvalidResendMailError)
@@ -155,11 +175,13 @@ func (service *AuthService) ResendVerificationToken(request *domain.ResendVerifi
 
 	err := service.cache.PostCacheData(request.UserToken, tokenUUID.String())
 	if err != nil {
+		log.Println("POST CACHE DATA PROBLEM")
 		return err
 	}
 
 	err = sendValidationMail(tokenUUID, request.UserMail)
 	if err != nil {
+		log.Println("SEND VALIDATION MAIL PROBLEM")
 		return err
 	}
 
@@ -251,7 +273,7 @@ func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPassw
 	}
 	credentials.Password = string(hash)
 
-	err = service.store.ChangePassword(credentials)
+	err = service.store.UpdateUser(credentials)
 	if err != nil {
 		return err
 	}
@@ -266,9 +288,37 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 		return "", err
 	}
 
+	if !user.Verified {
+		userServiceEndpoint := fmt.Sprintf("http://%s:%s/%s", userServiceHost, userServicePort, user.ID.Hex())
+		userServiceRequest, _ := http.NewRequest("GET", userServiceEndpoint, nil)
+		response, _ := http.DefaultClient.Do(userServiceRequest)
+		if response.StatusCode != 200 {
+			if response.StatusCode == 404 {
+				return "", fmt.Errorf("user doesn't exist")
+			}
+		}
+
+		var userUser domain.User
+		err := responseToType(response.Body, &userUser)
+		if err != nil {
+			return "", err
+		}
+
+		verify := domain.ResendVerificationRequest{
+			UserToken: user.ID.Hex(),
+			UserMail:  userUser.Email,
+		}
+
+		err = service.ResendVerificationToken(&verify)
+		if err != nil {
+			return "", err
+		}
+
+		return user.ID.Hex(), fmt.Errorf(errors.NotVerificatedUser)
+	}
+
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if passError != nil {
-		fmt.Println(passError)
 		return "not_same", err
 	}
 
@@ -284,18 +334,20 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 func responseToType(response io.ReadCloser, user *domain.User) error {
 	responseBodyBytes, err := io.ReadAll(response)
 	if err != nil {
+		log.Printf("err in readAll %s", err.Error())
 		return err
 	}
 
 	err = json.Unmarshal(responseBodyBytes, &user)
 	if err != nil {
+		log.Printf("err in Unmarshal %s", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func GenerateJWT(user *domain.User) (string, error) {
+func GenerateJWT(user *domain.Credentials) (string, error) {
 
 	key := []byte(os.Getenv("SECRET_KEY"))
 	signer, err := jwt.NewSignerHS(jwt.HS256, key)
@@ -327,14 +379,10 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 
 	username := claims["username"]
 
-	fmt.Println(username)
-
 	user, err := service.store.GetOneUser(username)
 	if err != nil {
 		log.Println(err)
 	}
-
-	fmt.Printf("Old password: %s", user.Password)
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password.OldPassword))
 	if err != nil {
@@ -354,11 +402,9 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 			return "hashErr"
 		}
 
-		fmt.Printf("New password: %s", newEncryptedPassword)
-
 		user.Password = string(newEncryptedPassword)
 
-		err = service.store.ChangePassword(user)
+		err = service.store.UpdateUser(user)
 		if err != nil {
 			return "baseErr"
 		}

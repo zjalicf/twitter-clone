@@ -87,12 +87,14 @@ func (handler *UserHandler) Get(writer http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id, ok := vars["id"]
 	if !ok {
+		log.Println("id get err")
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
+		log.Println("primitive get err")
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
