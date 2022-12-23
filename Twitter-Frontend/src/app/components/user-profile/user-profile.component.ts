@@ -22,7 +22,8 @@ export class UserProfileComponent implements OnInit {
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
-              private TweetService: TweetService) { }
+              private TweetService: TweetService,
+              private followService: FollowService) { }
 
   ngOnInit(): void {
     this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
@@ -46,7 +47,7 @@ export class UserProfileComponent implements OnInit {
         }
       });
 
-    this.userService.GetMe()
+    this.UserService.GetMe()
     .subscribe({
       next: (data: User) => {
         this.loggedInUser = data;

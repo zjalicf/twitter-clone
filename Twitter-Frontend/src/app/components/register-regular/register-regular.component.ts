@@ -7,6 +7,7 @@ import * as readline from 'readline';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
 import { VerificationService } from 'src/app/services/verify.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-register-regular',
@@ -96,8 +97,10 @@ export class RegisterRegularComponent implements OnInit {
           this.verificationService.updateVerificationToken(verificationToken);
           this.router.navigate(['/Verify-Account']);
         },
-        error: (error) => {
-          console.log(error)
+        error: (error: HttpErrorResponse) => {
+          if (error.status == 406) {
+            alert(error.error)
+          }
         }
       });
   }

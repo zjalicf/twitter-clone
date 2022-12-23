@@ -1,10 +1,11 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginDTO } from 'src/app/dto/loginDTO';
 import { AuthService } from 'src/app/services/auth.service';
 import { MainPageComponent } from '../main-page/main-page.component';
+import { VerificationService } from 'src/app/services/verify.service';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private formBuilder: FormBuilder,
+    private verificationService: VerificationService,
     // private headers: Headers
   ) { }
 
@@ -56,8 +58,17 @@ export class LoginComponent implements OnInit {
           localStorage.setItem('authToken', token);
           this.router.navigate(['/Main-Page']);
         },
-        error: (error) => {
-          this.formGroup.setErrors({ unauthenticated: true });
+        error: (error: HttpErrorResponse) => {
+          if (error.status == 423) {
+            let id = error.error.substring(0, error.error.length-1)
+            alert("Your account is locked, because you didn't verificate over email. We are sent mail with token, and you will be redirected to verification page.");
+            this.verificationService.updateVerificationToken(id);
+            this.router.navigate(['/Verify-Account']);
+            
+          }else{
+            this.formGroup.setErrors({ unauthenticated: true });
+          }
+          
         }
       });
 
