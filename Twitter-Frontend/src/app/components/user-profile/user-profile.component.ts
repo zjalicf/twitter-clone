@@ -19,14 +19,14 @@ export class UserProfileComponent implements OnInit {
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
 
-  constructor(private userService: UserService,
+  constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
               private TweetService: TweetService,
               private followService: FollowService) { }
 
   ngOnInit(): void {
-    this.userService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
+    this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
       .subscribe({
         next: (data: User) => {
           this.user = data;
@@ -47,7 +47,7 @@ export class UserProfileComponent implements OnInit {
         }
       });
 
-    this.userService.GetMe()
+    this.UserService.GetMe()
     .subscribe({
       next: (data: User) => {
         this.loggedInUser = data;

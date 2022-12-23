@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -72,8 +73,10 @@ export class RegisterBusinessComponent implements OnInit {
           this.verificationService.updateVerificationToken(verificationToken);
           this.router.navigate(['/Verify-Account']);
         },
-        error: (error) => {
-          console.log(error)
+        error: (error: HttpErrorResponse) => {
+          if (error.status == 406) {
+            alert(error.error)
+          }
         }
       });
   }

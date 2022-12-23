@@ -3,9 +3,9 @@ package domain
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type AuthStore interface {
-	GetAll() ([]*User, error)
+	GetAll() ([]*Credentials, error)
 	Register(user *Credentials) error
-	GetOneUser(username string) (*User, error)
-	GetOneUserByID(id primitive.ObjectID) *User
-	ChangePassword(user *User) error
+	GetOneUser(username string) (*Credentials, error)
+	GetOneUserByID(id primitive.ObjectID) *Credentials
+	UpdateUser(user *Credentials) error
 }

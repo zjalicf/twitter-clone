@@ -18,7 +18,7 @@ type AuthMongoDBStore struct {
 	credentials *mongo.Collection
 }
 
-func (store *AuthMongoDBStore) GetAll() ([]*domain.User, error) {
+func (store *AuthMongoDBStore) GetAll() ([]*domain.Credentials, error) {
 	filter := bson.D{{}}
 	return store.filter(filter)
 }
@@ -41,7 +41,7 @@ func (store *AuthMongoDBStore) Register(user *domain.Credentials) error {
 	return nil
 }
 
-func (store *AuthMongoDBStore) ChangePassword(user *domain.User) error {
+func (store *AuthMongoDBStore) UpdateUser(user *domain.Credentials) error {
 
 	fmt.Println(user)
 	newState, err := store.credentials.UpdateOne(context.TODO(), bson.M{"_id": user.ID}, bson.M{"$set": user})
@@ -52,7 +52,7 @@ func (store *AuthMongoDBStore) ChangePassword(user *domain.User) error {
 	return nil
 }
 
-func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error) {
+func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.Credentials, error) {
 	filter := bson.M{"username": username}
 
 	user, err := store.filterOne(filter)
@@ -63,10 +63,10 @@ func (store *AuthMongoDBStore) GetOneUser(username string) (*domain.User, error)
 	return user, nil
 }
 
-func (store *AuthMongoDBStore) GetOneUserByID(id primitive.ObjectID) *domain.User {
+func (store *AuthMongoDBStore) GetOneUserByID(id primitive.ObjectID) *domain.Credentials {
 	filter := bson.M{"_id": id}
 
-	var user domain.User
+	var user domain.Credentials
 	err := store.credentials.FindOne(context.TODO(), filter, nil).Decode(&user)
 	if err != nil {
 		return nil
@@ -75,7 +75,7 @@ func (store *AuthMongoDBStore) GetOneUserByID(id primitive.ObjectID) *domain.Use
 	return &user
 }
 
-func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.User, error) {
+func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.Credentials, error) {
 	cursor, err := store.credentials.Find(context.TODO(), filter)
 	defer cursor.Close(context.TODO())
 
@@ -85,15 +85,15 @@ func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.User, error
 	return decode(cursor)
 }
 
-func (store *AuthMongoDBStore) filterOne(filter interface{}) (user *domain.User, err error) {
+func (store *AuthMongoDBStore) filterOne(filter interface{}) (user *domain.Credentials, err error) {
 	result := store.credentials.FindOne(context.TODO(), filter)
 	err = result.Decode(&user)
 	return
 }
 
-func decode(cursor *mongo.Cursor) (users []*domain.User, err error) {
+func decode(cursor *mongo.Cursor) (users []*domain.Credentials, err error) {
 	for cursor.Next(context.TODO()) {
-		var user domain.User
+		var user domain.Credentials
 		err = cursor.Decode(&user)
 		if err != nil {
 			return
