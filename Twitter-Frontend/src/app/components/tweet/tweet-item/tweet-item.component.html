@@ -8,14 +8,18 @@
     <mat-card-subtitle class="tweet-text">{{tweet.text}}</mat-card-subtitle>
     <img class="tweet-image" mat-card-image src="https://time.com/wp-content/uploads/2017/10/229-westerlund-21.jpg?w=2000">
     <mat-card-actions>
-      <button (click)="likeTweet(tweet)" mat-icon-button color="warn">
+
+      <button *ngIf="isLiked" (click)="likeTweet(tweet)" mat-icon-button color="warn">
         <mat-icon class="favorite-icon">favorite</mat-icon>
       </button>
+
+      <button *ngIf="!isLiked" (click)="likeTweet(tweet)" mat-icon-button color="warn">
+        <mat-icon class="favorite-icon">favorite_border</mat-icon>
+      </button>
+
       <b class="total-likes">{{tweet.favorite_count}}</b>
       <button mat-icon-button color="warn" class="who-liked" (click)="openDialog()">Likes</button>
-      <!-- <button *ngIf="!isLiked()" (click)="likeTweet(tweet)" mat-icon-button color="warn">
-        <mat-icon class="favorite-icon">favorite_border</mat-icon>
-      </button> -->
+
     </mat-card-actions>
 </mat-card>
 

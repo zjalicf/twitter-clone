@@ -121,8 +121,9 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	jsonResponse(tweets, writer)
 	writer.WriteHeader(http.StatusOK)
+	jsonResponse(tweets, writer)
+
 }
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
