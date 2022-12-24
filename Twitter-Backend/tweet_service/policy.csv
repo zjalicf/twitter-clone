@@ -8,3 +8,6 @@ p, Business, /, GET
 p, Business, /user/*, GET
 p, Business, /favorite, POST
 p, Business, /whoLiked/*, GET
+p, Regular, /feed, GET
+p, Business, /feed, GET
+

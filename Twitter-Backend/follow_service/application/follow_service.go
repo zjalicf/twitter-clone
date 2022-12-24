@@ -25,6 +25,22 @@ func (service *FollowService) FollowExist(followRequest *domain.FollowRequest) (
 	return service.store.FollowExist(followRequest)
 }
 
+func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, error) {
+	followings, err := service.store.GetFollowingsOfUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	var usernameList []*string
+	for i := 0; i < len(followings); i++ {
+		usernameList = append(usernameList, &followings[i].Receiver)
+	}
+	log.Println("LIST OF USERNAMES FOLLOW SERVICE: ")
+	log.Println(usernameList)
+	usernameList = append(usernameList, &username)
+	return usernameList, nil
+}
+
 func (service *FollowService) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
 	return service.store.GetRequestsForUser(username)
 }

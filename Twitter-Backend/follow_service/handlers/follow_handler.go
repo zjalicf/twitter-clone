@@ -36,6 +36,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
+	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
 
 	http.Handle("/", router)
 	log.Println("Successful")
@@ -69,6 +70,21 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 	fmt.Println(returnRequests)
 
 	jsonResponse(returnRequests, writer)
+}
+
+func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, req *http.Request) {
+
+	token, _ := authorization.GetToken(req)
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	users, err := handler.service.GetFollowingsOfUser(username)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(users, writer)
 }
 
 //func (handler *FollowHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
