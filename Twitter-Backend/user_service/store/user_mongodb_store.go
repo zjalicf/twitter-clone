@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"user_service/domain"
 )
@@ -15,7 +16,8 @@ const (
 )
 
 type UserMongoDBStore struct {
-	users *mongo.Collection
+	Tracer trace.Tracer
+	users  *mongo.Collection
 }
 
 func NewUserMongoDBStore(client *mongo.Client) domain.UserStore {

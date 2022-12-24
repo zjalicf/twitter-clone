@@ -34,7 +34,7 @@ func NewUserHandler(service *application.UserService) *UserHandler {
 func (handler *UserHandler) Init(router *mux.Router) {
 
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	log.Println("sucessful init of enforcer")
+	log.Println("successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}

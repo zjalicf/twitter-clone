@@ -15,9 +15,12 @@ services:
       TWEET_DB: ${TWEET_DB}
       TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
-       tweet_db:
-         condition: service_healthy
+      jaeger:
+        condition: service_healthy  #Ovo je pitanje da li moze ovako
+      tweet_db:
+        condition: service_healthy
     networks:
       - network
 
@@ -35,8 +38,10 @@ services:
       USER_DB_PORT: ${USER_DB_PORT}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - user_db
+      - jaeger
     networks:
       - network
 
@@ -60,9 +65,11 @@ services:
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SMTP_AUTH_MAIL: ${SMTP_AUTH_MAIL}
       SMTP_AUTH_PASSWORD: ${SMTP_AUTH_PASSWORD}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - auth_db
       - auth_cache
+      - jaeger
     networks:
       - network
 
@@ -80,8 +87,10 @@ services:
       FOLLOW_DB_PORT: ${FOLLOW_DB_PORT}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - follow_db
+      - jaeger
     networks:
       - network
 
@@ -154,6 +163,22 @@ services:
       - network
     volumes:
       - auth_cache:/data
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - network
+
+  collector:
+    image: otel/opentelemetry-collector:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./api_gateway/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - network
 
 volumes:
   cassandra_store:
