@@ -74,10 +74,9 @@ export class TweetItemComponent implements OnInit {
     this.tweetID.id = tweet.id
     this.tweetService.LikeTweet(this.tweetID).subscribe(
       {next : (data) => {
-        console.log(data)
+        console.log(data.status)
           if (data == 201) {
             this.tweet.favorite_count++
-
           }else{
             this.tweet.favorite_count--
           } 
