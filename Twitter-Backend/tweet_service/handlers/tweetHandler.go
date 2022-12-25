@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
-	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -167,6 +166,7 @@ func Post(handler *TweetHandler) http.HandlerFunc {
 }
 
 func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
+	log.Println(req.Header.Get("Authorization"))
 	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("error: %s", err.Error())

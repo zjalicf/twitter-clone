@@ -78,6 +78,7 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
+	log.Printf("username is: %s", username)
 	users, err := handler.service.GetFollowingsOfUser(username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -86,23 +87,6 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 
 	jsonResponse(users, writer)
 }
-
-//func (handler *FollowHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
-//	vars := mux.Vars(req)
-//	username, ok := vars["username"]
-//	if !ok {
-//		writer.WriteHeader(http.StatusBadRequest)
-//		return
-//	}
-//
-//	tweets, err := handler.service.GetTweetsByUser(username)
-//	if err != nil {
-//		writer.WriteHeader(http.StatusInternalServerError)
-//		return
-//	}
-//
-//	jsonResponse(tweets, writer)
-//}
 
 //	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
 //		vars := mux.Vars(req)
