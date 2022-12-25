@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	DATABASE           = "tweet"
-	COLLECTION         = "tweet"
-	COLLECTION_BY_USER = "tweets_by_user"
-	COLLECTION_FAVORITE          = "favorite"
+	DATABASE                = "tweet"
+	COLLECTION              = "tweet"
+	COLLECTION_BY_USER      = "tweets_by_user"
+	COLLECTION_FAVORITE     = "favorite"
 	COLLECTION_FEED_BY_USER = "feed_by_user"
 )
 
@@ -163,11 +163,9 @@ func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
 }
 
 func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error) {
-	//uuid, err := gocql.RandomUUID()
-	//if err != nil {
-	//	log.Println("ERR IN UUID RANDOMIZE")
-	//	return nil, err
-	//}
+
+	fmt.Println(followings)
+
 	query := sr.session.Query(`SELECT * FROM feed_by_user WHERE username IN ? ORDER BY created_at DESC`, followings)
 	query.PageSize(0)
 	scanner := query.Iter().Scanner()
@@ -390,4 +388,3 @@ func (sr *TweetRepo) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error)
 
 	return favorites, nil
 }
-
