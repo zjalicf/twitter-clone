@@ -170,8 +170,14 @@ func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http
 	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("error: %s", err.Error())
+		if err.Error() == "FollowServiceError" {
+			http.Error(writer, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
-	}
+	} else {
+		jsonResponse(feed, writer)
 
-	jsonResponse(feed, writer)
+	}
 }

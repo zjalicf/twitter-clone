@@ -14,12 +14,14 @@ import (
 )
 
 type FollowHandler struct {
-	service *application.FollowService
+	service            *application.FollowService
+	counterUnavailable int
 }
 
 func NewFollowHandler(service *application.FollowService) *FollowHandler {
 	return &FollowHandler{
-		service: service,
+		service:            service,
+		counterUnavailable: 3,
 	}
 }
 
@@ -86,6 +88,7 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 	}
 
 	jsonResponse(users, writer)
+
 }
 
 //	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
