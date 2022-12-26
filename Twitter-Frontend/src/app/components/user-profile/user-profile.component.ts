@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { Tweet } from 'src/app/models/tweet.model';
@@ -23,7 +24,8 @@ export class UserProfileComponent implements OnInit {
               private route: ActivatedRoute,
               private router: Router,
               private TweetService: TweetService,
-              private followService: FollowService) { }
+              private followService: FollowService,
+              private _snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
     this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
@@ -81,6 +83,7 @@ export class UserProfileComponent implements OnInit {
       this.followService.SendRequest("private", followReq).subscribe(
         data => {
           console.log(data.status)
+          this.openSnackBar("Request sended!", "")
         },
         error => {
           if (error.status == 400) {
@@ -102,6 +105,12 @@ export class UserProfileComponent implements OnInit {
         }
       )
     }
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3500
+    });
   }
 
 }

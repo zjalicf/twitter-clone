@@ -13,6 +13,7 @@ export class TweetListComponent implements OnInit {
   @Input() tweets: Tweet[] = []
 
   ngOnInit(): void {
+    console.log(this.tweets)
   }
 
 }

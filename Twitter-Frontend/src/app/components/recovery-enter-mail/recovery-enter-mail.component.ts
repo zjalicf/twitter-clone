@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
 import { RecoveryPasswordService } from 'src/app/services/recoveryPassword.service';
@@ -21,7 +22,8 @@ export class RecoveryEnterMailComponent implements OnInit {
     private authService: AuthService,
     private formBuilder: FormBuilder,
     private router: Router,
-    private recoveryService: RecoveryPasswordService
+    private recoveryService: RecoveryPasswordService,
+    private _snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -46,15 +48,23 @@ export class RecoveryEnterMailComponent implements OnInit {
     this.authService.RequestRecoverPassword(email).subscribe({
       next: (token: string) => {
         this.recoveryService.updateToken(token)
-        alert("ups")
+        this.openSnackBar("Recovery token has sended to your e-mail. Please type token from e-mail", "")
         this.router.navigate(['/Recovery-Token'])
       },
       error: (error: HttpErrorResponse) => {
         if(error.status == 404){
           this.formGroup.setErrors({userNotExist:true})
+        this.openSnackBar("User with that e-mail not exists in system.", "")
+
         }
       }
     })
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3500
+    });
   }
 
 }

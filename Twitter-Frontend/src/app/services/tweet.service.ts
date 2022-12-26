@@ -20,8 +20,8 @@ import { Tweet } from "../models/tweet.model";
             return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, tweet);
         }
 
-        public GetAllTweets(): Observable<any> {
-            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/`);
+        public GetHomeFeed(): Observable<any> {
+            return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/feed`);
         }
     
         public GetTweetsForUser(username: string): Observable<any> {
