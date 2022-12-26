@@ -1,38 +1,50 @@
 package application
 
 import (
+	"context"
 	"github.com/gocql/gocql"
+	"go.opentelemetry.io/otel/trace"
 	"time"
 	"tweet_service/domain"
 )
 
 type TweetService struct {
-	store domain.TweetStore
+	store  domain.TweetStore
+	tracer trace.Tracer
 }
 
-func NewTweetService(store domain.TweetStore) *TweetService {
+func NewTweetService(store domain.TweetStore, tracer trace.Tracer) *TweetService {
 	return &TweetService{
-		store: store,
+		store:  store,
+		tracer: tracer,
 	}
 }
 
-//func (service *TweetService) Get(id primitive.ObjectID) (*domain.Tweet, error) {
-//	return service.store.Get(id)
-//}
+func (service *TweetService) GetAll(ctx context.Context) ([]domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetAll")
+	defer span.End()
 
-func (service *TweetService) GetAll() ([]domain.Tweet, error) {
 	return service.store.GetAll()
 }
 
-func (service *TweetService) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
+func (service *TweetService) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetTweetsByUser")
+	defer span.End()
+
 	return service.store.GetTweetsByUser(username)
 }
 
-func (service *TweetService) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error) {
+func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string) ([]*domain.Favorite, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetLikesByTweet")
+	defer span.End()
+
 	return service.store.GetLikesByTweet(tweetID)
 }
 
-func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain.Tweet, error) {
+func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, username string) (*domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.Post")
+	defer span.End()
+
 	tweet.ID, _ = gocql.RandomUUID()
 	tweet.CreatedAt = time.Now().Unix()
 	tweet.Favorited = false
@@ -44,6 +56,9 @@ func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain
 	return service.store.Post(tweet)
 }
 
-func (service *TweetService) Favorite(id string, username string) (int, error) {
+func (service *TweetService) Favorite(ctx context.Context, id string, username string) (int, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.Favorite")
+	defer span.End()
+
 	return service.store.Favorite(id, username)
 }

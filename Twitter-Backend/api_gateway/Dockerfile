@@ -1,4 +1,4 @@
-FROM nginx:latest
+FROM nginx:1.18
 
 COPY ./api_gateway.conf /etc/nginx/conf.d/api_gateway.conf
 COPY ./cert  /etc/nginx/cert

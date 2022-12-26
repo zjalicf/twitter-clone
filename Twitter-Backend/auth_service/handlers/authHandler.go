@@ -11,6 +11,9 @@ import (
 	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log"
 	"net/http"
@@ -22,22 +25,24 @@ type KeyUser struct{}
 type AuthHandler struct {
 	service *application.AuthService
 	store   *store.AuthMongoDBStore
+	tracer  trace.Tracer
 }
 
-func NewAuthHandler(service *application.AuthService) *AuthHandler {
+func NewAuthHandler(service *application.AuthService, tracer trace.Tracer) *AuthHandler {
 	return &AuthHandler{
 		service: service,
+		tracer:  tracer,
 	}
 }
 
 func (handler *AuthHandler) Init(router *mux.Router) {
-
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	log.Println("sucessful init of enforcer")
+	log.Println("successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	router.Use(ExtractTraceInfoMiddleware)
 	loginRouter := router.Methods(http.MethodPost).Subrouter()
 	loginRouter.HandleFunc("/login", handler.Login)
 
@@ -62,10 +67,12 @@ func (handler *AuthHandler) Init(router *mux.Router) {
 }
 
 func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Register")
+	defer span.End()
 
 	myUser := req.Context().Value(domain.User{}).(domain.User)
 
-	token, statusCode, err := handler.service.Register(&myUser)
+	token, statusCode, err := handler.service.Register(ctx, &myUser)
 	if err != nil {
 		http.Error(writer, err.Error(), statusCode)
 		return
@@ -75,6 +82,8 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 }
 
 func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.VerifyAccount")
+	defer span.End()
 
 	var request domain.RegisterRecoverVerification
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -89,7 +98,7 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 		return
 	}
 
-	err = handler.service.VerifyAccount(&request)
+	err = handler.service.VerifyAccount(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.InvalidTokenError {
 			log.Println(err.Error())
@@ -105,6 +114,8 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 }
 
 func (handler *AuthHandler) ResendVerificationToken(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.ResendVerificationToken")
+	defer span.End()
 
 	var request domain.ResendVerificationRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -114,7 +125,7 @@ func (handler *AuthHandler) ResendVerificationToken(writer http.ResponseWriter, 
 		return
 	}
 
-	err = handler.service.ResendVerificationToken(&request)
+	err = handler.service.ResendVerificationToken(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.InvalidResendMailError {
 			http.Error(writer, err.Error(), http.StatusNotAcceptable)
@@ -129,6 +140,8 @@ func (handler *AuthHandler) ResendVerificationToken(writer http.ResponseWriter, 
 }
 
 func (handler *AuthHandler) SendRecoveryPasswordToken(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.SendRecoveryPasswordToken")
+	defer span.End()
 
 	buf := new(strings.Builder)
 	_, err := io.Copy(buf, req.Body)
@@ -138,7 +151,7 @@ func (handler *AuthHandler) SendRecoveryPasswordToken(writer http.ResponseWriter
 		return
 	}
 
-	id, statusCode, err := handler.service.SendRecoveryPasswordToken(buf.String())
+	id, statusCode, err := handler.service.SendRecoveryPasswordToken(ctx, buf.String())
 	if err != nil {
 		http.Error(writer, err.Error(), statusCode)
 		return
@@ -148,6 +161,8 @@ func (handler *AuthHandler) SendRecoveryPasswordToken(writer http.ResponseWriter
 }
 
 func (handler *AuthHandler) CheckRecoveryPasswordToken(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.CheckRecoveryPasswordToken")
+	defer span.End()
 
 	var request domain.RegisterRecoverVerification
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -157,7 +172,7 @@ func (handler *AuthHandler) CheckRecoveryPasswordToken(writer http.ResponseWrite
 		return
 	}
 
-	err = handler.service.CheckRecoveryPasswordToken(&request)
+	err = handler.service.CheckRecoveryPasswordToken(ctx, &request)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusNotAcceptable)
 		return
@@ -167,6 +182,9 @@ func (handler *AuthHandler) CheckRecoveryPasswordToken(writer http.ResponseWrite
 }
 
 func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.RecoverPassword")
+	defer span.End()
+
 	var request domain.RecoverPasswordRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -175,7 +193,7 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 		return
 	}
 
-	err = handler.service.RecoverPassword(&request)
+	err = handler.service.RecoverPassword(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotMatchingPasswordsError {
 			http.Error(writer, err.Error(), http.StatusNotAcceptable)
@@ -189,6 +207,9 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 }
 
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Login")
+	defer span.End()
+
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
@@ -197,7 +218,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	token, err := handler.service.Login(&request)
+	token, err := handler.service.Login(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotVerificatedUser {
 			http.Error(writer, token, http.StatusLocked)
@@ -238,23 +259,25 @@ func MiddlewareUserValidation(next http.Handler) http.Handler {
 	})
 }
 
-func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *http.Request) {
+func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.ChangePassword")
+	defer span.End()
 
-	var token string = request.Header.Get("Authorization")
+	var token string = req.Header.Get("Authorization")
 	bearerToken := strings.Split(token, "Bearer ")
 	tokenString := bearerToken[1]
 
-	fmt.Println(request.Body)
+	fmt.Println(req.Body)
 
 	var password domain.PasswordChange
-	err := json.NewDecoder(request.Body).Decode(&password)
+	err := json.NewDecoder(req.Body).Decode(&password)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := handler.service.ChangePassword(password, tokenString)
+	status := handler.service.ChangePassword(ctx, password, tokenString)
 
 	if status == "oldPassErr" {
 		http.Error(writer, "Wrong old password", http.StatusConflict) //409
@@ -271,4 +294,11 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, request *
 	//_, err = writer.Write([]byte("Password successfully changed."))
 	//if err != nil {
 	//}
+}
+
+func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

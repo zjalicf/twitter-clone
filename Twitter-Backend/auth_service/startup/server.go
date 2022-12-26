@@ -11,6 +11,12 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 	"os"
@@ -38,11 +44,24 @@ func (server *Server) Start() {
 		}
 	}(mongoClient, context.Background())
 
+	cfg := config.NewConfig()
+
+	ctx := context.Background()
+	exp, err := newExporter(cfg.JaegerAddress)
+	if err != nil {
+		log.Fatalf("Failed to Initialize Exporter: %v", err)
+	}
+
+	tp := newTraceProvider(exp)
+	defer func() { _ = tp.Shutdown(ctx) }()
+	otel.SetTracerProvider(tp)
+	tracer := tp.Tracer("auth_service")
+
 	redisClient := server.initRedisClient()
 	authCache := server.initAuthCache(redisClient)
 	authStore := server.initAuthStore(mongoClient)
-	authService := server.initAuthService(authStore, authCache)
-	authHandler := server.initAuthHandler(authService)
+	authService := server.initAuthService(authStore, authCache, tracer)
+	authHandler := server.initAuthHandler(authService, tracer)
 
 	server.start(authHandler)
 }
@@ -73,12 +92,12 @@ func (server *Server) initAuthCache(client *redis.Client) domain.AuthCache {
 	return cache
 }
 
-func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache) *application.AuthService {
-	return application.NewAuthService(store, cache)
+func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, tracer trace.Tracer) *application.AuthService {
+	return application.NewAuthService(store, cache, tracer)
 }
 
-func (server *Server) initAuthHandler(service *application.AuthService) *handlers.AuthHandler {
-	return handlers.NewAuthHandler(service)
+func (server *Server) initAuthHandler(service *application.AuthService, tracer trace.Tracer) *handlers.AuthHandler {
+	return handlers.NewAuthHandler(service, tracer)
 }
 
 func (server *Server) start(authHandler *handlers.AuthHandler) {
@@ -111,4 +130,31 @@ func (server *Server) start(authHandler *handlers.AuthHandler) {
 		log.Fatalf("Error Shutting Down Server %s", err)
 	}
 	log.Println("Server Gracefully Stopped")
+}
+
+func newExporter(address string) (*jaeger.Exporter, error) {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(address)))
+	if err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
+
+func newTraceProvider(exp sdktrace.SpanExporter) *sdktrace.TracerProvider {
+	r, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("auth_service"),
+		),
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(r),
+	)
 }

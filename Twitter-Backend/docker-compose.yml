@@ -17,8 +17,6 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
-      jaeger:
-        condition: service_healthy  #Ovo je pitanje da li moze ovako
       tweet_db:
         condition: service_healthy
     networks:
@@ -87,10 +85,8 @@ services:
       FOLLOW_DB_PORT: ${FOLLOW_DB_PORT}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
-      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - follow_db
-      - jaeger
     networks:
       - network
 
@@ -104,13 +100,6 @@ services:
       - "8000:8000"
     networks:
       - network
-
-#  tweet_db:
-#    image: mongo
-#    container_name: tweet_db
-#    restart: on-failure
-#    networks:
-#      - network
 
   tweet_db:
     image: cassandra

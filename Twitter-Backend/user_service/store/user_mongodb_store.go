@@ -5,7 +5,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel/trace"
 	"log"
 	"user_service/domain"
 )
@@ -16,8 +15,7 @@ const (
 )
 
 type UserMongoDBStore struct {
-	Tracer trace.Tracer
-	users  *mongo.Collection
+	users *mongo.Collection
 }
 
 func NewUserMongoDBStore(client *mongo.Client) domain.UserStore {
@@ -35,6 +33,16 @@ func (store *UserMongoDBStore) GetAll() ([]*domain.User, error) {
 func (store *UserMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) {
 	filter := bson.M{"_id": id}
 	return store.filterOne(filter)
+}
+
+func (store *UserMongoDBStore) GetOneUser(username string) (*domain.User, error) {
+	filter := bson.M{"username": username}
+	user, err := store.filterOne(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (store *UserMongoDBStore) GetByEmail(email string) (*domain.User, error) {
@@ -94,16 +102,4 @@ func decode(cursor *mongo.Cursor) (users []*domain.User, err error) {
 	}
 	err = cursor.Err()
 	return
-}
-
-func (store *UserMongoDBStore) GetOneUser(username string) (*domain.User, error) {
-
-	filter := bson.M{"username": username}
-
-	user, err := store.filterOne(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }
