@@ -50,14 +50,14 @@ func (service *AuthService) GetAll(ctx context.Context) ([]*domain.Credentials, 
 	ctx, span := service.tracer.Start(ctx, "AuthService.GetAll")
 	defer span.End()
 
-	return service.store.GetAll()
+	return service.store.GetAll(ctx)
 }
 
 func (service *AuthService) Register(ctx context.Context, user *domain.User) (string, int, error) {
 	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
 	defer span.End()
 
-	_, err := service.store.GetOneUser(user.Username)
+	_, err := service.store.GetOneUser(ctx, user.Username)
 	if err == nil {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
@@ -105,7 +105,7 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 		Verified: true,
 	}
 
-	err = service.store.Register(&credentials)
+	err = service.store.Register(ctx, &credentials)
 	if err != nil {
 		return "", 500, err
 	}
@@ -162,10 +162,10 @@ func (service *AuthService) VerifyAccount(ctx context.Context, validation *domai
 		}
 
 		userID, err := primitive.ObjectIDFromHex(validation.UserToken)
-		user := service.store.GetOneUserByID(userID)
+		user := service.store.GetOneUserByID(ctx, userID)
 		user.Verified = true
 
-		err = service.store.UpdateUser(user)
+		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
 			log.Printf("error in updating user after changing status of verify: %s", err.Error())
 			return err
@@ -286,7 +286,7 @@ func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword
 	if err != nil {
 		return err
 	}
-	credentials := service.store.GetOneUserByID(primitiveID)
+	credentials := service.store.GetOneUserByID(ctx, primitiveID)
 
 	pass := []byte(recoverPassword.NewPassword)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
@@ -295,7 +295,7 @@ func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword
 	}
 	credentials.Password = string(hash)
 
-	err = service.store.UpdateUser(credentials)
+	err = service.store.UpdateUser(ctx, credentials)
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func (service *AuthService) Login(ctx context.Context, credentials *domain.Crede
 	ctx, span := service.tracer.Start(ctx, "AuthService.Login")
 	defer span.End()
 
-	user, err := service.store.GetOneUser(credentials.Username)
+	user, err := service.store.GetOneUser(ctx, credentials.Username)
 	if err != nil {
 		fmt.Println(err)
 		return "", err
@@ -405,7 +405,7 @@ func (service *AuthService) ChangePassword(ctx context.Context, password domain.
 
 	username := claims["username"]
 
-	user, err := service.store.GetOneUser(username)
+	user, err := service.store.GetOneUser(ctx, username)
 	if err != nil {
 		log.Println(err)
 	}
@@ -430,7 +430,7 @@ func (service *AuthService) ChangePassword(ctx context.Context, password domain.
 
 		user.Password = string(newEncryptedPassword)
 
-		err = service.store.UpdateUser(user)
+		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
 			return "baseErr"
 		}

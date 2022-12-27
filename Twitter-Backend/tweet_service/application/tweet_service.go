@@ -24,21 +24,21 @@ func (service *TweetService) GetAll(ctx context.Context) ([]domain.Tweet, error)
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetAll")
 	defer span.End()
 
-	return service.store.GetAll()
+	return service.store.GetAll(ctx)
 }
 
 func (service *TweetService) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetTweetsByUser")
 	defer span.End()
 
-	return service.store.GetTweetsByUser(username)
+	return service.store.GetTweetsByUser(ctx, username)
 }
 
 func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string) ([]*domain.Favorite, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetLikesByTweet")
 	defer span.End()
 
-	return service.store.GetLikesByTweet(tweetID)
+	return service.store.GetLikesByTweet(ctx, tweetID)
 }
 
 func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, username string) (*domain.Tweet, error) {
@@ -53,12 +53,12 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	tweet.RetweetCount = 0
 	tweet.Username = username
 
-	return service.store.Post(tweet)
+	return service.store.Post(ctx, tweet)
 }
 
 func (service *TweetService) Favorite(ctx context.Context, id string, username string) (int, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Favorite")
 	defer span.End()
 
-	return service.store.Favorite(id, username)
+	return service.store.Favorite(ctx, id, username)
 }
