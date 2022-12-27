@@ -34,19 +34,6 @@ func NewServer(config *config.Config) *Server {
 	}
 }
 
-func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store.GetClient(server.config.UserDBHost, server.config.UserDBPort)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-func (server *Server) initUserStore(client *mongo.Client) domain.UserStore {
-	userStore := store.NewUserMongoDBStore(client)
-	return userStore
-}
-
 func (server *Server) Start() {
 	mongoClient := server.initMongoClient()
 	defer func(mongoClient *mongo.Client, ctx context.Context) {
@@ -69,11 +56,16 @@ func (server *Server) Start() {
 	otel.SetTracerProvider(tp)
 	tracer := tp.Tracer("user_service")
 
-	userStore := server.initUserStore(mongoClient)
+	userStore := server.initUserStore(mongoClient, tracer)
 	userService := server.initUserService(userStore, tracer)
 	userHandler := server.initUserHandler(userService, tracer)
 
 	server.start(userHandler)
+}
+
+func (server *Server) initUserStore(client *mongo.Client, tracer trace.Tracer) domain.UserStore {
+	userStore := store.NewUserMongoDBStore(client, tracer)
+	return userStore
 }
 
 func (server *Server) initUserService(store domain.UserStore, tracer trace.Tracer) *application.UserService {
@@ -82,6 +74,14 @@ func (server *Server) initUserService(store domain.UserStore, tracer trace.Trace
 
 func (server *Server) initUserHandler(service *application.UserService, tracer trace.Tracer) *handlers.UserHandler {
 	return handlers.NewUserHandler(service, tracer)
+}
+
+func (server *Server) initMongoClient() *mongo.Client {
+	client, err := store.GetClient(server.config.UserDBHost, server.config.UserDBPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return client
 }
 
 func (server *Server) start(userHandler *handlers.UserHandler) {

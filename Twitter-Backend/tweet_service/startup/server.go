@@ -33,13 +33,6 @@ func NewServer(config *config.Config) *Server {
 }
 
 func (server *Server) Start() {
-	tweetStore, err := store.New(log.Default())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer tweetStore.CloseSession()
-	tweetStore.CreateTables()
-
 	cfg := config.NewConfig()
 
 	ctx := context.Background()
@@ -52,6 +45,13 @@ func (server *Server) Start() {
 	defer func() { _ = tp.Shutdown(ctx) }()
 	otel.SetTracerProvider(tp)
 	tracer := tp.Tracer("tweet_service")
+
+	tweetStore, err := store.New(log.Default(), tracer)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tweetStore.CloseSession()
+	tweetStore.CreateTables()
 
 	tweetService := server.initTweetService(*tweetStore, tracer)
 	tweetHandler := server.initTweetHandler(tweetService, tracer)

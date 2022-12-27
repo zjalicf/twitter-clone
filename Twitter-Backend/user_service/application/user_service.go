@@ -26,14 +26,14 @@ func (service *UserService) Get(ctx context.Context, id primitive.ObjectID) (*do
 	ctx, span := service.tracer.Start(ctx, "UserService.Get")
 	defer span.End()
 
-	return service.store.Get(id)
+	return service.store.Get(ctx, id)
 }
 
 func (service *UserService) DoesEmailExist(ctx context.Context, email string) (string, error) {
 	ctx, span := service.tracer.Start(ctx, "UserService.DoesEmailExist")
 	defer span.End()
 
-	user, err := service.store.GetByEmail(email)
+	user, err := service.store.GetByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}
@@ -45,14 +45,14 @@ func (service *UserService) GetAll(ctx context.Context) ([]*domain.User, error) 
 	ctx, span := service.tracer.Start(ctx, "UserService.GetAll")
 	defer span.End()
 
-	return service.store.GetAll()
+	return service.store.GetAll(ctx)
 }
 
 func (service *UserService) GetOneUser(ctx context.Context, username string) (*domain.User, error) {
 	ctx, span := service.tracer.Start(ctx, "UserService.GetOneUser")
 	defer span.End()
 
-	retUser, err := service.store.GetOneUser(username)
+	retUser, err := service.store.GetOneUser(ctx, username)
 	if err != nil {
 		log.Println(err)
 		return nil, fmt.Errorf("user not found")
@@ -72,7 +72,7 @@ func (service *UserService) Register(ctx context.Context, user *domain.User) (*d
 	}
 	validatedUser.Visibility = true
 
-	retUser, err := service.store.Post(validatedUser)
+	retUser, err := service.store.Post(ctx, validatedUser)
 	if err != nil {
 		log.Println(errors.DatabaseError)
 		return nil, fmt.Errorf(errors.DatabaseError)
@@ -91,14 +91,14 @@ func (service *UserService) ChangeUserVisibility(ctx context.Context, userID str
 		return err
 	}
 
-	user, err := service.store.Get(primitiveID)
+	user, err := service.store.Get(ctx, primitiveID)
 	if err != nil {
 		log.Printf("Getting user by id error: %s", err.Error())
 		return fmt.Errorf(errors.UserNotFound)
 	}
 
 	user.Visibility = !user.Visibility
-	err = service.store.UpdateUser(user)
+	err = service.store.UpdateUser(ctx, user)
 	if err != nil {
 		log.Printf("Updating user error in service: %s", err.Error())
 		return err

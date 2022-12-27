@@ -59,7 +59,7 @@ func (server *Server) Start() {
 
 	redisClient := server.initRedisClient()
 	authCache := server.initAuthCache(redisClient)
-	authStore := server.initAuthStore(mongoClient)
+	authStore := server.initAuthStore(mongoClient, tracer)
 	authService := server.initAuthService(authStore, authCache, tracer)
 	authHandler := server.initAuthHandler(authService, tracer)
 
@@ -82,8 +82,8 @@ func (server *Server) initRedisClient() *redis.Client {
 	return client
 }
 
-func (server *Server) initAuthStore(client *mongo.Client) domain.AuthStore {
-	store := store2.NewAuthMongoDBStore(client)
+func (server *Server) initAuthStore(client *mongo.Client, tracer trace.Tracer) domain.AuthStore {
+	store := store2.NewAuthMongoDBStore(client, tracer)
 	return store
 }
 
