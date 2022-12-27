@@ -1,8 +1,15 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { TweetID } from 'src/app/dto/tweetIdDTO';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
+import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
+import { Favorite } from 'src/app/models/favorite.model';
+import { Router } from '@angular/router';
+import { HttpHeaderResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-tweet-item',
@@ -11,13 +18,23 @@ import { UserService } from 'src/app/services/user.service';
 })
 export class TweetItemComponent implements OnInit {
 
-  constructor(private userService: UserService) { }
+  constructor(private userService: UserService,
+    private tweetService: TweetService,
+    public dialog: MatDialog) { }
 
-   @Input() tweet: Tweet = new Tweet();
+  @Input() tweet: Tweet = new Tweet();
 
-   loggedInUser: User = new User();
+  likesByTweet: Favorite[] = [];
+
+  loggedInUser: User = new User();
+  tweetID: TweetID = new TweetID();
+  totalLikes: number = 0
+  isLiked?: boolean;
+  liked: string = "favorite_border";
 
   ngOnInit(): void {
+    this.totalLikes = this.tweet.favorite_count;
+
     this.userService.GetMe()
       .subscribe({
         next: (data: User) => {
@@ -27,7 +44,35 @@ export class TweetItemComponent implements OnInit {
           console.log(error);
         }
       });
+
+    this.tweetService.GetLikesByTweet(this.tweet.id)
+      .subscribe({
+        next: (data) => {
+          this.likesByTweet = data;
+          if (data != null) {
+            this.likesByTweet.forEach(like => {
+              if (like.username == this.loggedInUser.username) {
+                this.isLiked = true;
+              } else {
+                this.isLiked = false;
+              }
+            });
+          }
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
   }
+
+  // isLiked(): boolean {
+  //   for (let favorite of this.likesByTweet) {
+  //     if (favorite.username == this.loggedInUser.username) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 
   isThatMe(): boolean {
     if (this.tweet.username == this.loggedInUser.username) {
@@ -37,4 +82,52 @@ export class TweetItemComponent implements OnInit {
     }
   }
 
+  likeTweet(tweet: Tweet) {
+
+    this.tweetID.id = tweet.id
+    this.tweetService.LikeTweet(this.tweetID).subscribe(
+      {
+        next: (data) => {
+          if (data == 201) {
+            this.isLiked = true
+            this.tweet.favorite_count++
+            this.tweetService.GetLikesByTweet(this.tweet.id)
+              .subscribe({
+                next: (data) => {
+                  this.likesByTweet = data;
+                },
+                error: (error) => {
+                  console.log(error);
+                }
+              })
+          } else {
+            this.isLiked = false
+            this.tweet.favorite_count--
+            this.tweetService.GetLikesByTweet(this.tweet.id).subscribe({
+              next: (data) => {
+                this.likesByTweet = data;
+              },
+              error: (error) => {
+                console.log(error);
+              }
+            })
+          }
+        }
+      });
+  }
+
+  openDialog(): void {
+    const dialogRef = this.dialog.open(TweetLikesDialogComponent, {
+      data: this.likesByTweet,
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result == "username") {
+        this.dialog.closeAll();
+      }
+    });
+  }
+
+  handleClick() {
+    console.log(event)
+  }
 }

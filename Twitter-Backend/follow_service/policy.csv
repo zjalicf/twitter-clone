@@ -6,4 +6,14 @@ p, Regular, /, POST
 p, Regular, /, GET
 p, Regular, /acceptRequest/*, PUT
 p, Regular, /declineRequest/*, PUT
+p, Business, /*, POST
+p, Business, /*, GET
+p, Business, /requests/*, GET
+p, Business, /requests/*, POST
+p, Business, /, POST
+p, Business, /, GET
+p, Business, /acceptRequest/*, PUT
+p, Business, /declineRequest/*, PUT
+p, Regular, /followings, GET
+p, Business, /followings, GET
 

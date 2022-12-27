@@ -1,7 +1,9 @@
 <mat-card class="my-profile-card">
     <mat-card-title class="username">{{user.username}}</mat-card-title>
-    <h2 class="first-name"><b>First Name: </b>{{user.firstName}}</h2>
-    <h2 class="last-name"><b>Last Name: </b>{{user.lastName}}</h2>
+    <h2 class="first-name" *ngIf="user.userType == 'Regular'"><b>First Name: </b>{{user.firstName}}</h2>
+    <h2 class="last-name" *ngIf="user.userType == 'Regular'"><b>Last Name: </b>{{user.lastName}}</h2>
+    <h2 class="first-name" *ngIf="user.userType == 'Business'"><b>Company Name: </b>{{user.companyName}}</h2>
+    <h2 class="last-name" *ngIf="user.userType == 'Business'"><b>Website: </b>{{user.website}}</h2>
     <h2 class="email"><b>Email: </b>{{user.email}}</h2>
     <h2 class="role"><b>Role: </b>{{user.userType}}</h2>
     <mat-card-actions class="my-profile-options-card">

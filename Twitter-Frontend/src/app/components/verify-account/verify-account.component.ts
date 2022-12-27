@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ResendVerificationRequest } from 'src/app/dto/resend-verification-request';
 import { VerificationRequest } from 'src/app/dto/verificationRequest';
@@ -23,7 +24,8 @@ export class VerifyAccountComponent implements OnInit {
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
               private router: Router,
-              private verificationService: VerificationService) { }
+              private verificationService: VerificationService,
+              private _snackBar: MatSnackBar) { }
 
 
   ngOnInit(): void {
@@ -52,12 +54,11 @@ export class VerifyAccountComponent implements OnInit {
     let request = new VerificationRequest();
     request.user_token = userToken;
     request.mail_token = mailToken;
-    console.log(request)
     
     this.authService.VerifyAccount(request)
       .subscribe({
           next: (response: void) => {
-            alert("You have been successfully registered to Twitter");
+            this.openSnackBar("You have been successfully registered to Twitter", "OK")
             this.router.navigate(['/Login'])
           },
           error: (error: HttpErrorResponse) => {
@@ -84,17 +85,23 @@ export class VerifyAccountComponent implements OnInit {
 
     this.authService.ResendVerificationToken(request).subscribe({
       next: (v:void) => {
-        alert("Verification token has been resend. Please check your email inbox(general and spam).")
+        this.openSnackBar("Verification token has been resend. Please check your email inbox(general and spam).", "OK")
         if(this.resend == false){
           this.formGroup.setErrors({expiredToken:false})
         }
         this.resend = true;
       },
       error: (error: HttpErrorResponse) => {
-        alert("An error is occured, try again later.")
+        this.openSnackBar("An error is occured, try again later.", "OK")
       }
     }
     )
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 5000
+    });
   }
 
 }

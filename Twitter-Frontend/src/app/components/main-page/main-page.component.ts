@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
 import { TweetService } from 'src/app/services/tweet.service';
@@ -15,7 +16,8 @@ export class MainPageComponent implements OnInit {
   user: User = new User()
 
   constructor(private tweetService: TweetService,
-    private userService: UserService) { }
+    private userService: UserService,
+    private _snackBar: MatSnackBar) { }
 
 
   //treba napraviti da se prikazu samo tvitovi usera koje pratimo i tvitovi ulogovanog usera
@@ -30,16 +32,24 @@ export class MainPageComponent implements OnInit {
           console.log(error);
         },
         complete: () => {
-          this.tweetService.GetTweetsForUser(this.user.username)
+          this.tweetService.GetHomeFeed()
             .subscribe({
               next: (data) => {
                 this.tweets = data;
+                console.log(this.tweets)
               },
               error: (error) => {
+                this.openSnackBar("The service is currently unavailable. Try again later.", "")
                 console.log(error);
               }
             });
         }
       });
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3500
+    });
   }
 }

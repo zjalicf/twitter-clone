@@ -1,5 +1,13 @@
 p, Regular, /, POST
-p, Business, /, POST
 p, Regular, /, GET
 p, Regular, /user/*, GET
 p, Regular, /favorite, POST
+p, Regular, /whoLiked/*, GET
+p, Business, /, POST
+p, Business, /, GET
+p, Business, /user/*, GET
+p, Business, /favorite, POST
+p, Business, /whoLiked/*, GET
+p, Regular, /feed, GET
+p, Business, /feed, GET
+

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, UrlSegment } from '@angular/router';
 import { RecoverPasswordDTO } from 'src/app/dto/recoverPasswordDTO';
 import { AuthService } from 'src/app/services/auth.service';
@@ -24,7 +25,8 @@ export class RecoveryNewPasswordsComponent implements OnInit {
     private authService: AuthService,
     private formBuilder: FormBuilder,
     private router: Router,
-    private recoveryService: RecoveryPasswordService
+    private recoveryService: RecoveryPasswordService,
+    private _snackBar: MatSnackBar
   ) { }
 
   
@@ -64,7 +66,7 @@ export class RecoveryNewPasswordsComponent implements OnInit {
     this.authService.RecoverPassword(recoverPasswordReq)
       .subscribe({
         next: () => {
-          alert('Successfuly recovered password.');
+          this.openSnackBar("Successfully recovered password.", "")
           this.router.navigate(['/Login']);
         },
         error: (error: HttpErrorResponse) => {
@@ -72,6 +74,12 @@ export class RecoveryNewPasswordsComponent implements OnInit {
           console.log(error.message);
         }
       });
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3500
+    });
   }
 
 }
@@ -94,4 +102,5 @@ export function createPasswordStrenghtValidator(): ValidatorFn {
 
     return !passwordValid ? {passwordStrength:true}: null;
   }
+    
 }

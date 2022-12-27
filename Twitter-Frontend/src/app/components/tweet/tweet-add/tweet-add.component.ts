@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AddTweetDTO } from 'src/app/dto/addTweetDTO';
 import { Tweet } from 'src/app/models/tweet.model';
 import { TweetService } from 'src/app/services/tweet.service';
 
@@ -38,7 +39,7 @@ export class TweetAddComponent implements OnInit {
       return;
     }
 
-    let addTweet: Tweet = new Tweet();
+    let addTweet: AddTweetDTO = new AddTweetDTO();
 
     addTweet.text = this.formGroup.get("text")?.value;
 

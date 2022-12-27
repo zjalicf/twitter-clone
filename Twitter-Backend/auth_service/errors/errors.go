@@ -8,4 +8,7 @@ const (
 	InvalidResendMailError    = "invalid resend mail"
 	NotFoundMailError         = "mail not found in database"
 	NotMatchingPasswordsError = "passwords doesn't matching"
+	NotVerificatedUser        = "user wasn't verified yet"
+	UsernameAlreadyExist      = "username already exists in database"
+	EmailAlreadyExist         = "email already exists in database"
 )

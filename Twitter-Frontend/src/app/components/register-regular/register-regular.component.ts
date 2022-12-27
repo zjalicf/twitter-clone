@@ -2,11 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {Router} from "@angular/router"
 import { User } from 'src/app/models/user.model';
-import * as fs from 'fs';
-import * as readline from 'readline';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
 import { VerificationService } from 'src/app/services/verify.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-register-regular',
@@ -34,22 +34,15 @@ export class RegisterRegularComponent implements OnInit {
     'Female'
   ];
 
-  // fileName = "../../blacklist/blacklist.txt";
-
-  // rl = readline.createInterface({
-  //   input: fs.createReadStream(this.fileName),
-  //   crlfDelay: Infinity
-  // });
-
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
               private router: Router,
-              private verificationService: VerificationService) { }
+              private verificationService: VerificationService,
+              private _snackBar: MatSnackBar) { }
 
   submitted = false;
 
   ngOnInit(): void {
-    console.log(this.genders)
     this.formGroup = this.formBuilder.group({
       firstName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
       lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
@@ -96,10 +89,16 @@ export class RegisterRegularComponent implements OnInit {
           this.verificationService.updateVerificationToken(verificationToken);
           this.router.navigate(['/Verify-Account']);
         },
-        error: (error) => {
-          console.log(error)
+        error: (error: HttpErrorResponse) => {
+          if (error.status == 406) {
+            this.openSnackBar(error.error, "Ok")
+          }
         }
       });
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action);
   }
 
 }

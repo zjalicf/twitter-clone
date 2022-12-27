@@ -1,6 +1,7 @@
 .tweet-card {
   max-width: 530px;
   margin-top: 50px;
+  margin-bottom: 20px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -25,3 +26,15 @@
   cursor: pointer;
 }
   
+.favorite-icon {
+  transform: scale(1.5);
+}
+
+.total-likes {
+  margin-left: 10px;
+}
+
+.who-liked {
+  font-size: 15px;
+  margin-left: 10px;
+}

@@ -14,6 +14,8 @@ services:
     environment:
       TWEET_DB: ${TWEET_DB}
       TWEET_SERVICE_PORT: ${TWEET_SERVICE_PORT}
+      FOLLOW_SERVICE_HOST: ${FOLLOW_SERVICE_HOST}
+      FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
     depends_on:
        tweet_db:
@@ -93,6 +95,8 @@ services:
     restart: on-failure
     ports:
       - "8000:8000"
+    depends_on:
+      - tweet_service
     networks:
       - network
 

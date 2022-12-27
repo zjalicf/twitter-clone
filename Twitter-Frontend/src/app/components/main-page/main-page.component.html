@@ -5,4 +5,4 @@
     </mat-card>
 </div>
 
-<app-tweet-list [tweets]="tweets"></app-tweet-list>
+<app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>

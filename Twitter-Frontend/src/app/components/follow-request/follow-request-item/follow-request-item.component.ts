@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { FollowService } from 'src/app/services/follow.service';
 
@@ -12,7 +13,8 @@ export class FollowRequestItemComponent implements OnInit {
   @Input() followRequest: FollowRequest = new FollowRequest();
   @Output() answerFollowRequest = new EventEmitter<any>()
 
-  constructor(private followService: FollowService) { }
+  constructor(private followService: FollowService,
+    private _snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
 
@@ -23,7 +25,7 @@ export class FollowRequestItemComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.answerFollowRequest.emit();
-          alert("Request Accepted");
+          this.openSnackBar("Request Accepted","")
         },
         error: (error) => {
           console.log(error);
@@ -36,13 +38,19 @@ export class FollowRequestItemComponent implements OnInit {
     this.followService.DeclineRequest(id)
       .subscribe({
         next: (data) => {
-          alert("Request Denied");
+          this.openSnackBar("Request Denied","")
         },
         error: (error) => {
           console.log(error);
         }
       }
     )
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3000
+    });
   }
 
 }

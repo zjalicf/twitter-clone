@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { Tweet } from 'src/app/models/tweet.model';
@@ -18,16 +19,16 @@ export class UserProfileComponent implements OnInit {
   loggedInUser = new User();
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
-  
+
   constructor(private UserService: UserService,
               private route: ActivatedRoute,
               private router: Router,
               private TweetService: TweetService,
               private followService: FollowService,
-              private userService: UserService) { }
+              private _snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
-    this.UserService.GetOneUserByUsername(this.profileUsername)
+    this.UserService.GetOneUserByUsername(String(this.route.snapshot.paramMap.get("username")))
       .subscribe({
         next: (data: User) => {
           this.user = data;
@@ -48,7 +49,7 @@ export class UserProfileComponent implements OnInit {
         }
       });
 
-    this.userService.GetMe()
+    this.UserService.GetMe()
     .subscribe({
       next: (data: User) => {
         this.loggedInUser = data;
@@ -79,10 +80,37 @@ export class UserProfileComponent implements OnInit {
     var followReq = new FollowRequest()
     followReq.receiver = user.username
     if (user.visibility){
-      this.followService.SendRequest("private", followReq).subscribe()
+      this.followService.SendRequest("private", followReq).subscribe(
+        data => {
+          console.log(data.status)
+          this.openSnackBar("Request sended!", "")
+        },
+        error => {
+          if (error.status == 400) {
+            alert("You already follow this user")
+
+          }
+        }
+        )
     }else {
-      this.followService.SendRequest("public", followReq).subscribe()
+      this.followService.SendRequest("public", followReq).subscribe(
+        data => {
+          console.log(data.status)
+        },
+        error => {
+          if (error.status == 400) {
+            alert("You already follow this user")
+
+          }
+        }
+      )
     }
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action,  {
+      duration: 3500
+    });
   }
 
 }

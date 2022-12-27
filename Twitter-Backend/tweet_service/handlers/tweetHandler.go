@@ -41,6 +41,8 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/favorite", handler.Favorite).Methods("POST")
 	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
+	router.HandleFunc("/whoLiked/{id}", handler.GetLikesByTweet).Methods("GET")
+	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -72,6 +74,22 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 	jsonResponse(tweets, writer)
 }
 
+func (handler *TweetHandler) GetLikesByTweet(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	tweetID, ok := vars["id"]
+	if !ok {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	favorites, err := handler.service.GetLikesByTweet(tweetID)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(favorites, writer)
+}
+
 func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Request) {
 
 	bearer := req.Header.Get("Authorization")
@@ -96,12 +114,6 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//
-	//uuid, err := gocql.ParseUUID(tweet.)
-	//if err != nil {
-	//	writer.WriteHeader(http.StatusInternalServerError)
-	//	return
-	//}
 
 	tweets, err := handler.service.Favorite(tweetID.ID, username)
 
@@ -110,7 +122,9 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	writer.WriteHeader(http.StatusOK)
 	jsonResponse(tweets, writer)
+
 }
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
@@ -148,5 +162,22 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 func Post(handler *TweetHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler.Post(w, r)
+	}
+}
+
+func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
+	log.Println(req.Header.Get("Authorization"))
+	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
+	if err != nil {
+		log.Printf("error: %s", err.Error())
+		if err.Error() == "FollowServiceError" {
+			http.Error(writer, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	} else {
+		jsonResponse(feed, writer)
+
 	}
 }

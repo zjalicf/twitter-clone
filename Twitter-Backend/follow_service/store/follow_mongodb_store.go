@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 )
 
 const (
@@ -47,6 +48,18 @@ func (store *FollowMongoDBStore) FollowExist(followRequest *domain.FollowRequest
 func (store *FollowMongoDBStore) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
 	filter := bson.D{{"receiver", username}, {"status", 1}}
 	result, err := store.filter(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (store *FollowMongoDBStore) GetFollowingsOfUser(username string) ([]*domain.FollowRequest, error) {
+	filter := bson.D{{"requester", username}, {"status", domain.Accepted}}
+	result, err := store.filter(filter)
+	log.Println("FOLLOW MONGO RESULT: ")
+	log.Println(result)
 	if err != nil {
 		return nil, err
 	}
