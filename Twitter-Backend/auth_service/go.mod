@@ -9,6 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/tamararankovic/microservices_demo/common v0.0.0-20220326142530-97bfd7810e53
 	go.mongodb.org/mongo-driver v1.11.0
 	golang.org/x/crypto v0.2.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df

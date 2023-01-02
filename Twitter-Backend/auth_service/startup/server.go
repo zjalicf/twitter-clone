@@ -6,6 +6,8 @@ import (
 	"auth_service/handlers"
 	"auth_service/startup/config"
 	store2 "auth_service/store"
+	saga "common/saga/messaging"
+	"common/saga/messaging/nats"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis"
@@ -22,6 +24,10 @@ import (
 type Server struct {
 	config *config.Config
 }
+
+const (
+	QueueGroup = "user_service"
+)
 
 func NewServer(config *config.Config) *Server {
 	return &Server{
@@ -41,7 +47,19 @@ func (server *Server) Start() {
 	redisClient := server.initRedisClient()
 	authCache := server.initAuthCache(redisClient)
 	authStore := server.initAuthStore(mongoClient)
-	authService := server.initAuthService(authStore, authCache)
+
+	//saga init
+	commandPublisher := server.initPublisher(server.config.CreateUserCommandSubject)
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+	replySubscriber := server.initSubscriber(server.config.CreateUserReplySubject, QueueGroup)
+
+	createOrderOrchestrator := server.initCreateOrderOrchestrator(commandPublisher, replySubscriber)
+
+	authService := server.initAuthService(authStore, authCache, createOrderOrchestrator)
+
+	server.initCreateOrderHandler(authService, replyPublisher, commandSubscriber)
 	authHandler := server.initAuthHandler(authService)
 
 	server.start(authHandler)
@@ -73,14 +91,45 @@ func (server *Server) initAuthCache(client *redis.Client) domain.AuthCache {
 	return cache
 }
 
-func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache) *application.AuthService {
-	return application.NewAuthService(store, cache)
+func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator application.CreateUserOrchestrator) *application.AuthService {
+	return application.NewAuthService(store, cache, orchestrator)
 }
 
 func (server *Server) initAuthHandler(service *application.AuthService) *handlers.AuthHandler {
 	return handlers.NewAuthHandler(service)
 }
 
+//saga
+
+func (server *Server) initPublisher(subject string) saga.Publisher {
+	publisher, err := nats.NewNATSPublisher(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return publisher
+}
+
+func (server *Server) initSubscriber(subject string, queueGroup string) saga.Subscriber {
+	subscriber, err := nats.NewNATSSubscriber(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject, queueGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subscriber
+}
+
+func (server *Server) initCreateOrderOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
+	orchestrator, err := application.NewCreateUserOrchestrator(publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return orchestrator
+}
+
+// start
 func (server *Server) start(authHandler *handlers.AuthHandler) {
 	router := mux.NewRouter()
 	authHandler.Init(router)

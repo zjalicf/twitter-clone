@@ -62,6 +62,12 @@ services:
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SMTP_AUTH_MAIL: ${SMTP_AUTH_MAIL}
       SMTP_AUTH_PASSWORD: ${SMTP_AUTH_PASSWORD}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
+      CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
     depends_on:
       - auth_db
       - auth_cache
@@ -99,13 +105,6 @@ services:
       - tweet_service
     networks:
       - network
-
-#  tweet_db:
-#    image: mongo
-#    container_name: tweet_db
-#    restart: on-failure
-#    networks:
-#      - network
 
   tweet_db:
     image: cassandra
@@ -158,6 +157,13 @@ services:
       - network
     volumes:
       - auth_cache:/data
+
+  nats:
+    image: nats
+    container_name: nats
+    restart: on-failure
+    networks:
+      - network
 
 volumes:
   cassandra_store:

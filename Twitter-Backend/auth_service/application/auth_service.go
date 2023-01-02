@@ -27,19 +27,19 @@ var (
 	smtpServerPort  = 587
 	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
 	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
-	jwtKey          = []byte("SecretYouShouldHide")
-	//odakle povlazi GetEnv keys?
 )
 
 type AuthService struct {
-	store domain.AuthStore
-	cache domain.AuthCache
+	store        domain.AuthStore
+	cache        domain.AuthCache
+	orchestrator CreateUserOrchestrator
 }
 
-func NewAuthService(store domain.AuthStore, cache domain.AuthCache) *AuthService {
+func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator CreateUserOrchestrator) *AuthService {
 	return &AuthService{
-		store: store,
-		cache: cache,
+		store:        store,
+		cache:        cache,
+		orchestrator: orchestrator,
 	}
 }
 
