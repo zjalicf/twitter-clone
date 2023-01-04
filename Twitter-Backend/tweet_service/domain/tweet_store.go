@@ -8,5 +8,5 @@ type TweetStore interface {
 	Post(tweet *Tweet) (*Tweet, error)
 	Favorite(id string, username string) (int, error)
 	GetLikesByTweet(tweetID string) ([]*Favorite, error)
-	//DeleteAll()
+	SaveImageRedis(imageBytes []byte) error
 }

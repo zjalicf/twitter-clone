@@ -89,6 +89,10 @@ func (service *TweetService) GetLikesByTweet(tweetID string) ([]*domain.Favorite
 	return service.store.GetLikesByTweet(tweetID)
 }
 
+func (service *TweetService) SaveImageRedis(imageBytes []byte) error {
+	return service.store.SaveImageRedis(imageBytes)
+}
+
 func (service *TweetService) Post(tweet *domain.Tweet, username string) (*domain.Tweet, error) {
 	tweet.ID, _ = gocql.RandomUUID()
 	tweet.CreatedAt = time.Now().Unix()

@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/gomodule/redigo/redis"
 	"log"
 	"os"
 	"tweet_service/domain"
@@ -19,6 +20,29 @@ const (
 type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
+	conn    redis.Conn
+}
+
+//// kreirajte tabelu za cuvanje slika u Cassandra ako ne postoji
+//if err = session.Query(`CREATE TABLE IF NOT EXISTS images (id uuid PRIMARY KEY, image blob)`).Exec(); err != nil {
+//http.Error(w, err.Error(), http.StatusInternalServerError)
+//return
+//}
+//
+//// generišite ID za novu sliku
+//id := uuid.NewV4()
+//
+//// cuvajte sliku u Cassandra
+//if err = session.Query(`INSERT INTO images (id, image) VALUES (?, ?)`, id, imageBytes).Exec(); err != nil {
+//http.Error(w, err.Error(), http.StatusInternalServerError)
+//return
+
+func (sr *TweetRepo) SaveImageRedis(imageBytes []byte) error {
+	_, err := sr.conn.Do("SET", "image", imageBytes)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func New(logger *log.Logger) (*TweetRepo, error) {
@@ -52,14 +76,23 @@ func New(logger *log.Logger) (*TweetRepo, error) {
 		return nil, err
 	}
 
+	redisDB := os.Getenv("REDIS")
+	conn, err := redis.Dial("tcp", redisDB)
+	if err != nil {
+		logger.Println(err)
+		return nil, err
+	}
+
 	return &TweetRepo{
 		session: session,
 		logger:  logger,
+		conn:    conn,
 	}, nil
 }
 
 func (sr *TweetRepo) CloseSession() {
 	sr.session.Close()
+	sr.conn.Close()
 }
 
 // Field picture is missing

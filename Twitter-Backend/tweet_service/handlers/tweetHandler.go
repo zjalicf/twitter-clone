@@ -5,6 +5,7 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -129,8 +130,28 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
 
-	var request domain.Tweet
-	err := json.NewDecoder(req.Body).Decode(&request)
+	file, _, err := req.FormFile("image")
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	var imageBytes []byte
+	imageBytes, err = ioutil.ReadAll(file)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = handler.service.SaveImageRedis(imageBytes)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var tweet domain.Tweet
+	err = json.NewDecoder(req.Body).Decode(&tweet)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -149,14 +170,14 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	tweet, err := handler.service.Post(&request, username)
+	reponseTweet, err := handler.service.Post(&tweet, username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(tweet, writer)
+	jsonResponse(reponseTweet, writer)
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {

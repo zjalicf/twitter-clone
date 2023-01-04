@@ -42,7 +42,7 @@ func (server *Server) Start() {
 }
 
 func (server *Server) initTweetService(store store.TweetRepo) *application.TweetService {
-	return application.NewTweetService(&store)
+	return application.NewTweetService(&store) // ne kontam
 }
 
 func (server *Server) initTweetHandler(service *application.TweetService) *handlers.TweetHandler {
