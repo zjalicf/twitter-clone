@@ -105,6 +105,10 @@ func (service *TweetService) Favorite(id string, username string) (int, error) {
 	return service.store.Favorite(id, username)
 }
 
+func (service *TweetService) Retweet(id string, username string) (int, error) {
+	return service.store.Retweet(id, username)
+}
+
 func CircuitBreaker() *gobreaker.CircuitBreaker {
 	return gobreaker.NewCircuitBreaker(
 		gobreaker.Settings{
