@@ -2,7 +2,7 @@ package nats
 
 import (
 	"github.com/nats-io/nats.go"
-	saga "github.com/tamararankovic/microservices_demo/common/saga/messaging"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
 
 type Subscriber struct {

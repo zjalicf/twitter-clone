@@ -1,7 +1,9 @@
 package create_user
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type User struct {
-	ID         string
+	ID         primitive.ObjectID
 	Firstname  string
 	Lastname   string
 	Gender     Gender
@@ -40,7 +42,7 @@ const (
 	UnknownCommand
 )
 
-type CreateOrderCommand struct {
+type CreateUserCommand struct {
 	User User
 	Type CreateUserCommandType
 }
@@ -58,3 +60,6 @@ type CreateUserReply struct {
 	User User
 	Type CreateUserReplyType
 }
+
+//aaaa
+//aaaa

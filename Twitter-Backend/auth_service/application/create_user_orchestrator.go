@@ -2,8 +2,11 @@ package application
 
 import (
 	"auth_service/domain"
-	events "github.com/tamararankovic/microservices_demo/common/saga/create_order"
-	saga "github.com/tamararankovic/microservices_demo/common/saga/messaging"
+	"fmt"
+	"log"
+
+	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
 
 type CreateUserOrchestrator struct {
@@ -12,7 +15,7 @@ type CreateUserOrchestrator struct {
 }
 
 func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserOrchestrator, error) {
-	orchestrator := &CreateOrderOrchestrator{
+	orchestrator := &CreateUserOrchestrator{
 		commandPublisher: publisher,
 		replySubscriber:  subscriber,
 	}
@@ -24,10 +27,47 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 }
 
 func (o *CreateUserOrchestrator) Start(user *domain.User) error {
-	event := &events.CreateUserCommand{
-		Type: events.UpdateInventory,
-		User: user,
+
+	var gender events.Gender
+	var userType events.UserType
+
+	if user.Gender == "Male" {
+		gender = "Male"
+	} else {
+		gender = "Female"
 	}
+
+	if user.UserType == "Regular" {
+		userType = "Regular"
+	} else {
+		userType = "Business"
+	}
+
+	user1 := events.User{
+		ID:          user.ID,
+		Firstname:   user.Firstname,
+		Lastname:    user.Lastname,
+		Gender:      gender,
+		Age:         user.Age,
+		Residence:   user.Residence,
+		Email:       user.Email,
+		Username:    user.Username,
+		Password:    user.Password,
+		UserType:    userType,
+		Visibility:  user.Visibility,
+		CompanyName: user.CompanyName,
+		Website:     user.Website,
+	}
+
+	event := &events.CreateUserCommand{
+		User: user1,
+		Type: events.UpdateUsers,
+	}
+
+	log.Println("Orchestrator created")
+	//	Type: events.UpdateInventory,
+	//	User: user,
+	//}
 	//for _, item := range user.Items {
 	//	eventItem := events.OrderItem{
 	//		Product: events.Product{
@@ -40,6 +80,8 @@ func (o *CreateUserOrchestrator) Start(user *domain.User) error {
 	//}
 
 	//upis u bazu treba
+	fmt.Println("Message publiched!")
+	fmt.Println(event)
 	return o.commandPublisher.Publish(event)
 }
 

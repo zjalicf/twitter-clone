@@ -37,6 +37,12 @@ services:
       USER_DB_PORT: ${USER_DB_PORT}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
+      CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
     depends_on:
       - user_db
     networks:
@@ -71,6 +77,7 @@ services:
     depends_on:
       - auth_db
       - auth_cache
+      - nats
     networks:
       - network
 

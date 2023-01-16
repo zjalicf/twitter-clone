@@ -4,11 +4,11 @@ import (
 	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
@@ -32,10 +32,10 @@ var (
 type AuthService struct {
 	store        domain.AuthStore
 	cache        domain.AuthCache
-	orchestrator CreateUserOrchestrator
+	orchestrator *CreateUserOrchestrator
 }
 
-func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator CreateUserOrchestrator) *AuthService {
+func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *CreateUserOrchestrator) *AuthService {
 	return &AuthService{
 		store:        store,
 		cache:        cache,
@@ -53,67 +53,98 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
 
-	userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
-	userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
-	response, _ := http.DefaultClient.Do(userServiceRequestMail)
-	if response.StatusCode != 404 {
-		return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
-	}
-
-	pass := []byte(user.Password)
-	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	user.ID = primitive.NewObjectID()
+	validatedUser, err := validateUserType(user)
 	if err != nil {
-		return "", 500, err
-	}
-	user.Password = string(hash)
-
-	body, err := json.Marshal(user)
-	if err != nil {
-		return "", 500, err
-	}
-
-	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
-	responseUser, _ := http.DefaultClient.Do(userServiceRequest)
-
-	if responseUser.StatusCode != 200 {
-		buf := new(strings.Builder)
-		_, _ = io.Copy(buf, responseUser.Body)
-		return "", responseUser.StatusCode, fmt.Errorf(buf.String())
-	}
-
-	var newUser domain.User
-	err = responseToType(responseUser.Body, &newUser)
-	if err != nil {
-		return "", 500, err
+		return "", 0, err
 	}
 
 	credentials := domain.Credentials{
-		ID:       newUser.ID,
-		Username: user.Username,
-		Password: user.Password,
-		UserType: newUser.UserType,
+		ID:       user.ID,
+		Username: validatedUser.Username,
+		Password: validatedUser.Password,
+		UserType: validatedUser.UserType,
 		Verified: false,
 	}
 
 	err = service.store.Register(&credentials)
 	if err != nil {
-		return "", 500, err
+		return "", 0, err
 	}
 
-	validationToken := uuid.New()
-	err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
+	//starting orchestrator after insert in mongo
+
+	err = service.orchestrator.Start(validatedUser)
 	if err != nil {
-		log.Fatalf("failed to post validation data to redis: %s", err)
-		return "", 500, err
+		return "", 0, err
 	}
 
-	err = sendValidationMail(validationToken, user.Email)
-	if err != nil {
-		return "", 500, err
-	}
+	//ovo sve treba da se desi odvojeno u user_service
+	//obvde se samo upisuju kredencijali i ukoliko se uspesno upisu onda se radi publish()
 
-	return newUser.ID.Hex(), 200, nil
+	//userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
+	//userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
+	//response, _ := http.DefaultClient.Do(userServiceRequestMail)
+	//if response.StatusCode != 404 {
+	//	return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
+	//}
+	//
+	//pass := []byte(user.Password)
+	//hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	//if err != nil {
+	//	return "", 500, err
+	//}
+	//user.Password = string(hash)
+
+	//body, err := json.Marshal(user)
+	//if err != nil {
+	//	return "", 500, err
+	//}
+
+	//userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
+	//userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
+	//responseUser, _ := http.DefaultClient.Do(userServiceRequest)
+	//
+	//if responseUser.StatusCode != 200 {
+	//	buf := new(strings.Builder)
+	//	_, _ = io.Copy(buf, responseUser.Body)
+	//	return "", responseUser.StatusCode, fmt.Errorf(buf.String())
+	//}
+
+	//var newUser domain.User
+	//err = responseToType(responseUser.Body, &newUser)
+	//if err != nil {
+	//	return "", 500, err
+	//}
+
+	//credentials := domain.Credentials{
+	//	ID:       newUser.ID,
+	//	Username: user.Username,
+	//	Password: user.Password,
+	//	UserType: newUser.UserType,
+	//	Verified: false,
+	//}
+	//
+	//err = service.store.Register(&credentials)
+	//if err != nil {
+	//	return "", 500, err
+	//}
+	//
+	//validationToken := uuid.New()
+	//err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
+	//if err != nil {
+	//	log.Fatalf("failed to post validation data to redis: %s", err)
+	//	return "", 500, err
+	//}
+	//
+	//err = sendValidationMail(validationToken, user.Email)
+	//if err != nil {
+	//	return "", 500, err
+	//}
+	//
+	//return newUser.ID.Hex(), 200, nil
+
+	return "", 200, nil
 }
 
 func sendValidationMail(validationToken uuid.UUID, email string) error {
@@ -415,4 +446,100 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 	}
 
 	return "ok"
+}
+
+func (service *AuthService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID
+	user.Firstname = userIn.Firstname
+	user.Lastname = userIn.Lastname
+	if userIn.Gender == "Male" {
+		user.Gender = "Male"
+	} else {
+		user.Gender = "Female"
+	}
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Email = userIn.Email
+	user.Username = userIn.Username
+	user.Password = userIn.Password
+	if userIn.UserType == "Regular" {
+		user.UserType = "Regular"
+	} else {
+		user.UserType = "Business"
+	}
+	user.Visibility = userIn.Visibility
+	user.CompanyName = userIn.CompanyName
+	user.Website = userIn.Website
+
+	return user
+}
+
+func (service *AuthService) DomainToUser(userIn *domain.User) create_user.User {
+	var user create_user.User
+	user.ID = userIn.ID
+	user.Firstname = userIn.Firstname
+	user.Lastname = userIn.Lastname
+	if userIn.Gender == "Male" {
+		user.Gender = "Male"
+	} else {
+		user.Gender = "Female"
+	}
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Email = userIn.Email
+	user.Username = userIn.Username
+	user.Password = userIn.Password
+	if userIn.UserType == "Regular" {
+		user.UserType = "Regular"
+	} else {
+		user.UserType = "Business"
+	}
+	user.Visibility = userIn.Visibility
+	user.CompanyName = userIn.CompanyName
+	user.Website = userIn.Website
+
+	return user
+}
+
+func validateUserType(user *domain.User) (*domain.User, error) {
+
+	business := isBusiness(user)
+	regular := isRegular(user)
+
+	if business && regular {
+		return nil, fmt.Errorf("invalid user format")
+	} else if business {
+		user.UserType = domain.Business
+		return user, nil
+	} else if regular {
+		user.UserType = domain.Regular
+		return user, nil
+	}
+
+	return nil, fmt.Errorf("invalid user data")
+}
+
+func isBusiness(user *domain.User) bool {
+	if len(user.CompanyName) >= 3 &&
+		len(user.Website) >= 3 &&
+		len(user.Email) >= 3 &&
+		len(user.Username) >= 3 {
+		return true
+	}
+
+	return false
+}
+
+func isRegular(user *domain.User) bool {
+	if len(user.Firstname) >= 3 &&
+		len(user.Lastname) >= 3 &&
+		len(user.Gender) >= 3 &&
+		user.Age >= 1 &&
+		len(user.Residence) >= 3 &&
+		len(user.Username) >= 3 {
+		return true
+	}
+
+	return false
 }

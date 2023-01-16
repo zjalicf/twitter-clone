@@ -10,7 +10,8 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
-	saga "github.com/zjalicf/twitter-clone-common/tree/main/common/saga/messaging"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
@@ -25,7 +26,7 @@ type Server struct {
 }
 
 const (
-	QueueGroup = "user_service"
+	QueueGroup = "auth_service"
 )
 
 func NewServer(config *config.Config) *Server {
@@ -54,11 +55,11 @@ func (server *Server) Start() {
 	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
 	replySubscriber := server.initSubscriber(server.config.CreateUserReplySubject, QueueGroup)
 
-	createOrderOrchestrator := server.initCreateOrderOrchestrator(commandPublisher, replySubscriber)
+	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber)
 
-	authService := server.initAuthService(authStore, authCache, createOrderOrchestrator)
+	authService := server.initAuthService(authStore, authCache, createUserOrchestrator)
 
-	server.initCreateOrderHandler(authService, replyPublisher, commandSubscriber)
+	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber)
 	authHandler := server.initAuthHandler(authService)
 
 	server.start(authHandler)
@@ -90,7 +91,7 @@ func (server *Server) initAuthCache(client *redis.Client) domain.AuthCache {
 	return cache
 }
 
-func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator application.CreateUserOrchestrator) *application.AuthService {
+func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *application.CreateUserOrchestrator) *application.AuthService {
 	return application.NewAuthService(store, cache, orchestrator)
 }
 
@@ -120,12 +121,21 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-func (server *Server) initCreateOrderOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
+func (server *Server) initCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
 	orchestrator, err := application.NewCreateUserOrchestrator(publisher, subscriber)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return orchestrator
+}
+
+func (server *Server) initCreateUserHandler(service *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Auth service UserHandler Started!")
+
 }
 
 // start

@@ -41,16 +41,11 @@ func (store *UserMongoDBStore) GetByEmail(email string) (*domain.User, error) {
 }
 
 func (store *UserMongoDBStore) Post(user *domain.User) (*domain.User, error) {
-	user.ID = primitive.NewObjectID()
-
 	result, err := store.users.InsertOne(context.TODO(), user)
-
 	if err != nil {
 		return nil, err
 	}
-
 	user.ID = result.InsertedID.(primitive.ObjectID)
-
 	return user, nil
 }
 
