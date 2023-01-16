@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"auth_service/application"
+	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
@@ -18,14 +19,22 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 		replyPublisher:    publisher,
 		commandSubscriber: subscriber,
 	}
-	err := o.commandSubscriber.Subscribe(o.handle)
+	//prijava za slusanje komandi
+	err := o.commandSubscriber.Subscribe(o.handleCommands)
 	if err != nil {
 		return nil, err
+	}
+
+	//prijava za slusanje odgovora
+	err1 := o.commandSubscriber.Subscribe(o.handleReplays)
+	if err1 != nil {
+		return nil, err1
 	}
 	return o, nil
 }
 
-func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
+//hendlovanje komandama
+func (handler *CreateUserCommandHandler) handleCommands(command *events.CreateUserCommand) {
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
@@ -36,6 +45,21 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 			return
 		}
 		reply.Type = events.AuthUpdated
+	default:
+		reply.Type = events.UnknownReply
+	}
+
+	if reply.Type != events.UnknownReply {
+		_ = handler.replyPublisher.Publish(reply)
+	}
+}
+
+//hendlovanje odgovorima
+func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserReply) {
+
+	switch reply.Type {
+	case events.UsersUpdated:
+		fmt.Println("Auth je primio poruku: Users is updated")
 	default:
 		reply.Type = events.UnknownReply
 	}
