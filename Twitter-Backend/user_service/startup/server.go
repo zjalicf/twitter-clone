@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
@@ -21,6 +23,10 @@ import (
 type Server struct {
 	config *config.Config
 }
+
+const (
+	QueueGroup = "user_service"
+)
 
 func NewServer(config *config.Config) *Server {
 	return &Server{
@@ -53,9 +59,15 @@ func (server *Server) Start() {
 		}
 	}(mongoClient, context.Background())
 
+	//saga init
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+
 	userStore := server.initUserStore(mongoClient)
 	userService := server.initUserService(userStore)
 	userHandler := server.initUserHandler(userService)
+
+	server.initCreateUserHandler(userService, replyPublisher, commandSubscriber)
 
 	server.start(userHandler)
 }
@@ -66,6 +78,34 @@ func (server *Server) initUserService(store domain.UserStore) *application.UserS
 
 func (server *Server) initUserHandler(service *application.UserService) *handlers.UserHandler {
 	return handlers.NewUserHandler(service)
+}
+
+func (server *Server) initCreateUserHandler(service *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("User service UserHandler Started!")
+}
+
+func (server *Server) initPublisher(subject string) saga.Publisher {
+	publisher, err := nats.NewNATSPublisher(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return publisher
+}
+
+func (server *Server) initSubscriber(subject string, queueGroup string) saga.Subscriber {
+	subscriber, err := nats.NewNATSSubscriber(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject, queueGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subscriber
 }
 
 func (server *Server) start(tweetHandler *handlers.UserHandler) {

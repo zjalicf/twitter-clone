@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"user_service/domain"
@@ -45,7 +46,7 @@ func (service *UserService) GetOneUser(username string) (*domain.User, error) {
 }
 
 func (service *UserService) Register(user *domain.User) (*domain.User, error) {
-	user.ID = primitive.NewObjectID()
+	fmt.Println(user)
 	validatedUser, err := validateUserType(user)
 	if err != nil {
 		log.Println(errors.ValidationError)
@@ -125,4 +126,30 @@ func isRegular(user *domain.User) bool {
 	}
 
 	return false
+}
+
+func (service *UserService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID
+	user.Firstname = userIn.Firstname
+	user.Lastname = userIn.Lastname
+	if userIn.Gender == "Male" {
+		user.Gender = "Male"
+	} else {
+		user.Gender = "Female"
+	}
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Email = userIn.Email
+	user.Username = userIn.Username
+	if userIn.UserType == "Regular" {
+		user.UserType = "Regular"
+	} else {
+		user.UserType = "Business"
+	}
+	user.Visibility = userIn.Visibility
+	user.CompanyName = userIn.CompanyName
+	user.Website = userIn.Website
+
+	return user
 }

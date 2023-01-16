@@ -70,7 +70,7 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 		http.Error(writer, err.Error(), statusCode)
 		return
 	}
-
+	writer.WriteHeader(http.StatusOK)
 	jsonResponse(token, writer)
 }
 
@@ -196,6 +196,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
+	fmt.Println(request)
 
 	token, err := handler.service.Login(&request)
 	if err != nil {
@@ -204,7 +205,6 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 			return
 		}
 		http.Error(writer, "Username not exist!", http.StatusBadRequest)
-
 		return
 	}
 
