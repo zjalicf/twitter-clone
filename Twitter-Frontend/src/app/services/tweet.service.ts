@@ -36,4 +36,8 @@ import { Tweet } from "../models/tweet.model";
             return this.http.get<Favorite[]>(`${environment.baseApiUrl}/${this.url}/whoLiked/` + tweetID)
         }
 
+        public Retweet(tweetID: TweetID): Observable<void> {
+            return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/retweet/`,tweetID)
+        }
+
     }
