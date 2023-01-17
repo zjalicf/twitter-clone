@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"auth_service/application"
+	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"log"
 )
 
 type CreateUserCommandHandler struct {
@@ -34,6 +36,9 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 
 //hendlovanje komandama
 func (handler *CreateUserCommandHandler) handleCommands(command *events.CreateUserCommand) {
+
+	fmt.Println(command)
+
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
@@ -56,6 +61,8 @@ func (handler *CreateUserCommandHandler) handleCommands(command *events.CreateUs
 //hendlovanje odgovorima
 func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserReply) {
 
+	fmt.Println(reply)
+
 	switch reply.Type {
 	case events.UsersUpdated:
 
@@ -63,8 +70,13 @@ func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserR
 		//i samo u tom slucaju saga je uspesna
 
 		//poslati mejl kada stigne ova poruka
-		handler.authService.
-			fmt.Println("Auth je primio poruku: Users is updated")
+		fmt.Println("USLO U SEND MAIL")
+		user := handler.authService.UserToDomain(reply.User)
+		err := handler.authService.SendMail(&user)
+		if err != nil {
+			log.Printf("Failed to send mail: %s", err.Error())
+			return
+		}
 	default:
 		reply.Type = events.UnknownReply
 	}
