@@ -53,16 +53,35 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
 
+	userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
+	userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
+	response, err := http.DefaultClient.Do(userServiceRequestMail)
+	if err != nil {
+		return "", 500, fmt.Errorf(errors.ServiceUnavailable)
+	}
+	if response.StatusCode != 404 {
+		return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
+	}
+
+	//provereni su mejl i username
+
 	user.ID = primitive.NewObjectID()
 	validatedUser, err := validateUserType(user)
 	if err != nil {
 		return "", 0, err
 	}
 
+	pass := []byte(user.Password)
+	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	if err != nil {
+		return "", 500, err
+	}
+	user.Password = string(hash)
+
 	credentials := domain.Credentials{
 		ID:       user.ID,
 		Username: validatedUser.Username,
-		Password: validatedUser.Password,
+		Password: user.Password,
 		UserType: validatedUser.UserType,
 		Verified: false,
 	}
@@ -79,72 +98,25 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 		return "", 0, err
 	}
 
-	//ovo sve treba da se desi odvojeno u user_service
-	//obvde se samo upisuju kredencijali i ukoliko se uspesno upisu onda se radi publish()
+	return credentials.ID.Hex(), 200, nil
+}
 
-	//userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
-	//userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
-	//response, _ := http.DefaultClient.Do(userServiceRequestMail)
-	//if response.StatusCode != 404 {
-	//	return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
-	//}
-	//
-	//pass := []byte(user.Password)
-	//hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-	//user.Password = string(hash)
+func (service *AuthService) SendMail(user *domain.User) error {
 
-	//body, err := json.Marshal(user)
-	//if err != nil {
-	//	return "", 500, err
-	//}
+	validationToken := uuid.New()
+	err := service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
+	if err != nil {
+		log.Fatalf("failed to post validation data to redis: %s", err)
+		return err
+	}
 
-	//userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-	//userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
-	//responseUser, _ := http.DefaultClient.Do(userServiceRequest)
-	//
-	//if responseUser.StatusCode != 200 {
-	//	buf := new(strings.Builder)
-	//	_, _ = io.Copy(buf, responseUser.Body)
-	//	return "", responseUser.StatusCode, fmt.Errorf(buf.String())
-	//}
+	err = sendValidationMail(validationToken, user.Email)
+	if err != nil {
+		log.Printf("Failed to send mail: %s", err.Error())
+		return err
+	}
 
-	//var newUser domain.User
-	//err = responseToType(responseUser.Body, &newUser)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-
-	//credentials := domain.Credentials{
-	//	ID:       newUser.ID,
-	//	Username: user.Username,
-	//	Password: user.Password,
-	//	UserType: newUser.UserType,
-	//	Verified: false,
-	//}
-	//
-	//err = service.store.Register(&credentials)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-	//
-	//validationToken := uuid.New()
-	//err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
-	//if err != nil {
-	//	log.Fatalf("failed to post validation data to redis: %s", err)
-	//	return "", 500, err
-	//}
-	//
-	//err = sendValidationMail(validationToken, user.Email)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-	//
-	//return newUser.ID.Hex(), 200, nil
-
-	return "", 200, nil
+	return nil
 }
 
 func sendValidationMail(validationToken uuid.UUID, email string) error {
