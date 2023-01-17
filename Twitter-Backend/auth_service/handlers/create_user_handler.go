@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"auth_service/application"
-	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
@@ -59,7 +58,13 @@ func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserR
 
 	switch reply.Type {
 	case events.UsersUpdated:
-		fmt.Println("Auth je primio poruku: Users is updated")
+
+		//posto se update radi u dva servisa ,trebalo bi imati neki brojac koji ce da broji broj pristiglih poruka. Tipa prva iz user_Service a druga iz follow servisa
+		//i samo u tom slucaju saga je uspesna
+
+		//poslati mejl kada stigne ova poruka
+		handler.authService.
+			fmt.Println("Auth je primio poruku: Users is updated")
 	default:
 		reply.Type = events.UnknownReply
 	}

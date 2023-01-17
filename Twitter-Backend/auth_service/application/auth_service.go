@@ -79,8 +79,7 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 		return "", 0, err
 	}
 
-	//ovo sve treba da se desi odvojeno u user_service
-	//obvde se samo upisuju kredencijali i ukoliko se uspesno upisu onda se radi publish()
+	//ovo treba da se desi kada pristigne poruka UsersUpdated
 
 	//userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
 	//userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
@@ -111,27 +110,8 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	//	return "", responseUser.StatusCode, fmt.Errorf(buf.String())
 	//}
 
-	//var newUser domain.User
-	//err = responseToType(responseUser.Body, &newUser)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-
-	//credentials := domain.Credentials{
-	//	ID:       newUser.ID,
-	//	Username: user.Username,
-	//	Password: user.Password,
-	//	UserType: newUser.UserType,
-	//	Verified: false,
-	//}
-	//
-	//err = service.store.Register(&credentials)
-	//if err != nil {
-	//	return "", 500, err
-	//}
-	//
 	//validationToken := uuid.New()
-	//err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
+	//err = service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
 	//if err != nil {
 	//	log.Fatalf("failed to post validation data to redis: %s", err)
 	//	return "", 500, err
@@ -142,9 +122,9 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	//	return "", 500, err
 	//}
 	//
-	//return newUser.ID.Hex(), 200, nil
+	//return user.ID.Hex(), 200, nil
 
-	return "", 200, nil
+	return "", 0, nil
 }
 
 func sendValidationMail(validationToken uuid.UUID, email string) error {
