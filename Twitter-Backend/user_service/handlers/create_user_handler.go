@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 	"user_service/application"
@@ -31,7 +32,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	switch command.Type {
 	case events.UpdateUsers:
-		_, err := handler.userService.Register(nil, &user)
+		_, err := handler.userService.Register(context.TODO(), &user)
 		if err != nil {
 			return
 		}

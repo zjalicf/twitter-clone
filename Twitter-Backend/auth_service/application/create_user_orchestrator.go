@@ -2,9 +2,8 @@ package application
 
 import (
 	"auth_service/domain"
+	"context"
 	"fmt"
-	"log"
-
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
@@ -26,7 +25,7 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 	return orchestrator, nil
 }
 
-func (o *CreateUserOrchestrator) Start(user *domain.User) error {
+func (o *CreateUserOrchestrator) Start(ctx context.Context, user *domain.User) error {
 
 	var gender events.Gender
 	var userType events.UserType
@@ -64,24 +63,7 @@ func (o *CreateUserOrchestrator) Start(user *domain.User) error {
 		Type: events.UpdateUsers,
 	}
 
-	log.Println("Orchestrator created")
-	//	Type: events.UpdateInventory,
-	//	User: user,
-	//}
-	//for _, item := range user.Items {
-	//	eventItem := events.OrderItem{
-	//		Product: events.Product{
-	//			Id:    item.Product.Id,
-	//			Color: events.Color{Code: item.Product.Color.Code},
-	//		},
-	//		Quantity: item.Quantity,
-	//	}
-	//	event.Order.Items = append(event.Order.Items, eventItem)
-	//}
-
-	//upis u bazu treba
-	fmt.Println("Message publiched!")
-	fmt.Println(event)
+	fmt.Printf("CONTEXT JE : %s", event.Context)
 	return o.commandPublisher.Publish(event)
 }
 

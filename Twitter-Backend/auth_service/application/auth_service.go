@@ -55,19 +55,12 @@ func (service *AuthService) GetAll(ctx context.Context) ([]*domain.Credentials, 
 }
 
 func (service *AuthService) Register(ctx context.Context, user *domain.User) (string, int, error) {
-	if ctx != nil {
-		ctx1, span := service.tracer.Start(ctx, "AuthService.Register")
-		defer span.End()
+	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
+	defer span.End()
 
-		_, err := service.store.GetOneUser(ctx1, user.Username)
-		if err == nil {
-			return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
-		}
-	} else {
-		_, err := service.store.GetOneUser(nil, user.Username)
-		if err == nil {
-			return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
-		}
+	_, err := service.store.GetOneUser(ctx, user.Username)
+	if err == nil {
+		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
 
 	userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
@@ -110,7 +103,7 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 
 	//starting orchestrator after insert in mongo
 
-	err = service.orchestrator.Start(validatedUser)
+	err = service.orchestrator.Start(ctx, validatedUser)
 	if err != nil {
 		return "", 0, err
 	}
