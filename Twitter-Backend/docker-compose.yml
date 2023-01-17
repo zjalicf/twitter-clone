@@ -17,9 +17,10 @@ services:
       FOLLOW_SERVICE_HOST: ${FOLLOW_SERVICE_HOST}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
-       tweet_db:
-         condition: service_healthy
+      tweet_db:
+        condition: service_healthy
     networks:
       - network
 
@@ -43,8 +44,10 @@ services:
       NATS_PASS: ${NATS_PASS}
       CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
       CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - user_db
+      - jaeger
     networks:
       - network
 
@@ -74,9 +77,11 @@ services:
       NATS_PASS: ${NATS_PASS}
       CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
       CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - auth_db
       - auth_cache
+      - jaeger
       - nats
     networks:
       - network
@@ -169,6 +174,22 @@ services:
     image: nats
     container_name: nats
     restart: on-failure
+    networks:
+      - network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - network
+
+  collector:
+    image: otel/opentelemetry-collector:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./api_gateway/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     networks:
       - network
 
