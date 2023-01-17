@@ -36,15 +36,12 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 
 //hendlovanje komandama
 func (handler *CreateUserCommandHandler) handleCommands(command *events.CreateUserCommand) {
-
-	fmt.Println(command)
-
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
 	case events.UpdateAuth:
-		_, _, err := handler.authService.Register(&user)
+		_, _, err := handler.authService.Register(nil, &user)
 		if err != nil {
 			return
 		}

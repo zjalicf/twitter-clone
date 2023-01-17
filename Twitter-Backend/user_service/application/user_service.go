@@ -62,9 +62,6 @@ func (service *UserService) GetOneUser(ctx context.Context, username string) (*d
 }
 
 func (service *UserService) Register(ctx context.Context, user *domain.User) (*domain.User, error) {
-	ctx, span := service.tracer.Start(ctx, "UserService.Register")
-	defer span.End()
-
 	validatedUser, err := validateUserType(user)
 	if err != nil {
 		log.Println(errors.ValidationError)
@@ -72,13 +69,24 @@ func (service *UserService) Register(ctx context.Context, user *domain.User) (*d
 	}
 	validatedUser.Visibility = true
 
-	retUser, err := service.store.Post(ctx, validatedUser)
-	if err != nil {
-		log.Println(errors.DatabaseError)
-		return nil, fmt.Errorf(errors.DatabaseError)
-	}
+	if ctx != nil {
+		ctx1, span := service.tracer.Start(ctx, "UserService.Register")
+		defer span.End()
 
-	return retUser, nil
+		retUser, err := service.store.Post(ctx1, validatedUser)
+		if err != nil {
+			log.Println(errors.DatabaseError)
+			return nil, fmt.Errorf(errors.DatabaseError)
+		}
+		return retUser, nil
+	} else {
+		retUser, err := service.store.Post(nil, validatedUser)
+		if err != nil {
+			log.Println(errors.DatabaseError)
+			return nil, fmt.Errorf(errors.DatabaseError)
+		}
+		return retUser, nil
+	}
 }
 
 func (service *UserService) ChangeUserVisibility(ctx context.Context, userID string) error {

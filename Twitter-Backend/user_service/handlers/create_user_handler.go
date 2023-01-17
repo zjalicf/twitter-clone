@@ -31,7 +31,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	switch command.Type {
 	case events.UpdateUsers:
-		_, err := handler.userService.Register(&user)
+		_, err := handler.userService.Register(nil, &user)
 		if err != nil {
 			return
 		}
