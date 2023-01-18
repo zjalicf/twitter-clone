@@ -9,5 +9,4 @@ func main() {
 	cfg := config.NewConfig()
 	server := startup.NewServer(cfg)
 	server.Start()
-
 }

@@ -1,30 +1,40 @@
 package application
 
 import (
+	"context"
 	"fmt"
 	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"user_service/domain"
 	"user_service/errors"
 )
 
 type UserService struct {
-	store domain.UserStore
+	store  domain.UserStore
+	tracer trace.Tracer
 }
 
-func NewUserService(store domain.UserStore) *UserService {
+func NewUserService(store domain.UserStore, tracer trace.Tracer) *UserService {
 	return &UserService{
-		store: store,
+		store:  store,
+		tracer: tracer,
 	}
 }
 
-func (service *UserService) Get(id primitive.ObjectID) (*domain.User, error) {
-	return service.store.Get(id)
+func (service *UserService) Get(ctx context.Context, id primitive.ObjectID) (*domain.User, error) {
+	ctx, span := service.tracer.Start(ctx, "UserService.Get")
+	defer span.End()
+
+	return service.store.Get(ctx, id)
 }
 
-func (service *UserService) DoesEmailExist(email string) (string, error) {
-	user, err := service.store.GetByEmail(email)
+func (service *UserService) DoesEmailExist(ctx context.Context, email string) (string, error) {
+	ctx, span := service.tracer.Start(ctx, "UserService.DoesEmailExist")
+	defer span.End()
+
+	user, err := service.store.GetByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}
@@ -32,21 +42,27 @@ func (service *UserService) DoesEmailExist(email string) (string, error) {
 	return user.ID.Hex(), nil
 }
 
-func (service *UserService) GetAll() ([]*domain.User, error) {
-	return service.store.GetAll()
+func (service *UserService) GetAll(ctx context.Context) ([]*domain.User, error) {
+	ctx, span := service.tracer.Start(ctx, "UserService.GetAll")
+	defer span.End()
+
+	return service.store.GetAll(ctx)
 }
 
-func (service *UserService) GetOneUser(username string) (*domain.User, error) {
-	retUser, err := service.store.GetOneUser(username)
+func (service *UserService) GetOneUser(ctx context.Context, username string) (*domain.User, error) {
+	ctx, span := service.tracer.Start(ctx, "UserService.GetOneUser")
+	defer span.End()
+
+	retUser, err := service.store.GetOneUser(ctx, username)
 	if err != nil {
 		log.Println(err)
-		return nil, fmt.Errorf("User not found")
+		return nil, fmt.Errorf("user not found")
 	}
 	return retUser, nil
 }
 
-func (service *UserService) Register(user *domain.User) (*domain.User, error) {
-	fmt.Println(user)
+func (service *UserService) Register(ctx context.Context, user *domain.User) (*domain.User, error) {
+
 	validatedUser, err := validateUserType(user)
 	if err != nil {
 		log.Println(errors.ValidationError)
@@ -54,30 +70,36 @@ func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 	}
 	validatedUser.Visibility = true
 
-	retUser, err := service.store.Post(validatedUser)
+	ctx, span := service.tracer.Start(ctx, "UserService.Register")
+	defer span.End()
+
+	retUser, err := service.store.Post(ctx, validatedUser)
 	if err != nil {
 		log.Println(errors.DatabaseError)
 		return nil, fmt.Errorf(errors.DatabaseError)
 	}
-
 	return retUser, nil
+
 }
 
-func (service *UserService) ChangeUserVisibility(userID string) error {
+func (service *UserService) ChangeUserVisibility(ctx context.Context, userID string) error {
+	ctx, span := service.tracer.Start(ctx, "UserService.ChangeUserVisibility")
+	defer span.End()
+
 	primitiveID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		log.Println("Primitive ID parsing error.")
 		return err
 	}
 
-	user, err := service.store.Get(primitiveID)
+	user, err := service.store.Get(ctx, primitiveID)
 	if err != nil {
 		log.Printf("Getting user by id error: %s", err.Error())
 		return fmt.Errorf(errors.UserNotFound)
 	}
 
 	user.Visibility = !user.Visibility
-	err = service.store.UpdateUser(user)
+	err = service.store.UpdateUser(ctx, user)
 	if err != nil {
 		log.Printf("Updating user error in service: %s", err.Error())
 		return err

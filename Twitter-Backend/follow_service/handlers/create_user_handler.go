@@ -1,21 +1,20 @@
 package handlers
 
 import (
-	"context"
+	"follow_service/application"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
-	"user_service/application"
 )
 
 type CreateUserCommandHandler struct {
-	userService       *application.UserService
+	followService     *application.FollowService
 	replyPublisher    saga.Publisher
 	commandSubscriber saga.Subscriber
 }
 
-func NewCreateUserCommandHandler(userService *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserCommandHandler, error) {
+func NewCreateUserCommandHandler(followService *application.FollowService, publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserCommandHandler, error) {
 	o := &CreateUserCommandHandler{
-		userService:       userService,
+		followService:     followService,
 		replyPublisher:    publisher,
 		commandSubscriber: subscriber,
 	}
@@ -27,16 +26,16 @@ func NewCreateUserCommandHandler(userService *application.UserService, publisher
 }
 
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
-	user := handler.userService.UserToDomain(command.User)
+	user := handler.followService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
-	case events.UpdateUsers:
-		_, err := handler.userService.Register(context.TODO(), &user)
+	case events.UpdateGraph:
+		err := handler.followService.CreateUser(&user)
 		if err != nil {
 			return
 		}
-		reply.Type = events.UsersUpdated
+		reply.Type = events.GraphUpdated
 	default:
 		reply.Type = events.UnknownReply
 	}

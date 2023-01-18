@@ -3,6 +3,8 @@ package application
 import (
 	"fmt"
 	"follow_service/domain"
+	"github.com/google/uuid"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
@@ -45,9 +47,9 @@ func (service *FollowService) GetRequestsForUser(username string) ([]*domain.Fol
 	return service.store.GetRequestsForUser(username)
 }
 
-func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string, visibility bool) (*domain.FollowRequest, error) {
+func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string, visibility bool) error {
 
-	request.ID = primitive.NewObjectID()
+	request.ID = uuid.New().String()
 	request.Requester = username
 
 	if visibility {
@@ -58,19 +60,30 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 
 	isExist, err := service.FollowExist(request)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if isExist {
-		return nil, fmt.Errorf("You already follow this user!")
+		return fmt.Errorf("You already follow this user!")
 	}
 
-	retFollow, err := service.store.SaveRequest(request)
+	err = service.store.SaveRequest(request)
 	if err != nil {
 		log.Println(err)
-		return nil, fmt.Errorf("Follow not inserted in db")
+		return fmt.Errorf("Follow not inserted in db")
 	}
-	return retFollow, nil
+
+	return nil
+}
+
+func (service *FollowService) CreateUser(user *domain.User) error {
+	err := service.store.SaveUser(user)
+	if err != nil {
+		log.Printf("Error with saving user node in neo4j: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (service *FollowService) AcceptRequest(id primitive.ObjectID) error {
@@ -81,6 +94,16 @@ func (service *FollowService) DeclineRequest(id primitive.ObjectID) error {
 	return service.store.DeclineRequest(id)
 }
 
-func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) (*domain.FollowRequest, error) {
+func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) error {
 	return service.store.SaveRequest(followRequest)
+}
+
+func (service *FollowService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID.Hex()
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Username = userIn.Username
+
+	return user
 }

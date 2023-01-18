@@ -36,15 +36,12 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 
 //hendlovanje komandama
 func (handler *CreateUserCommandHandler) handleCommands(command *events.CreateUserCommand) {
-
-	fmt.Println(command)
-
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
 	case events.UpdateAuth:
-		_, _, err := handler.authService.Register(&user)
+		_, _, err := handler.authService.Register(nil, &user)
 		if err != nil {
 			return
 		}
@@ -70,13 +67,15 @@ func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserR
 		//i samo u tom slucaju saga je uspesna
 
 		//poslati mejl kada stigne ova poruka
-		fmt.Println("USLO U SEND MAIL")
 		user := handler.authService.UserToDomain(reply.User)
 		err := handler.authService.SendMail(&user)
 		if err != nil {
 			log.Printf("Failed to send mail: %s", err.Error())
 			return
 		}
+	case events.GraphUpdated:
+		fmt.Println("Napravljen NODE")
+
 	default:
 		reply.Type = events.UnknownReply
 	}
