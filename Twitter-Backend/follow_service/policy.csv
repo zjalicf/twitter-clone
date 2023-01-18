@@ -16,4 +16,5 @@ p, Business, /acceptRequest/*, PUT
 p, Business, /declineRequest/*, PUT
 p, Regular, /followings, GET
 p, Business, /followings, GET
+p, NotLoggedIn, /users, POST
 

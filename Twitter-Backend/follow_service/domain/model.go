@@ -1,14 +1,17 @@
 package domain
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 type FollowRequest struct {
-	ID        primitive.ObjectID `bson:"_id" json:"id,omitempty"`
-	Receiver  string             `bson:"receiver" json:"receiver"`
-	Requester string             `bson:"requester" json:"requester"`
-	Status    Status             `bson:"status" json:"status,omitempty"`
+	ID        string `json:"id,omitempty"`
+	Receiver  string `json:"receiver"`
+	Requester string `json:"requester"`
+	Status    Status `json:"status,omitempty"`
+}
+
+type User struct {
+	ID        string `json:"id,omitempty"`
+	Username  string `json:"username"`
+	Age       int    `json:"age"`
+	Residence string `json:"residence"`
 }
 
 type Status int

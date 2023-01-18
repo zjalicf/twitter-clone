@@ -6,6 +6,7 @@ import (
 	"follow_service/application"
 	"follow_service/authorization"
 	"follow_service/domain"
+	"follow_service/errors"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,6 +37,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
+	router.HandleFunc("/users", handler.CreateUser).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
@@ -140,14 +142,34 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 		visibility = false
 	}
 
-	followRequest, err := handler.service.CreateRequest(&request, claims["username"], visibility)
+	err = handler.service.CreateRequest(&request, claims["username"], visibility)
 	if err != nil {
+		log.Println("ERR")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(followRequest, writer)
+	//jsonResponse(followRequest, writer)
+}
+
+func (handler *FollowHandler) CreateUser(writer http.ResponseWriter, req *http.Request) {
+	var request domain.User
+	err := json.NewDecoder(req.Body).Decode(&request)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.CreateUser(&request)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(writer, errors.ServiceUnavailable, http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *http.Request) {
