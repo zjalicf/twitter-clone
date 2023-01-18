@@ -1,14 +1,18 @@
 package store
 
 import (
-	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"log"
 )
 
-func GetClient(host, port string) (*mongo.Client, error) {
-	uri := fmt.Sprintf("mongodb://%s:%s/", host, port)
-	optionsClient := options.Client().ApplyURI(uri)
-	return mongo.Connect(context.TODO(), optionsClient)
+func GetClient(host, port, user, pass string) (*neo4j.DriverWithContext, error) {
+
+	uri := fmt.Sprintf("bolt://%s:%s/", host, port)
+	log.Printf("neo4j uri: %s", uri)
+	log.Printf("USER: %s, PASS: %s", user, pass)
+	auth := neo4j.BasicAuth(user, pass, "")
+	driver, err := neo4j.NewDriverWithContext(uri, auth)
+
+	return &driver, err
 }

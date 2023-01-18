@@ -9,7 +9,7 @@ import (
 	"follow_service/startup/config"
 	"follow_service/store"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 	"net/http"
 	"os"
@@ -28,32 +28,25 @@ func NewServer(config *config.Config) *Server {
 	}
 }
 
-func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort)
+func (server *Server) initNeo4JDriver() *neo4j.DriverWithContext {
+	driver, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort,
+		server.config.FollowDBUser, server.config.FollowDBPass)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return client
+	return driver
 }
 
-func (server *Server) initFollowStore(client *mongo.Client) domain.FollowRequestStore {
-	store := store.NewFollowMongoDBStore(client)
+func (server *Server) initFollowStore(driver *neo4j.DriverWithContext) domain.FollowRequestStore {
+	store := store.NewFollowNeo4JStore(driver)
 
-	//Delete everything from the database on server start
-	//	store.DeleteAll()
 	return store
 }
 
 func (server *Server) Start() {
-	mongoClient := server.initMongoClient()
-	defer func(mongoClient *mongo.Client, ctx context.Context) {
-		err := mongoClient.Disconnect(ctx)
-		if err != nil {
 
-		}
-	}(mongoClient, context.Background())
-
-	followStore := server.initFollowStore(mongoClient)
+	neo4jDriver := server.initNeo4JDriver()
+	followStore := server.initFollowStore(neo4jDriver)
 	followService := server.initFollowService(followStore)
 	followHandler := server.initFollowHandler(followService)
 

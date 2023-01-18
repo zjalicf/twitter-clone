@@ -80,6 +80,8 @@ services:
     environment:
       FOLLOW_DB_HOST: ${FOLLOW_DB_HOST}
       FOLLOW_DB_PORT: ${FOLLOW_DB_PORT}
+      FOLLOW_DB_USER: ${FOLLOW_DB_USER}
+      FOLLOW_DB_PASS: ${FOLLOW_DB_PASS}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
     depends_on:
@@ -138,12 +140,41 @@ services:
     networks:
       - network
 
+#  follow_db:
+#    image: mongo
+#    container_name: follow_db
+#    restart: on-failure
+#    networks:
+#      - network
+
   follow_db:
-    image: mongo
-    container_name: follow_db
-    restart: on-failure
+    image: neo4j
+    restart: always
+    ports:
+      # bolt
+      - "7687:7687"
+      # http
+      - "7474:7474"
+      # https
+      - "7473:7473"
+    # Docker healtcheck - checks if database is "alive"
+    healthcheck:
+      # test: [ "CMD-SHELL", "echo RETURN 1 | cypher-shell -a <NEO4J_dbms_connector_bolt_listen__address> -u <user defined username> -p <user defined password> || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "echo RETURN 1 | cypher-shell -a bolt://follow_db:7687 -u neo4j -p twitter123 || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      - NEO4J_initial_dbms_default__database=follow
+      - NEO4J_AUTH=neo4j/twitter123
     networks:
       - network
+    volumes:
+      - neo4j_data:/data
 
   auth_cache:
     image: redis
@@ -161,7 +192,7 @@ services:
 
 volumes:
   cassandra_store:
-
+  neo4j_data:
   auth_cache:
     driver: local
 
