@@ -10,6 +10,8 @@ import (
 	"follow_service/store"
 	"github.com/gorilla/mux"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +29,10 @@ func NewServer(config *config.Config) *Server {
 		config: config,
 	}
 }
+
+const (
+	QueueGroup = "follow_service"
+)
 
 func (server *Server) initNeo4JDriver() *neo4j.DriverWithContext {
 	driver, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort,
@@ -50,6 +56,12 @@ func (server *Server) Start() {
 	followService := server.initFollowService(followStore)
 	followHandler := server.initFollowHandler(followService)
 
+	//saga init
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+
+	server.initCreateUserHandler(followService, replyPublisher, commandSubscriber)
+
 	server.start(followHandler)
 }
 
@@ -59,6 +71,33 @@ func (server *Server) initFollowService(store domain.FollowRequestStore) *applic
 
 func (server *Server) initFollowHandler(service *application.FollowService) *handlers.FollowHandler {
 	return handlers.NewFollowHandler(service)
+}
+
+func (server *Server) initCreateUserHandler(service *application.FollowService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (server *Server) initPublisher(subject string) saga.Publisher {
+	publisher, err := nats.NewNATSPublisher(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return publisher
+}
+
+func (server *Server) initSubscriber(subject string, queueGroup string) saga.Subscriber {
+	subscriber, err := nats.NewNATSSubscriber(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject, queueGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subscriber
 }
 
 func (server *Server) start(followHandler *handlers.FollowHandler) {

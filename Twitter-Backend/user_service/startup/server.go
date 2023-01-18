@@ -101,7 +101,6 @@ func (server *Server) initCreateUserHandler(service *application.UserService, pu
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("User service UserHandler Started!")
 }
 
 func (server *Server) initPublisher(subject string) saga.Publisher {

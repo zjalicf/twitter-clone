@@ -67,13 +67,15 @@ func (handler *CreateUserCommandHandler) handleReplays(reply *events.CreateUserR
 		//i samo u tom slucaju saga je uspesna
 
 		//poslati mejl kada stigne ova poruka
-		fmt.Println("USLO U SEND MAIL")
 		user := handler.authService.UserToDomain(reply.User)
 		err := handler.authService.SendMail(&user)
 		if err != nil {
 			log.Printf("Failed to send mail: %s", err.Error())
 			return
 		}
+	case events.GraphUpdated:
+		fmt.Println("Napravljen NODE")
+
 	default:
 		reply.Type = events.UnknownReply
 	}

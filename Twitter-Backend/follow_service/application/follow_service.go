@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"follow_service/domain"
 	"github.com/google/uuid"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
@@ -95,4 +96,14 @@ func (service *FollowService) DeclineRequest(id primitive.ObjectID) error {
 
 func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) error {
 	return service.store.SaveRequest(followRequest)
+}
+
+func (service *FollowService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID.Hex()
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Username = userIn.Username
+
+	return user
 }
