@@ -82,7 +82,6 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 		log.Printf("Error with saving user node in neo4j: %s", err.Error())
 		return err
 	}
-
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"follow_service/application"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
@@ -26,15 +27,18 @@ func NewCreateUserCommandHandler(followService *application.FollowService, publi
 }
 
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
-	user := handler.followService.UserToDomain(command.User)
+	//user := handler.followService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
 	case events.UpdateGraph:
-		err := handler.followService.CreateUser(&user)
-		if err != nil {
-			return
-		}
+
+		fmt.Println("Stigla poruka u graph")
+		
+		//err := handler.followService.CreateUser(&user)
+		//if err != nil {
+		//	return
+		//}
 		reply.Type = events.GraphUpdated
 	default:
 		reply.Type = events.UnknownReply

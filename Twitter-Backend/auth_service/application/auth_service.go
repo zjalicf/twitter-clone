@@ -96,14 +96,7 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 		Verified: false,
 	}
 
-	err = service.store.Register(ctx, &credentials)
-	if err != nil {
-		return "", 0, err
-	}
-
-	//starting orchestrator after insert in mongo
-
-	err = service.orchestrator.Start(ctx, validatedUser)
+	err = service.orchestrator.Start(validatedUser)
 	if err != nil {
 		return "", 0, err
 	}
