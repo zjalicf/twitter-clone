@@ -96,8 +96,14 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 		Verified: false,
 	}
 
+	err = service.store.Register(ctx, &credentials)
+	if err != nil {
+		return "", 0, err
+	}
+
 	err = service.orchestrator.Start(validatedUser)
 	if err != nil {
+		log.Println("ERR IN START ORCHESTRATOR")
 		return "", 0, err
 	}
 

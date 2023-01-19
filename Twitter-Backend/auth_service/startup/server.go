@@ -156,8 +156,6 @@ func (server *Server) initCreateUserHandler(service *application.AuthService, pu
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Auth service UserHandler Started!")
-
 }
 
 // start

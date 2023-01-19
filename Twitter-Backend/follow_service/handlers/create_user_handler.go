@@ -27,19 +27,23 @@ func NewCreateUserCommandHandler(followService *application.FollowService, publi
 }
 
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
-	//user := handler.followService.UserToDomain(command.User)
+	user := handler.followService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
-	case events.UpdateGraph:
 
-		fmt.Println("Stigla poruka u graph")
-		
-		//err := handler.followService.CreateUser(&user)
-		//if err != nil {
-		//	return
-		//}
-		reply.Type = events.GraphUpdated
+	case events.UpdateGraph:
+		err := handler.followService.CreateUser(&user)
+		if err != nil {
+			reply.Type = events.FollowFailed
+		} else {
+			reply.Type = events.GraphUpdated
+		}
+
+	case events.RollbackFollow:
+		//TODO
+		fmt.Println("Rollback follow")
+		reply.Type = events.FollowFailed
 	default:
 		reply.Type = events.UnknownReply
 	}

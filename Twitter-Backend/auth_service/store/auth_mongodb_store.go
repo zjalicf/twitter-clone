@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/trace"
+	"log"
 )
 
 const (
@@ -70,8 +71,10 @@ func (store *AuthMongoDBStore) GetOneUser(ctx context.Context, username string) 
 
 	user, err := store.filterOne(filter)
 	if err != nil {
+		log.Println(err.Error())
 		return nil, err
 	}
+	log.Println("SVE OK")
 
 	return user, nil
 }

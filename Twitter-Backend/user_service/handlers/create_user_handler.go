@@ -27,19 +27,26 @@ func NewCreateUserCommandHandler(userService *application.UserService, publisher
 }
 
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
-	//user := handler.userService.UserToDomain(command.User)
+	user := handler.userService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
 	switch command.Type {
+
 	case events.UpdateUsers:
-		fmt.Println("Stigla poruka u users")
 
-		//_, err := handler.userService.Register(nil, &user)
-		//if err != nil {
-		//	return
-		//}
+		_, err := handler.userService.Register(&user)
+		if err != nil {
+			reply.Type = events.UsersFailed
+		} else {
+			reply.Type = events.UsersUpdated
 
-		reply.Type = events.UsersUpdated
+		}
+
+	case events.RollbackUsers:
+		reply.Type = events.UsersFailed
+		//TODO
+		fmt.Println("Rollback users")
+
 	default:
 		reply.Type = events.UnknownReply
 	}
