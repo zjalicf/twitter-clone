@@ -2,8 +2,6 @@ package application
 
 import (
 	"auth_service/domain"
-	"context"
-	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 )
@@ -25,7 +23,7 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 	return orchestrator, nil
 }
 
-func (o *CreateUserOrchestrator) Start(ctx context.Context, user *domain.User) error {
+func (o *CreateUserOrchestrator) Start(user *domain.User) error {
 
 	var gender events.Gender
 	var userType events.UserType
@@ -60,10 +58,8 @@ func (o *CreateUserOrchestrator) Start(ctx context.Context, user *domain.User) e
 
 	event := &events.CreateUserCommand{
 		User: user1,
-		Type: events.UpdateUsers,
+		Type: events.UpdateAuth,
 	}
-
-	fmt.Printf("CONTEXT JE : %s", event.Context)
 	return o.commandPublisher.Publish(event)
 }
 
@@ -77,6 +73,8 @@ func (o *CreateUserOrchestrator) handle(reply *events.CreateUserReply) {
 
 func (o *CreateUserOrchestrator) nextCommandType(reply events.CreateUserReplyType) events.CreateUserCommandType {
 	switch reply {
+	case events.AuthUpdated:
+		return events.UpdateUsers
 	case events.UsersUpdated:
 		return events.UpdateGraph
 	default:

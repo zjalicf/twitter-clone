@@ -37,7 +37,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
-	router.HandleFunc("/users", handler.CreateUser).Methods("POST")
+	//router.HandleFunc("/users", handler.CreateUser).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")

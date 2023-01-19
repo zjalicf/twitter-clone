@@ -68,11 +68,14 @@ func (server *Server) Start() {
 	authStore := server.initAuthStore(mongoClient, tracer)
 
 	//saga init
-	commandPublisher := server.initPublisher(server.config.CreateUserCommandSubject)
-	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
 
-	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+	//orchestrator
+	commandPublisher := server.initPublisher(server.config.CreateUserCommandSubject)
 	replySubscriber := server.initSubscriber(server.config.CreateUserReplySubject, QueueGroup)
+
+	//service
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
 
 	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber)
 

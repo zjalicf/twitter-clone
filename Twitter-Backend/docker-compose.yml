@@ -19,6 +19,8 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
+      jaeger:
+        condition: service_started
       tweet_db:
         condition: service_healthy
     networks:
@@ -48,6 +50,7 @@ services:
     depends_on:
       - user_db
       - jaeger
+      - auth_service
     networks:
       - network
 
@@ -110,6 +113,9 @@ services:
       CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
     depends_on:
       - follow_db
+      - jaeger
+      - auth_service
+      - user_service
     networks:
       - network
 
@@ -123,6 +129,9 @@ services:
       - "8000:8000"
     depends_on:
       - tweet_service
+      - auth_service
+      - user_service
+      - follow_service
     networks:
       - network
 
