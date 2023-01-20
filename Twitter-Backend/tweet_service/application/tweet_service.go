@@ -98,6 +98,10 @@ func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string
 	return service.store.GetLikesByTweet(ctx, tweetID)
 }
 
+func (service *TweetService) SaveImageRedis(imageBytes []byte) error {
+	return service.store.SaveImageRedis(imageBytes)
+}
+
 func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, username string) (*domain.Tweet, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Post")
 	defer span.End()

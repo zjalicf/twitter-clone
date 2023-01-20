@@ -6,6 +6,8 @@ require (
 	github.com/casbin/casbin v1.9.1
 	github.com/cristalhq/jwt/v4 v4.0.2
 	github.com/gocql/gocql v1.2.1
+	github.com/gomodule/redigo v1.8.9
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sony/gobreaker v0.5.0
 	go.opentelemetry.io/otel v1.11.2
