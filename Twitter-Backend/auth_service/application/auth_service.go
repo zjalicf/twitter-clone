@@ -26,7 +26,7 @@ var (
 	userServiceHost = os.Getenv("USER_SERVICE_HOST")
 	userServicePort = os.Getenv("USER_SERVICE_PORT")
 	smtpServer      = "smtp-mail.outlook.com"
-	smtpServerPort  = 587
+	smtpServerPort  = 5875
 	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
 	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
 )
@@ -138,6 +138,11 @@ func sendValidationMail(validationToken uuid.UUID, email string) error {
 	message.SetBody("text", bodyString)
 
 	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
+
+	_, err := client.Dial()
+	if err != nil {
+		return err
+	}
 
 	if err := client.DialAndSend(message); err != nil {
 		log.Fatalf("failed to send verification mail because of: %s", err)
