@@ -6,6 +6,9 @@ import (
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 	"os"
@@ -17,25 +20,27 @@ import (
 
 type TweetHandler struct {
 	service *application.TweetService
+	tracer  trace.Tracer
 }
 
 var jwtKey = []byte(os.Getenv("SECRET_KEY"))
 var verifier, _ = jwt.NewVerifierHS(jwt.HS256, jwtKey)
 
-func NewTweetHandler(service *application.TweetService) *TweetHandler {
+func NewTweetHandler(service *application.TweetService, tracer trace.Tracer) *TweetHandler {
 	return &TweetHandler{
 		service: service,
+		tracer:  tracer,
 	}
 }
 
 func (handler *TweetHandler) Init(router *mux.Router) {
-
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	log.Println("sucessful init of enforcer")
+	log.Println("successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	router.Use(ExtractTraceInfoMiddleware)
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
@@ -50,7 +55,10 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 }
 
 func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
-	tweets, err := handler.service.GetAll()
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetAll")
+	defer span.End()
+
+	tweets, err := handler.service.GetAll(ctx)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -59,6 +67,9 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 }
 
 func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetTweetsByUser")
+	defer span.End()
+
 	vars := mux.Vars(req)
 	username, ok := vars["username"]
 	if !ok {
@@ -66,7 +77,7 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 		return
 	}
 
-	tweets, err := handler.service.GetTweetsByUser(username)
+	tweets, err := handler.service.GetTweetsByUser(ctx, username)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -76,6 +87,9 @@ func (handler *TweetHandler) GetTweetsByUser(writer http.ResponseWriter, req *ht
 }
 
 func (handler *TweetHandler) GetLikesByTweet(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetLikesByTweet")
+	defer span.End()
+
 	vars := mux.Vars(req)
 	tweetID, ok := vars["id"]
 	if !ok {
@@ -83,7 +97,7 @@ func (handler *TweetHandler) GetLikesByTweet(writer http.ResponseWriter, req *ht
 		return
 	}
 
-	favorites, err := handler.service.GetLikesByTweet(tweetID)
+	favorites, err := handler.service.GetLikesByTweet(ctx, tweetID)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -92,6 +106,8 @@ func (handler *TweetHandler) GetLikesByTweet(writer http.ResponseWriter, req *ht
 }
 
 func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Favorite")
+	defer span.End()
 
 	bearer := req.Header.Get("Authorization")
 	bearerToken := strings.Split(bearer, "Bearer ")
@@ -116,7 +132,7 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	tweets, err := handler.service.Favorite(tweetID.ID, username)
+	tweets, err := handler.service.Favorite(ctx, tweetID.ID, username)
 
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -129,6 +145,8 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 }
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
+	defer span.End()
 
 	file, _, err := req.FormFile("image")
 	if err != nil {
@@ -170,7 +188,8 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	reponseTweet, err := handler.service.Post(&tweet, username)
+	tweet, err := handler.service.Post(ctx, &request, username)
+
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -184,6 +203,13 @@ func Post(handler *TweetHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler.Post(w, r)
 	}
+}
+
+func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {

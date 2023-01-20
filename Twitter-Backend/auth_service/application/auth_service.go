@@ -4,12 +4,14 @@ import (
 	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
 	"io"
@@ -32,32 +34,51 @@ var (
 type AuthService struct {
 	store        domain.AuthStore
 	cache        domain.AuthCache
-	orchestrator CreateUserOrchestrator
+	tracer       trace.Tracer
+	orchestrator *CreateUserOrchestrator
 }
 
-func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator CreateUserOrchestrator) *AuthService {
+func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *CreateUserOrchestrator, tracer trace.Tracer) *AuthService {
 	return &AuthService{
 		store:        store,
 		cache:        cache,
 		orchestrator: orchestrator,
+		tracer:       tracer,
 	}
 }
 
-func (service *AuthService) GetAll() ([]*domain.Credentials, error) {
-	return service.store.GetAll()
+func (service *AuthService) GetAll(ctx context.Context) ([]*domain.Credentials, error) {
+	ctx, span := service.tracer.Start(ctx, "AuthService.GetAll")
+	defer span.End()
+
+	return service.store.GetAll(ctx)
 }
 
-func (service *AuthService) Register(user *domain.User) (string, int, error) {
-	_, err := service.store.GetOneUser(user.Username)
+func (service *AuthService) Register(ctx context.Context, user *domain.User) (string, int, error) {
+	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
+	defer span.End()
+
+	_, err := service.store.GetOneUser(ctx, user.Username)
 	if err == nil {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
 
 	userServiceEndpointMail := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, user.Email)
 	userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
-	response, _ := http.DefaultClient.Do(userServiceRequestMail)
+	response, err := http.DefaultClient.Do(userServiceRequestMail)
+	if err != nil {
+		return "", 500, fmt.Errorf(errors.ServiceUnavailable)
+	}
 	if response.StatusCode != 404 {
 		return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
+	}
+
+	//provereni su mejl i username
+
+	user.ID = primitive.NewObjectID()
+	validatedUser, err := validateUserType(user)
+	if err != nil {
+		return "", 0, err
 	}
 
 	pass := []byte(user.Password)
@@ -67,53 +88,51 @@ func (service *AuthService) Register(user *domain.User) (string, int, error) {
 	}
 	user.Password = string(hash)
 
-	body, err := json.Marshal(user)
-	if err != nil {
-		return "", 500, err
-	}
-
-	userServiceEndpoint := fmt.Sprintf("http://%s:%s/", userServiceHost, userServicePort)
-	userServiceRequest, _ := http.NewRequest("POST", userServiceEndpoint, bytes.NewReader(body))
-	responseUser, _ := http.DefaultClient.Do(userServiceRequest)
-
-	if responseUser.StatusCode != 200 {
-		buf := new(strings.Builder)
-		_, _ = io.Copy(buf, responseUser.Body)
-		return "", responseUser.StatusCode, fmt.Errorf(buf.String())
-	}
-
-	var newUser domain.User
-	err = responseToType(responseUser.Body, &newUser)
-	if err != nil {
-		return "", 500, err
-	}
-
 	credentials := domain.Credentials{
-		ID:       newUser.ID,
-		Username: user.Username,
+		ID:       user.ID,
+		Username: validatedUser.Username,
 		Password: user.Password,
-		UserType: newUser.UserType,
+		UserType: validatedUser.UserType,
 		Verified: false,
 	}
 
-	err = service.store.Register(&credentials)
+	err = service.store.Register(ctx, &credentials)
 	if err != nil {
-		return "", 500, err
+		return "", 0, err
 	}
 
+	err = service.orchestrator.Start(validatedUser)
+	if err != nil {
+		log.Println("ERR IN START ORCHESTRATOR")
+		return "", 0, err
+	}
+
+	return credentials.ID.Hex(), 200, nil
+}
+
+func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.DeleteUserByID")
+	defer span.End()
+
+	return service.store.DeleteUserByID(ctx, id)
+}
+
+func (service *AuthService) SendMail(user *domain.User) error {
+
 	validationToken := uuid.New()
-	err = service.cache.PostCacheData(newUser.ID.Hex(), validationToken.String())
+	err := service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
 	if err != nil {
 		log.Fatalf("failed to post validation data to redis: %s", err)
-		return "", 500, err
+		return err
 	}
 
 	err = sendValidationMail(validationToken, user.Email)
 	if err != nil {
-		return "", 500, err
+		log.Printf("Failed to send mail: %s", err.Error())
+		return err
 	}
 
-	return newUser.ID.Hex(), 200, nil
+	return nil
 }
 
 func sendValidationMail(validationToken uuid.UUID, email string) error {
@@ -127,6 +146,11 @@ func sendValidationMail(validationToken uuid.UUID, email string) error {
 
 	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
 
+	_, err := client.Dial()
+	if err != nil {
+		return err
+	}
+
 	if err := client.DialAndSend(message); err != nil {
 		log.Fatalf("failed to send verification mail because of: %s", err)
 		return err
@@ -135,7 +159,10 @@ func sendValidationMail(validationToken uuid.UUID, email string) error {
 	return nil
 }
 
-func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVerification) error {
+func (service *AuthService) VerifyAccount(ctx context.Context, validation *domain.RegisterRecoverVerification) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.VerifyAccount")
+	defer span.End()
+
 	token, err := service.cache.GetCachedValue(validation.UserToken)
 	if err != nil {
 		log.Println(errors.ExpiredTokenError)
@@ -150,10 +177,10 @@ func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVeri
 		}
 
 		userID, err := primitive.ObjectIDFromHex(validation.UserToken)
-		user := service.store.GetOneUserByID(userID)
+		user := service.store.GetOneUserByID(ctx, userID)
 		user.Verified = true
 
-		err = service.store.UpdateUser(user)
+		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
 			log.Printf("error in updating user after changing status of verify: %s", err.Error())
 			return err
@@ -165,7 +192,10 @@ func (service *AuthService) VerifyAccount(validation *domain.RegisterRecoverVeri
 	return fmt.Errorf(errors.InvalidTokenError)
 }
 
-func (service *AuthService) ResendVerificationToken(request *domain.ResendVerificationRequest) error {
+func (service *AuthService) ResendVerificationToken(ctx context.Context, request *domain.ResendVerificationRequest) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.ResendVerificationToken")
+	defer span.End()
+
 	if len(request.UserMail) == 0 {
 		log.Println(errors.InvalidResendMailError)
 		return fmt.Errorf(errors.InvalidResendMailError)
@@ -188,7 +218,9 @@ func (service *AuthService) ResendVerificationToken(request *domain.ResendVerifi
 	return nil
 }
 
-func (service *AuthService) SendRecoveryPasswordToken(email string) (string, int, error) {
+func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email string) (string, int, error) {
+	ctx, span := service.tracer.Start(ctx, "AuthService.SendRecoveryPasswordToken")
+	defer span.End()
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, email)
 	userServiceRequest, _ := http.NewRequest("GET", userServiceEndpoint, nil)
@@ -217,7 +249,9 @@ func (service *AuthService) SendRecoveryPasswordToken(email string) (string, int
 	return userID, 200, nil
 }
 
-func (service *AuthService) CheckRecoveryPasswordToken(request *domain.RegisterRecoverVerification) error {
+func (service *AuthService) CheckRecoveryPasswordToken(ctx context.Context, request *domain.RegisterRecoverVerification) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.CheckRecoveryPasswordToken")
+	defer span.End()
 
 	if len(request.UserToken) == 0 {
 		return fmt.Errorf(errors.InvalidUserTokenError)
@@ -255,7 +289,10 @@ func sendRecoverPasswordMail(validationToken uuid.UUID, email string) error {
 	return nil
 }
 
-func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPasswordRequest) error {
+func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword *domain.RecoverPasswordRequest) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.RecoverPassword")
+	defer span.End()
+
 	if recoverPassword.NewPassword != recoverPassword.RepeatedNew {
 		return fmt.Errorf(errors.NotMatchingPasswordsError)
 	}
@@ -264,7 +301,7 @@ func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPassw
 	if err != nil {
 		return err
 	}
-	credentials := service.store.GetOneUserByID(primitiveID)
+	credentials := service.store.GetOneUserByID(ctx, primitiveID)
 
 	pass := []byte(recoverPassword.NewPassword)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
@@ -273,7 +310,7 @@ func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPassw
 	}
 	credentials.Password = string(hash)
 
-	err = service.store.UpdateUser(credentials)
+	err = service.store.UpdateUser(ctx, credentials)
 	if err != nil {
 		return err
 	}
@@ -281,8 +318,11 @@ func (service *AuthService) RecoverPassword(recoverPassword *domain.RecoverPassw
 	return nil
 }
 
-func (service *AuthService) Login(credentials *domain.Credentials) (string, error) {
-	user, err := service.store.GetOneUser(credentials.Username)
+func (service *AuthService) Login(ctx context.Context, credentials *domain.Credentials) (string, error) {
+	ctx, span := service.tracer.Start(ctx, "AuthService.Login")
+	defer span.End()
+
+	user, err := service.store.GetOneUser(ctx, credentials.Username)
 	if err != nil {
 		fmt.Println(err)
 		return "", err
@@ -309,7 +349,7 @@ func (service *AuthService) Login(credentials *domain.Credentials) (string, erro
 			UserMail:  userUser.Email,
 		}
 
-		err = service.ResendVerificationToken(&verify)
+		err = service.ResendVerificationToken(ctx, &verify)
 		if err != nil {
 			return "", err
 		}
@@ -348,7 +388,6 @@ func responseToType(response io.ReadCloser, user *domain.User) error {
 }
 
 func GenerateJWT(user *domain.Credentials) (string, error) {
-
 	key := []byte(os.Getenv("SECRET_KEY"))
 	signer, err := jwt.NewSignerHS(jwt.HS256, key)
 	if err != nil {
@@ -372,14 +411,16 @@ func GenerateJWT(user *domain.Credentials) (string, error) {
 	return token.String(), nil
 }
 
-func (service *AuthService) ChangePassword(password domain.PasswordChange, token string) string {
+func (service *AuthService) ChangePassword(ctx context.Context, password domain.PasswordChange, token string) string {
+	ctx, span := service.tracer.Start(ctx, "AuthService.ChangePassword")
+	defer span.End()
 
 	parsedToken := authorization.GetToken(token)
 	claims := authorization.GetMapClaims(parsedToken.Bytes())
 
 	username := claims["username"]
 
-	user, err := service.store.GetOneUser(username)
+	user, err := service.store.GetOneUser(ctx, username)
 	if err != nil {
 		log.Println(err)
 	}
@@ -404,7 +445,7 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 
 		user.Password = string(newEncryptedPassword)
 
-		err = service.store.UpdateUser(user)
+		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
 			return "baseErr"
 		}
@@ -415,4 +456,100 @@ func (service *AuthService) ChangePassword(password domain.PasswordChange, token
 	}
 
 	return "ok"
+}
+
+func (service *AuthService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID
+	user.Firstname = userIn.Firstname
+	user.Lastname = userIn.Lastname
+	if userIn.Gender == "Male" {
+		user.Gender = "Male"
+	} else {
+		user.Gender = "Female"
+	}
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Email = userIn.Email
+	user.Username = userIn.Username
+	user.Password = userIn.Password
+	if userIn.UserType == "Regular" {
+		user.UserType = "Regular"
+	} else {
+		user.UserType = "Business"
+	}
+	user.Visibility = userIn.Visibility
+	user.CompanyName = userIn.CompanyName
+	user.Website = userIn.Website
+
+	return user
+}
+
+func (service *AuthService) DomainToUser(userIn *domain.User) create_user.User {
+	var user create_user.User
+	user.ID = userIn.ID
+	user.Firstname = userIn.Firstname
+	user.Lastname = userIn.Lastname
+	if userIn.Gender == "Male" {
+		user.Gender = "Male"
+	} else {
+		user.Gender = "Female"
+	}
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Email = userIn.Email
+	user.Username = userIn.Username
+	user.Password = userIn.Password
+	if userIn.UserType == "Regular" {
+		user.UserType = "Regular"
+	} else {
+		user.UserType = "Business"
+	}
+	user.Visibility = userIn.Visibility
+	user.CompanyName = userIn.CompanyName
+	user.Website = userIn.Website
+
+	return user
+}
+
+func validateUserType(user *domain.User) (*domain.User, error) {
+
+	business := isBusiness(user)
+	regular := isRegular(user)
+
+	if business && regular {
+		return nil, fmt.Errorf("invalid user format")
+	} else if business {
+		user.UserType = domain.Business
+		return user, nil
+	} else if regular {
+		user.UserType = domain.Regular
+		return user, nil
+	}
+
+	return nil, fmt.Errorf("invalid user data")
+}
+
+func isBusiness(user *domain.User) bool {
+	if len(user.CompanyName) >= 3 &&
+		len(user.Website) >= 3 &&
+		len(user.Email) >= 3 &&
+		len(user.Username) >= 3 {
+		return true
+	}
+
+	return false
+}
+
+func isRegular(user *domain.User) bool {
+	if len(user.Firstname) >= 3 &&
+		len(user.Lastname) >= 3 &&
+		len(user.Gender) >= 3 &&
+		user.Age >= 1 &&
+		len(user.Residence) >= 3 &&
+		len(user.Username) >= 3 {
+		return true
+	}
+
+	return false
 }

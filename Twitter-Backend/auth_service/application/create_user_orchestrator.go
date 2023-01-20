@@ -2,8 +2,9 @@ package application
 
 import (
 	"auth_service/domain"
-	events "github.com/tamararankovic/microservices_demo/common/saga/create_order"
-	saga "github.com/tamararankovic/microservices_demo/common/saga/messaging"
+	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"log"
 )
 
 type CreateUserOrchestrator struct {
@@ -12,9 +13,10 @@ type CreateUserOrchestrator struct {
 }
 
 func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserOrchestrator, error) {
-	orchestrator := &CreateOrderOrchestrator{
+	orchestrator := &CreateUserOrchestrator{
 		commandPublisher: publisher,
 		replySubscriber:  subscriber,
+		//authService:      service,
 	}
 	err := orchestrator.replySubscriber.Subscribe(orchestrator.handle)
 	if err != nil {
@@ -24,37 +26,80 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 }
 
 func (o *CreateUserOrchestrator) Start(user *domain.User) error {
-	event := &events.CreateUserCommand{
-		Type: events.UpdateInventory,
-		User: user,
-	}
-	//for _, item := range user.Items {
-	//	eventItem := events.OrderItem{
-	//		Product: events.Product{
-	//			Id:    item.Product.Id,
-	//			Color: events.Color{Code: item.Product.Color.Code},
-	//		},
-	//		Quantity: item.Quantity,
-	//	}
-	//	event.Order.Items = append(event.Order.Items, eventItem)
-	//}
 
-	//upis u bazu treba
+	var gender events.Gender
+	var userType events.UserType
+
+	if user.Gender == "Male" {
+		gender = "Male"
+	} else {
+		gender = "Female"
+	}
+
+	if user.UserType == "Regular" {
+		userType = "Regular"
+	} else {
+		userType = "Business"
+	}
+
+	user1 := events.User{
+		ID:          user.ID,
+		Firstname:   user.Firstname,
+		Lastname:    user.Lastname,
+		Gender:      gender,
+		Age:         user.Age,
+		Residence:   user.Residence,
+		Email:       user.Email,
+		Username:    user.Username,
+		Password:    user.Password,
+		UserType:    userType,
+		Visibility:  user.Visibility,
+		CompanyName: user.CompanyName,
+		Website:     user.Website,
+	}
+
+	event := &events.CreateUserCommand{
+		User: user1,
+		Type: events.UpdateAuth,
+	}
+	log.Println("PUBLISH EVENT UPDATE AUTH")
+
 	return o.commandPublisher.Publish(event)
 }
 
 func (o *CreateUserOrchestrator) handle(reply *events.CreateUserReply) {
 	command := events.CreateUserCommand{User: reply.User}
-	command.Type = o.nextCommandType(reply.Type)
+	command.Type = o.nextCommandType(*reply)
 	if command.Type != events.UnknownCommand {
 		_ = o.commandPublisher.Publish(command)
 	}
 }
 
-func (o *CreateUserOrchestrator) nextCommandType(reply events.CreateUserReplyType) events.CreateUserCommandType {
-	switch reply {
+func (o *CreateUserOrchestrator) nextCommandType(reply events.CreateUserReply) events.CreateUserCommandType {
+	switch reply.Type {
+	case events.AuthUpdated:
+		log.Println("AUTH UPDATED")
+		return events.UpdateUsers
 	case events.UsersUpdated:
+		log.Println("USERS UPDATED")
 		return events.UpdateGraph
+	case events.GraphUpdated:
+		log.Println("GRAPH UPDATED")
+		return events.SendMail
+	case events.MailSent:
+		log.Println("MAIL SENT")
+		return events.UnknownCommand
+	case events.MailFailed:
+		log.Println("MAIL FAILED")
+		return events.RollbackFollow
+	case events.FollowFailed:
+		log.Println("FOLLOW FAILED")
+		return events.RollbackUsers
+	case events.UsersFailed:
+		log.Println("USERS FAILED")
+		return events.RollbackAuth
+	case events.UnknownReply:
+		return events.UnknownCommand
 	default:
 		return events.UnknownCommand
 	}

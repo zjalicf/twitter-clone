@@ -9,7 +9,9 @@ import (
 	"follow_service/startup/config"
 	"follow_service/store"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"log"
 	"net/http"
 	"os"
@@ -28,34 +30,37 @@ func NewServer(config *config.Config) *Server {
 	}
 }
 
-func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort)
+const (
+	QueueGroup = "follow_service"
+)
+
+func (server *Server) initNeo4JDriver() *neo4j.DriverWithContext {
+	driver, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort,
+		server.config.FollowDBUser, server.config.FollowDBPass)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return client
+	return driver
 }
 
-func (server *Server) initFollowStore(client *mongo.Client) domain.FollowRequestStore {
-	store := store.NewFollowMongoDBStore(client)
+func (server *Server) initFollowStore(driver *neo4j.DriverWithContext) domain.FollowRequestStore {
+	store := store.NewFollowNeo4JStore(driver)
 
-	//Delete everything from the database on server start
-	//	store.DeleteAll()
 	return store
 }
 
 func (server *Server) Start() {
-	mongoClient := server.initMongoClient()
-	defer func(mongoClient *mongo.Client, ctx context.Context) {
-		err := mongoClient.Disconnect(ctx)
-		if err != nil {
 
-		}
-	}(mongoClient, context.Background())
-
-	followStore := server.initFollowStore(mongoClient)
+	neo4jDriver := server.initNeo4JDriver()
+	followStore := server.initFollowStore(neo4jDriver)
 	followService := server.initFollowService(followStore)
 	followHandler := server.initFollowHandler(followService)
+
+	//saga init
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+
+	server.initCreateUserHandler(followService, replyPublisher, commandSubscriber)
 
 	server.start(followHandler)
 }
@@ -66,6 +71,33 @@ func (server *Server) initFollowService(store domain.FollowRequestStore) *applic
 
 func (server *Server) initFollowHandler(service *application.FollowService) *handlers.FollowHandler {
 	return handlers.NewFollowHandler(service)
+}
+
+func (server *Server) initCreateUserHandler(service *application.FollowService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (server *Server) initPublisher(subject string) saga.Publisher {
+	publisher, err := nats.NewNATSPublisher(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return publisher
+}
+
+func (server *Server) initSubscriber(subject string, queueGroup string) saga.Subscriber {
+	subscriber, err := nats.NewNATSSubscriber(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject, queueGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subscriber
 }
 
 func (server *Server) start(followHandler *handlers.FollowHandler) {

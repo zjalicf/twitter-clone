@@ -10,8 +10,15 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
-	saga "github.com/zjalicf/twitter-clone-common/tree/main/common/saga/messaging"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 	"os"
@@ -25,7 +32,7 @@ type Server struct {
 }
 
 const (
-	QueueGroup = "user_service"
+	QueueGroup = "auth_service"
 )
 
 func NewServer(config *config.Config) *Server {
@@ -43,23 +50,39 @@ func (server *Server) Start() {
 		}
 	}(mongoClient, context.Background())
 
+	cfg := config.NewConfig()
+
+	ctx := context.Background()
+	exp, err := newExporter(cfg.JaegerAddress)
+	if err != nil {
+		log.Fatalf("Failed to Initialize Exporter: %v", err)
+	}
+
+	tp := newTraceProvider(exp)
+	defer func() { _ = tp.Shutdown(ctx) }()
+	otel.SetTracerProvider(tp)
+	tracer := tp.Tracer("auth_service")
+
 	redisClient := server.initRedisClient()
 	authCache := server.initAuthCache(redisClient)
-	authStore := server.initAuthStore(mongoClient)
+	authStore := server.initAuthStore(mongoClient, tracer)
 
 	//saga init
-	commandPublisher := server.initPublisher(server.config.CreateUserCommandSubject)
-	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
 
-	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
+	//orchestrator
+	commandPublisher := server.initPublisher(server.config.CreateUserCommandSubject)
 	replySubscriber := server.initSubscriber(server.config.CreateUserReplySubject, QueueGroup)
 
-	createOrderOrchestrator := server.initCreateOrderOrchestrator(commandPublisher, replySubscriber)
+	//service
+	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
 
-	authService := server.initAuthService(authStore, authCache, createOrderOrchestrator)
+	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber)
 
-	server.initCreateOrderHandler(authService, replyPublisher, commandSubscriber)
-	authHandler := server.initAuthHandler(authService)
+	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer)
+
+	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber)
+	authHandler := server.initAuthHandler(authService, tracer)
 
 	server.start(authHandler)
 }
@@ -80,8 +103,8 @@ func (server *Server) initRedisClient() *redis.Client {
 	return client
 }
 
-func (server *Server) initAuthStore(client *mongo.Client) domain.AuthStore {
-	store := store2.NewAuthMongoDBStore(client)
+func (server *Server) initAuthStore(client *mongo.Client, tracer trace.Tracer) domain.AuthStore {
+	store := store2.NewAuthMongoDBStore(client, tracer)
 	return store
 }
 
@@ -90,12 +113,12 @@ func (server *Server) initAuthCache(client *redis.Client) domain.AuthCache {
 	return cache
 }
 
-func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator application.CreateUserOrchestrator) *application.AuthService {
-	return application.NewAuthService(store, cache, orchestrator)
+func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *application.CreateUserOrchestrator, tracer trace.Tracer) *application.AuthService {
+	return application.NewAuthService(store, cache, orchestrator, tracer)
 }
 
-func (server *Server) initAuthHandler(service *application.AuthService) *handlers.AuthHandler {
-	return handlers.NewAuthHandler(service)
+func (server *Server) initAuthHandler(service *application.AuthService, tracer trace.Tracer) *handlers.AuthHandler {
+	return handlers.NewAuthHandler(service, tracer)
 }
 
 //saga
@@ -120,12 +143,19 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-func (server *Server) initCreateOrderOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
+func (server *Server) initCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
 	orchestrator, err := application.NewCreateUserOrchestrator(publisher, subscriber)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return orchestrator
+}
+
+func (server *Server) initCreateUserHandler(service *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 // start
@@ -159,4 +189,31 @@ func (server *Server) start(authHandler *handlers.AuthHandler) {
 		log.Fatalf("Error Shutting Down Server %s", err)
 	}
 	log.Println("Server Gracefully Stopped")
+}
+
+func newExporter(address string) (*jaeger.Exporter, error) {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(address)))
+	if err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
+
+func newTraceProvider(exp sdktrace.SpanExporter) *sdktrace.TracerProvider {
+	r, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String("auth_service"),
+		),
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(r),
+	)
 }

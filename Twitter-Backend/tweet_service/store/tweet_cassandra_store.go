@@ -1,9 +1,11 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/gomodule/redigo/redis"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
 	"tweet_service/domain"
@@ -21,6 +23,7 @@ type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
 	conn    redis.Conn
+  tracer  trace.Tracer
 }
 
 //// kreirajte tabelu za cuvanje slika u Cassandra ako ne postoji
@@ -45,7 +48,7 @@ func (sr *TweetRepo) SaveImageRedis(imageBytes []byte) error {
 	return nil
 }
 
-func New(logger *log.Logger) (*TweetRepo, error) {
+func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 	db := os.Getenv("TWEET_DB")
 
 	cluster := gocql.NewCluster(db)
@@ -87,6 +90,7 @@ func New(logger *log.Logger) (*TweetRepo, error) {
 		session: session,
 		logger:  logger,
 		conn:    conn,
+		tracer:  tracer,
 	}, nil
 }
 
@@ -146,7 +150,10 @@ func (sr *TweetRepo) CreateTables() {
 //insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
 //(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
 
-func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
+func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetAll")
+	defer span.End()
+
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
 
 	var tweets []domain.Tweet
@@ -169,7 +176,10 @@ func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
 	return tweets, nil
 }
 
-func (sr *TweetRepo) GetTweetsByUser(username string) ([]*domain.Tweet, error) {
+func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetsByUser")
+	defer span.End()
+
 	query := fmt.Sprintf(`SELECT * FROM tweets_by_user WHERE username = '%s'`, username)
 	fmt.Println(query)
 	scanner := sr.session.Query(query).Iter().Scanner()
@@ -219,7 +229,10 @@ func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error)
 	return tweets, nil
 }
 
-func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
+func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.Post")
+	defer span.End()
+
 	insert := fmt.Sprintf("INSERT INTO %s "+
 		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
@@ -243,7 +256,10 @@ func (sr *TweetRepo) Post(tweet *domain.Tweet) (*domain.Tweet, error) {
 	return tweet, nil
 }
 
-func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
+func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username string) (int, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.Favorite")
+	defer span.End()
+
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
 		return -1, nil
@@ -380,7 +396,10 @@ func (sr *TweetRepo) Favorite(tweetID string, username string) (int, error) {
 	return 201, nil
 }
 
-func (sr *TweetRepo) GetLikesByTweet(tweetID string) ([]*domain.Favorite, error) {
+func (sr *TweetRepo) GetLikesByTweet(ctx context.Context, tweetID string) ([]*domain.Favorite, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetLikesByTweet")
+	defer span.End()
+
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
 		return nil, err
