@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
@@ -43,8 +44,8 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		}
 
 	case events.RollbackUsers:
+		_ = handler.userService.DeleteUserByID(context.TODO(), user.ID)
 		reply.Type = events.UsersFailed
-		//TODO
 		fmt.Println("Rollback users")
 
 	default:

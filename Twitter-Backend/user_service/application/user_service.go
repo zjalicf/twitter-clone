@@ -109,6 +109,13 @@ func (service *UserService) ChangeUserVisibility(ctx context.Context, userID str
 	return nil
 }
 
+func (service *UserService) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
+	ctx, span := service.tracer.Start(ctx, "UserService.DeleteUserByID")
+	defer span.End()
+
+	return service.store.DeleteUserByID(ctx, id)
+}
+
 func validateUserType(user *domain.User) (*domain.User, error) {
 
 	business := isBusiness(user)

@@ -110,6 +110,13 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 	return credentials.ID.Hex(), 200, nil
 }
 
+func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.DeleteUserByID")
+	defer span.End()
+
+	return service.store.DeleteUserByID(ctx, id)
+}
+
 func (service *AuthService) SendMail(user *domain.User) error {
 
 	validationToken := uuid.New()

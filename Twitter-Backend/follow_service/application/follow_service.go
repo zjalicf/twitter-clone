@@ -85,6 +85,10 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 	return nil
 }
 
+func (service *FollowService) DeleteUser(id *string) error {
+	return service.store.DeleteUser(id)
+}
+
 func (service *FollowService) AcceptRequest(id primitive.ObjectID) error {
 	return service.store.AcceptRequest(id)
 }

@@ -160,6 +160,31 @@ func (store *FollowNeo4JStore) SaveUser(user *domain.User) error {
 	return nil
 }
 
+func (store *FollowNeo4JStore) DeleteUser(id *string) error {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		_, err := transaction.Run(ctx,
+			"MATCH (u:User) "+
+				"WHERE u.id = $id "+
+				"DELETE u",
+			map[string]any{"id": id})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (store *FollowNeo4JStore) AcceptRequest(id primitive.ObjectID) error {
 
 	//filter := bson.D{{"_id", id}}

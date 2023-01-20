@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"fmt"
 	"follow_service/application"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"log"
 )
 
 type CreateUserCommandHandler struct {
@@ -42,7 +42,8 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	case events.RollbackFollow:
 		//TODO
-		fmt.Println("Rollback follow")
+		_ = handler.followService.DeleteUser(&user.ID)
+		log.Println("Rollback follow")
 		reply.Type = events.FollowFailed
 	default:
 		reply.Type = events.UnknownReply

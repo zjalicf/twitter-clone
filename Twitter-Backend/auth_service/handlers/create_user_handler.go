@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"auth_service/application"
+	"context"
 	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
@@ -57,6 +58,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	case events.RollbackAuth:
 		//TODO
+		_ = handler.authService.DeleteUserByID(context.TODO(), user.ID)
 		reply.Type = events.UnknownReply
 		fmt.Println("Rollback auth")
 

@@ -5,6 +5,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type FollowRequestStore interface {
 	GetAll() ([]*FollowRequest, error)
 	SaveUser(*User) error
+	DeleteUser(id *string) error
 	GetRequestsForUser(username string) ([]*FollowRequest, error)
 	GetFollowingsOfUser(username string) ([]*FollowRequest, error)
 	SaveRequest(*FollowRequest) error

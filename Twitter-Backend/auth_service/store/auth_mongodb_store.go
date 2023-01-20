@@ -94,6 +94,18 @@ func (store *AuthMongoDBStore) GetOneUserByID(ctx context.Context, id primitive.
 	return &user
 }
 
+func (store *AuthMongoDBStore) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
+	ctx, span := store.tracer.Start(ctx, "AuthStore.DeleteUserByID")
+	defer span.End()
+
+	_, err := store.credentials.DeleteMany(ctx, bson.M{"_id": id})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (store *AuthMongoDBStore) filter(filter interface{}) ([]*domain.Credentials, error) {
 	cursor, err := store.credentials.Find(context.TODO(), filter)
 	defer cursor.Close(context.TODO())
