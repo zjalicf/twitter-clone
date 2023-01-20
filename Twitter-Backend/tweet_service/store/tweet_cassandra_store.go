@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	DATABASE            = "tweet"
-	COLLECTION          = "tweet"
-	COLLECTION_BY_USER  = "tweets_by_user"
-	COLLECTION_FAVORITE = "favorite"
+	DATABASE               = "tweet"
+	COLLECTION             = "tweet"
+	COLLECTION_BY_USER     = "tweets_by_user"
+	COLLECTION_FAVORITE    = "favorite"
+	COLLECTION_TWEET_IMAGE = "tweet_image"
 	//COLLECTION_FEED_BY_USER = "feed_by_user"
 )
 
@@ -23,7 +24,7 @@ type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
 	conn    redis.Conn
-  tracer  trace.Tracer
+	tracer  trace.Tracer
 }
 
 //// kreirajte tabelu za cuvanje slika u Cassandra ako ne postoji
@@ -39,14 +40,6 @@ type TweetRepo struct {
 //if err = session.Query(`INSERT INTO images (id, image) VALUES (?, ?)`, id, imageBytes).Exec(); err != nil {
 //http.Error(w, err.Error(), http.StatusInternalServerError)
 //return
-
-func (sr *TweetRepo) SaveImageRedis(imageBytes []byte) error {
-	_, err := sr.conn.Do("SET", "image", imageBytes)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 	db := os.Getenv("TWEET_DB")
@@ -122,6 +115,10 @@ func (sr *TweetRepo) CreateTables() {
 		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
 			COLLECTION_FAVORITE)).Exec()
 
+	err = sr.session.Query(
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, image blob, PRIMARY KEY ((tweet_id)))",
+			COLLECTION_TWEET_IMAGE)).Exec()
+
 	//err = sr.session.Query(
 	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
 	//		COLLECTION_FAVORITE_BY_TWEET)).Exec()
@@ -147,8 +144,23 @@ func (sr *TweetRepo) CreateTables() {
 	}
 }
 
-//insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
-//(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
+func (sr *TweetRepo) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
+
+	insert := fmt.Sprintf("INSERT INTO %s "+"(tweet_id, image) "+"VALUES (?, ?)", COLLECTION_TWEET_IMAGE)
+
+	err := sr.session.Query(insert, tweetID, imageBytes).Exec()
+
+	if err != nil {
+		sr.logger.Println(err)
+		return nil
+	}
+
+	//_, err := sr.conn.Do("SET", "image", imageBytes)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
+}
 
 func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetAll")

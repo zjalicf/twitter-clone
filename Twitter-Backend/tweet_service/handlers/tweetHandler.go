@@ -5,10 +5,10 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -162,16 +162,18 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	err = handler.service.SaveImageRedis(imageBytes)
+	log.Println("evo me")
+
+	var request domain.Tweet
+	err = json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
+		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var tweet domain.Tweet
-	err = json.NewDecoder(req.Body).Decode(&tweet)
+	err = handler.service.SaveImage(request.ID, imageBytes)
 	if err != nil {
-		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -196,7 +198,7 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(reponseTweet, writer)
+	jsonResponse(tweet, writer)
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {
