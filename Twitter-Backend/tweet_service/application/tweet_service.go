@@ -23,12 +23,14 @@ var (
 type TweetService struct {
 	store  domain.TweetStore
 	tracer trace.Tracer
+	cache  domain.TweetCache
 	cb     *gobreaker.CircuitBreaker
 }
 
-func NewTweetService(store domain.TweetStore, tracer trace.Tracer) *TweetService {
+func NewTweetService(store domain.TweetStore, cache domain.TweetCache, tracer trace.Tracer) *TweetService {
 	return &TweetService{
 		store:  store,
+		cache:  cache,
 		cb:     CircuitBreaker(),
 		tracer: tracer,
 	}
@@ -89,6 +91,10 @@ func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error
 	}
 
 	return userFeed, nil
+}
+
+func (service *TweetService) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
+	return service.store.SaveImage(tweetID, imageBytes)
 }
 
 func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string) ([]*domain.Favorite, error) {

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
 	"go.opentelemetry.io/otel/trace"
 	"log"
@@ -11,10 +12,11 @@ import (
 )
 
 const (
-	DATABASE            = "tweet"
-	COLLECTION          = "tweet"
-	COLLECTION_BY_USER  = "tweets_by_user"
-	COLLECTION_FAVORITE = "favorite"
+	DATABASE               = "tweet"
+	COLLECTION             = "tweet"
+	COLLECTION_BY_USER     = "tweets_by_user"
+	COLLECTION_FAVORITE    = "favorite"
+	COLLECTION_TWEET_IMAGE = "tweet_image"
 	//COLLECTION_FEED_BY_USER = "feed_by_user"
 )
 
@@ -22,6 +24,7 @@ type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
 	tracer  trace.Tracer
+	conn    redis.Conn
 }
 
 func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
@@ -88,6 +91,10 @@ func (sr *TweetRepo) CreateTables() {
 	err = sr.session.Query(
 		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
 			COLLECTION_FAVORITE)).Exec()
+
+	err = sr.session.Query(
+		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, image blob, PRIMARY KEY ((tweet_id)))",
+			COLLECTION_TWEET_IMAGE)).Exec()
 
 	//err = sr.session.Query(
 	//	fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id)))",
@@ -221,6 +228,26 @@ func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Twe
 		return nil, err
 	}
 	return tweet, nil
+}
+
+func (sr *TweetRepo) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
+
+	insert := fmt.Sprintf("INSERT INTO %s "+"(tweet_id, image) "+"VALUES (?, ?)", COLLECTION_TWEET_IMAGE)
+
+	err := sr.session.Query(insert, tweetID, imageBytes).Exec()
+
+	log.Println("tu sam")
+	log.Println(imageBytes)
+
+	if err != nil {
+		sr.logger.Println(err)
+		return nil
+	}
+	//_, err := sr.conn.Do("SET", "image", imageBytes)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
 }
 
 func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username string) (int, error) {

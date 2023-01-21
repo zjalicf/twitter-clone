@@ -18,11 +18,15 @@ services:
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
       JAEGER_ADDRESS: ${JAEGER_ADDRESS}
+      TWEET_CACHE_HOST: ${TWEET_CACHE_HOST}
+      TWEET_CACHE_PORT: ${TWEET_CACHE_PORT}
     depends_on:
       jaeger:
         condition: service_started
       tweet_db:
         condition: service_healthy
+      redis_db:
+        condition: service_started
     networks:
       - network
 
@@ -216,6 +220,20 @@ services:
     volumes:
       - auth_cache:/data
 
+  redis_db:
+    image: redis
+    restart: always
+    environment:
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - ${TWEET_CACHE_PORT}:${TWEET_CACHE_PORT}
+    command: --port 6380
+    volumes:
+      - redis_data:/data
+    networks:
+      - network
+
   nats:
     image: nats
     container_name: nats
@@ -244,6 +262,7 @@ volumes:
   neo4j_data:
   auth_cache:
     driver: local
+  redis_data:
 
 networks:
   network:

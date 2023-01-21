@@ -3,6 +3,7 @@ package startup
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -17,9 +18,11 @@ import (
 	"syscall"
 	"time"
 	"tweet_service/application"
+	"tweet_service/domain"
 	"tweet_service/handlers"
 	"tweet_service/startup/config"
 	"tweet_service/store"
+	store2 "tweet_service/store"
 )
 
 type Server struct {
@@ -46,6 +49,8 @@ func (server *Server) Start() {
 	otel.SetTracerProvider(tp)
 	tracer := tp.Tracer("tweet_service")
 
+	redisClient := server.initRedisClient()
+	tweetCache := server.initTweetCache(redisClient)
 	tweetStore, err := store.New(log.Default(), tracer)
 	if err != nil {
 		log.Fatal(err)
@@ -53,18 +58,31 @@ func (server *Server) Start() {
 	defer tweetStore.CloseSession()
 	tweetStore.CreateTables()
 
-	tweetService := server.initTweetService(*tweetStore, tracer)
+	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer)
 	tweetHandler := server.initTweetHandler(tweetService, tracer)
 
 	server.start(tweetHandler)
 }
 
-func (server *Server) initTweetService(store store.TweetRepo, tracer trace.Tracer) *application.TweetService {
-	return application.NewTweetService(&store, tracer)
+func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer) *application.TweetService {
+	return application.NewTweetService(&store, cache, tracer)
+}
+
+func (server *Server) initTweetCache(client *redis.Client) domain.TweetCache {
+	cache := store2.NewTweetRedisCache(client)
+	return cache
 }
 
 func (server *Server) initTweetHandler(service *application.TweetService, tracer trace.Tracer) *handlers.TweetHandler {
 	return handlers.NewTweetHandler(service, tracer)
+}
+
+func (server *Server) initRedisClient() *redis.Client {
+	client, err := store2.GetRedisClient(server.config.TweetCacheHost, server.config.TweetCachePort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return client
 }
 
 func (server *Server) start(tweetHandler *handlers.TweetHandler) {

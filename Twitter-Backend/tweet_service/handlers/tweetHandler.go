@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
@@ -144,37 +145,89 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 }
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
-	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
-	defer span.End()
+	//ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
+	//defer span.End()
 
-	var request domain.Tweet
-	err := json.NewDecoder(req.Body).Decode(&request)
+	err := req.ParseMultipartForm(32 << 20)
 	if err != nil {
 		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if req.Header.Get("Authorization") == "" {
-		writer.WriteHeader(http.StatusUnauthorized)
+	log.Println(req.Header.Get("Content-Type"))
+	strs := strings.Split(req.Header.Get("Content-Type"), "; boundary")
+
+	if strs[0] != "multipart/form-data" {
+		log.Println("Invalid Content-Type")
+		http.Error(writer, "Invalid Content-Type", http.StatusBadRequest)
 		return
 	}
 
-	bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
-	tokenString := bearerToken[1]
-	token := authorization.GetToken(tokenString)
-
-	claims := authorization.GetMapClaims(token.Bytes())
-	username := claims["username"]
-
-	tweet, err := handler.service.Post(ctx, &request, username)
+	file, fileHeader, err := req.FormFile("image")
+	if fileHeader != nil {
+		log.Println(fileHeader)
+	}
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		fmt.Fprintln(writer, "Error getting image:", err)
 		return
 	}
+	defer file.Close()
+	jsonPostman, jsonHeader, err1 := req.FormFile("json")
+	log.Println(jsonHeader)
+	if err1 != nil {
+		fmt.Fprintln(writer, "Error getting JSON:", err1)
+		return
+	}
+
+	log.Printf("Json je : %s", jsonPostman)
+	log.Printf("File je : %s", file)
 
 	writer.WriteHeader(http.StatusOK)
-	jsonResponse(tweet, writer)
+	return
+	//imageBytes, err := ioutil.ReadAll(file)
+	//if err != nil {
+	//	fmt.Fprintln(writer, "Error reading image:", err)
+	//	http.Error(writer, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//var request domain.Tweet
+	//err = json.NewDecoder(req.Body).Decode(&request)
+	//if err != nil {
+	//	log.Printf("Error je : %s", err.Error())
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//log.Println(request)
+	//return
+	//
+	//err = handler.service.SaveImage(request.ID, imageBytes)
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//if req.Header.Get("Authorization") == "" {
+	//	writer.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//
+	//bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
+	//tokenString := bearerToken[1]
+	//token := authorization.GetToken(tokenString)
+	//
+	//claims := authorization.GetMapClaims(token.Bytes())
+	//username := claims["username"]
+	//
+	//tweet, err := handler.service.Post(ctx, &request, username)
+	//
+	//if err != nil {
+	//	http.Error(writer, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//writer.WriteHeader(http.StatusOK)
+	//jsonResponse(tweet, writer)
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {
