@@ -3,8 +3,8 @@ package application
 import (
 	"fmt"
 	"follow_service/domain"
+	"follow_service/errors"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
 
@@ -27,14 +27,14 @@ func (service *FollowService) FollowExist(followRequest *domain.FollowRequest) (
 }
 
 func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, error) {
-	followings, err := service.store.GetFollowingsOfUser(username)
+	followers, err := service.store.GetFollowingsOfUser(username)
 	if err != nil {
 		return nil, err
 	}
 
 	var usernameList []*string
-	for i := 0; i < len(followings); i++ {
-		usernameList = append(usernameList, &followings[i].Receiver)
+	for i := 0; i < len(followers); i++ {
+		usernameList = append(usernameList, &followers[i].Username)
 	}
 	log.Println("LIST OF USERNAMES FOLLOW SERVICE: ")
 	log.Println(usernameList)
@@ -54,6 +54,7 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 	if visibility {
 		request.Status = 1
 	} else {
+		//service.store.
 		request.Status = 3
 	}
 
@@ -85,11 +86,21 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 	return nil
 }
 
-func (service *FollowService) AcceptRequest(id primitive.ObjectID) error {
-	return service.store.AcceptRequest(id)
+func (service *FollowService) AcceptRequest(id *string) error {
+	err := service.store.AcceptRequest(id)
+	if err != nil {
+		return fmt.Errorf(errors.ErrorInAcceptRequest)
+	}
+
+	err = service.store.SaveFollow(id)
+	if err != nil {
+		return fmt.Errorf(errors.ErrorInSaveFollow)
+	}
+
+	return nil
 }
 
-func (service *FollowService) DeclineRequest(id primitive.ObjectID) error {
+func (service *FollowService) DeclineRequest(id *string) error {
 	return service.store.DeclineRequest(id)
 }
 

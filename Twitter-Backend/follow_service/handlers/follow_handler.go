@@ -9,7 +9,6 @@ import (
 	"follow_service/errors"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/http"
 )
@@ -175,14 +174,14 @@ func (handler *FollowHandler) CreateUser(writer http.ResponseWriter, req *http.R
 func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-	followId, err := primitive.ObjectIDFromHex(vars["id"])
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+	followId, ok := vars["id"]
+	if !ok {
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
-	err = handler.service.AcceptRequest(followId)
+	err := handler.service.AcceptRequest(&followId)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -192,14 +191,14 @@ func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *htt
 func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-	followId, err := primitive.ObjectIDFromHex(vars["id"])
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+	followId, ok := vars["id"]
+	if !ok {
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
-	err = handler.service.DeclineRequest(followId)
+	err := handler.service.DeclineRequest(&followId)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
 	writer.WriteHeader(http.StatusOK)
