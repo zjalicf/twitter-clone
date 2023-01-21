@@ -172,12 +172,8 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 	defer file.Close()
-	jsonPostman, jsonHeader, err1 := req.FormFile("json")
-	log.Println(jsonHeader)
-	if err1 != nil {
-		fmt.Fprintln(writer, "Error getting JSON:", err1)
-		return
-	}
+	jsonPostman := req.FormValue("json")
+	log.Println(jsonPostman)
 
 	log.Printf("Json je : %s", jsonPostman)
 	log.Printf("File je : %s", file)
