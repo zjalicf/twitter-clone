@@ -6,7 +6,7 @@
       <mat-card-title *ngIf="!isThatMe()" class="tweet-user-username" [routerLink]="['/View-Profile', tweet.username]">{{tweet.username}}</mat-card-title>
     </mat-card-title>
     <mat-card-subtitle class="tweet-text">{{tweet.text}}</mat-card-subtitle>
-    <img class="tweet-image" mat-card-image src="https://time.com/wp-content/uploads/2017/10/229-westerlund-21.jpg?w=2000">
+    <img class="tweet-image" mat-card-image *ngIf="this.tweet.image" [src]="imagePath">
     <mat-card-actions>
 
       <button *ngIf="isLiked" (click)="likeTweet(tweet)" mat-icon-button color="warn">

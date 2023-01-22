@@ -36,4 +36,18 @@ import { Tweet } from "../models/tweet.model";
             return this.http.get<Favorite[]>(`${environment.baseApiUrl}/${this.url}/whoLiked/` + tweetID)
         }
 
+        public GetImageByTweet(tweetID: string): Observable<Blob> {
+            // let returnRet: Blob = new Blob()
+            // fetch('https://localhost:8000/api/tweets/image/' + tweetID).then(response => response.blob())
+            // .then(blob => {
+            //     const returnRet = blob
+            //     console.log(returnRet);
+            // });
+            // return returnRet
+            return this.http.get(`${environment.baseApiUrl}/${this.url}/image/${tweetID}`, { responseType: 'blob' })
+            
+     
+        }
+
+
     }
