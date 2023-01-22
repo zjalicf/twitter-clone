@@ -8,6 +8,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gocql/gocql v1.2.1
 	github.com/gorilla/mux v1.8.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/sony/gobreaker v0.5.0
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2

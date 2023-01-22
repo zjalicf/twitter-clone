@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -25,6 +26,8 @@ import (
 	store2 "tweet_service/store"
 )
 
+var Logger = logrus.New()
+
 type Server struct {
 	config *config.Config
 }
@@ -35,7 +38,45 @@ func NewServer(config *config.Config) *Server {
 	}
 }
 
+func initLogger() {
+	file, err := os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	Logger.SetOutput(file)
+
+	rotationInterval := 24 * time.Hour
+	ticker := time.NewTicker(rotationInterval)
+	defer ticker.Stop()
+
+	go func() {
+		for range ticker.C {
+			rotateLogs(file)
+		}
+	}()
+}
+
+func rotateLogs(file *os.File) {
+	currentTime := time.Now().Format("2006-01-02_15-04-05")
+	err := os.Rename("/app/logs/application.log", "/app/logs/application_"+currentTime+".log")
+	if err != nil {
+		Logger.Error(err)
+	}
+	file.Close()
+
+	file, err = os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		Logger.Error(err)
+	}
+
+	Logger.SetOutput(file)
+}
+
 func (server *Server) Start() {
+
+	initLogger()
+
 	cfg := config.NewConfig()
 
 	ctx := context.Background()
@@ -65,7 +106,9 @@ func (server *Server) Start() {
 }
 
 func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer) *application.TweetService {
-	return application.NewTweetService(&store, cache, tracer)
+	service := application.NewTweetService(&store, cache, tracer)
+	Logger.Info("Started tweet service")
+	return service
 }
 
 func (server *Server) initTweetCache(client *redis.Client) domain.TweetCache {
