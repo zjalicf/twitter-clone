@@ -13,7 +13,7 @@ type Tweet struct {
 	Retweeted     bool       `json:"retweeted"`
 	RetweetCount  int        `json:"retweet_count"`
 	Username      string     `json:"username"`
-	Image         bool       `json:"bool"`
+	Image         bool       `json:"image"`
 }
 
 type Favorite struct {

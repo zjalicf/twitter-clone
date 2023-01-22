@@ -187,9 +187,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, "bad json format", http.StatusBadRequest)
 		return
 	}
-	log.Println(tweetVal)
-
-	log.Println(imageBytes)
 	//err = handler.service.SaveImage(request.ID, imageBytes)
 	//if err != nil {
 	//	http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -232,7 +229,9 @@ func (handler *TweetHandler) GetTweetImage(writer http.ResponseWriter, req *http
 		return
 	}
 
+	writer.WriteHeader(http.StatusOK)
 	writer.Write(*image)
+
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {

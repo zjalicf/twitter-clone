@@ -153,7 +153,7 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	for scanner.Next() {
 		var tweet domain.Tweet
 		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.ID,
-			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
+			&tweet.Image, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
 		if err != nil {
 			sr.logger.Println(err)
 			return nil, err
