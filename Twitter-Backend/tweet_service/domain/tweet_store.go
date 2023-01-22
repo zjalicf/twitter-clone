@@ -7,6 +7,7 @@ import (
 
 type TweetStore interface {
 	GetFeedByUser(followings []string) ([]*Tweet, error)
+	SaveImageRedis(imageBytes []byte) error
 	GetAll(ctx context.Context) ([]Tweet, error)
 	GetTweetsByUser(ctx context.Context, username string) ([]*Tweet, error)
 	Post(ctx context.Context, tweet *Tweet) (*Tweet, error)

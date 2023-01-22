@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
+	"github.com/gomodule/redigo/redis"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
@@ -23,8 +24,8 @@ const (
 type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
-	tracer  trace.Tracer
 	conn    redis.Conn
+  tracer  trace.Tracer
 }
 
 func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
@@ -58,15 +59,24 @@ func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 		return nil, err
 	}
 
+	redisDB := os.Getenv("REDIS")
+	conn, err := redis.Dial("tcp", redisDB)
+	if err != nil {
+		logger.Println(err)
+		return nil, err
+	}
+
 	return &TweetRepo{
 		session: session,
 		logger:  logger,
+		conn:    conn,
 		tracer:  tracer,
 	}, nil
 }
 
 func (sr *TweetRepo) CloseSession() {
 	sr.session.Close()
+	sr.conn.Close()
 }
 
 // Field picture is missing

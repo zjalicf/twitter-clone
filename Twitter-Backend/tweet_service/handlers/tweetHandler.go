@@ -6,6 +6,7 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -150,7 +151,7 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
 	defer span.End()
 
-	err := req.ParseMultipartForm(32 << 20)
+  err := req.ParseMultipartForm(32 << 20)
 	if err != nil {
 		log.Println(err)
 		return
@@ -231,7 +232,6 @@ func (handler *TweetHandler) GetTweetImage(writer http.ResponseWriter, req *http
 
 	writer.WriteHeader(http.StatusOK)
 	writer.Write(*image)
-
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {
