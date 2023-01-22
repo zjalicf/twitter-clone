@@ -10,6 +10,7 @@ import (
 	"follow_service/store"
 	"github.com/gorilla/mux"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/sirupsen/logrus"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"log"
@@ -19,6 +20,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var Logger = logrus.New()
 
 type Server struct {
 	config *config.Config
@@ -49,7 +52,44 @@ func (server *Server) initFollowStore(driver *neo4j.DriverWithContext) domain.Fo
 	return store
 }
 
+func initLogger() {
+	file, err := os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	Logger.SetOutput(file)
+
+	rotationInterval := 24 * time.Hour
+	ticker := time.NewTicker(rotationInterval)
+	defer ticker.Stop()
+
+	go func() {
+		for range ticker.C {
+			rotateLogs(file)
+		}
+	}()
+}
+
+func rotateLogs(file *os.File) {
+	currentTime := time.Now().Format("2006-01-02_15-04-05")
+	err := os.Rename("/app/logs/application.log", "/app/logs/application_"+currentTime+".log")
+	if err != nil {
+		Logger.Error(err)
+	}
+	file.Close()
+
+	file, err = os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		Logger.Error(err)
+	}
+
+	Logger.SetOutput(file)
+}
+
 func (server *Server) Start() {
+
+	initLogger()
 
 	neo4jDriver := server.initNeo4JDriver()
 	followStore := server.initFollowStore(neo4jDriver)
