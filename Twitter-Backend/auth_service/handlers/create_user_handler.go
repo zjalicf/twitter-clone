@@ -35,7 +35,7 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 	return o, nil
 }
 
-//hendlovanje komandama
+// hendlovanje komandama
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}

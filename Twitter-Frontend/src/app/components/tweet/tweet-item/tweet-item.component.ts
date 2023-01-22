@@ -10,7 +10,6 @@ import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dia
 import { Favorite } from 'src/app/models/favorite.model';
 import { Router } from '@angular/router';
 import { HttpHeaderResponse } from '@angular/common/http';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tweet-item',
@@ -21,8 +20,7 @@ export class TweetItemComponent implements OnInit {
 
   constructor(private userService: UserService,
     private tweetService: TweetService,
-    public dialog: MatDialog,
-    private sanitizer: DomSanitizer) { }
+    public dialog: MatDialog) { }
 
   @Input() tweet: Tweet = new Tweet();
 
@@ -39,7 +37,6 @@ export class TweetItemComponent implements OnInit {
 
   ngOnInit(): void {
     this.totalLikes = this.tweet.favorite_count;
-    this.sanitizer.bypassSecurityTrustUrl(this.imagePath);
 
     if(this.tweet.image) {
       this.tweetService.GetImageByTweet(this.tweet.id).subscribe(response => {
@@ -51,7 +48,7 @@ export class TweetItemComponent implements OnInit {
       });
   
     }
-    
+
     this.userService.GetMe()
       .subscribe({
         next: (data: User) => {
@@ -91,6 +88,7 @@ export class TweetItemComponent implements OnInit {
   }
 
   likeTweet(tweet: Tweet) {
+
     this.tweetID.id = tweet.id
     this.tweetService.LikeTweet(this.tweetID).subscribe(
       {

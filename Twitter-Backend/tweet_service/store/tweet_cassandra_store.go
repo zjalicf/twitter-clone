@@ -103,8 +103,8 @@ func (sr *TweetRepo) CreateTables() {
 	}
 }
 
-//insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
-//(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
+// insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
+// (60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
 func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
 
