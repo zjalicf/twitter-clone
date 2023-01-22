@@ -146,8 +146,8 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 	//	log.Printf("GET REDIS ERR: %s", err.Error())
 	//	return nil, err
 	//}
-
 	if cachedImage != nil {
+		log.Println("KES SLIKA")
 		return cachedImage, nil
 	}
 
@@ -162,7 +162,7 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 		log.Printf("POST REDIS ERR: %s", err.Error())
 		return nil, err
 	}
-	log.Println(&image)
+	log.Println("CASSANDRA SLIKA")
 	return &image, nil
 }
 
