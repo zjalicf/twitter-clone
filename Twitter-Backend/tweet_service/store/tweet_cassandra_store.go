@@ -3,9 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
-	"github.com/gomodule/redigo/redis"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
@@ -26,8 +24,7 @@ const (
 type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
-	conn    redis.Conn
-  tracer  trace.Tracer
+	tracer  trace.Tracer
 }
 
 func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
@@ -61,24 +58,15 @@ func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 		return nil, err
 	}
 
-	redisDB := os.Getenv("REDIS")
-	conn, err := redis.Dial("tcp", redisDB)
-	if err != nil {
-		logger.Println(err)
-		return nil, err
-	}
-
 	return &TweetRepo{
 		session: session,
 		logger:  logger,
-		conn:    conn,
 		tracer:  tracer,
 	}, nil
 }
 
 func (sr *TweetRepo) CloseSession() {
 	sr.session.Close()
-	sr.conn.Close()
 }
 
 // Field picture is missing
@@ -105,28 +93,27 @@ func (sr *TweetRepo) CreateTables() {
 	err = sr.session.Query(
 		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (tweet_id UUID, image blob, PRIMARY KEY ((tweet_id)))",
 			COLLECTION_TWEET_IMAGE)).Exec()
-	
+
 	err = sr.session.Query(
 		fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id UUID, tweet_id UUID, username text, PRIMARY KEY ((tweet_id), username))",
-		COLLECTION_RETWEET)).Exec()
+			COLLECTION_RETWEET)).Exec()
 
 	if err != nil {
 		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
 	}
 }
 
-
 //insert into tweet (tweet_id, created_at, favorite_count, favorited, retweet_count, retweeted, text, user_id) values
 //(60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
-func (sr *TweetRepo) GetAll() ([]domain.Tweet, error) {
+func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
 
 	var tweets []domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
 
-		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.OwnerUsername, &tweet.Image,
-			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.Image,
+			&tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
 			sr.logger.Println(err)
 			return nil, err
@@ -154,7 +141,7 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	for scanner.Next() {
 		var tweet domain.Tweet
 		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.ID,
-			&tweet.OwnerUsername, &tweet.Image, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
 		if err != nil {
 			sr.logger.Println(err)
 			return nil, err
@@ -179,7 +166,7 @@ func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error)
 	for scanner.Next() {
 		var tweet domain.Tweet
 		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.ID,
-			&tweet.OwnerUsername, &tweet.Image, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
 
 		if err != nil {
 			sr.logger.Println(err)
@@ -210,8 +197,6 @@ func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Twe
 
 	err := sr.session.Query(
 		insert, tweet.ID, tweet.CreatedAt, tweet.FavoriteCount, tweet.Favorited,
-
-
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username, tweet.OwnerUsername, tweet.Image).Exec()
 
 	err = sr.session.Query(
@@ -232,12 +217,9 @@ func (sr *TweetRepo) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
 	err := sr.session.Query(insert, tweetID, imageBytes).Exec()
 	if err != nil {
 		sr.logger.Println(err)
-		return nil
+		return err
 	}
-	//_, err := sr.conn.Do("SET", "image", imageBytes)
-	//if err != nil {
-	//	return err
-	//}
+
 	return nil
 }
 
@@ -270,9 +252,9 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 	var tweetUsername string
 	var tweets []*domain.Tweet
 	for scanner.Next() {
-		var tweet domain.Tweet 
-		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.OwnerUsername, &tweet.Image,
-			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.Image,
+			&tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
 			sr.logger.Println(err)
@@ -385,7 +367,6 @@ func (sr *TweetRepo) GetLikesByTweet(ctx context.Context, tweetID string) ([]*do
 	return favorites, nil
 }
 
-
 func (sr *TweetRepo) GetTweetImage(ctx context.Context, id string) ([]byte, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetImage")
 	defer span.End()
@@ -439,8 +420,8 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 	var tweets []*domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
-		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.OwnerUsername,
-			&tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.Image,
+			&tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
 			sr.logger.Println(err)
@@ -497,18 +478,18 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 	timeNow := time.Now().Unix()
 
 	insertTweet := fmt.Sprintf("INSERT INTO %s "+
-		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username, owner_username) "+
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
+		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username, owner_username, image) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
 
 	insertByUser := fmt.Sprintf("INSERT INTO %s "+
-		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username, owner_username) "+
-		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
+		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username, owner_username, image) "+
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
 
-	err = sr.session.Query(
-		insertTweet, newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username).Exec()
+	err = sr.session.Query(insertTweet,
+		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image).Exec()
 
-	err = sr.session.Query(
-		insertByUser, newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username).Exec()
+	err = sr.session.Query(insertByUser,
+		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image).Exec()
 
 	if err != nil {
 		sr.logger.Println(err.Error())

@@ -21,10 +21,6 @@ services:
       TWEET_CACHE_HOST: ${TWEET_CACHE_HOST}
       TWEET_CACHE_PORT: ${TWEET_CACHE_PORT}
     depends_on:
-      tweet_db:
-        condition: service_healthy
-      redis:
-        condition: service_started
       jaeger:
         condition: service_started
       tweet_db:
@@ -33,8 +29,6 @@ services:
         condition: service_started
     networks:
       - network
-    volumes:
-      - ./logs:/app/logs
 
   user_service:
     image: user_service
@@ -169,17 +163,6 @@ services:
     networks:
       - network
 
-  redis:
-    image: redis
-    container_name: redis
-    restart: on-failure
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - network
-
   auth_db:
     image: mongo
     container_name: auth_db
@@ -276,7 +259,6 @@ services:
 
 volumes:
   cassandra_store:
-  redis_data:
   neo4j_data:
   auth_cache:
     driver: local
