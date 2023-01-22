@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"follow_service/domain"
+	"follow_service/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 )
@@ -76,7 +77,7 @@ func (store *FollowNeo4JStore) GetRequestsForUser(username string) ([]*domain.Fo
 	requests, err := session.ExecuteRead(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, err := transaction.Run(ctx,
 			"MATCH (r:Request)-[:REQUEST_TO]->(u:User) "+
-				"WHERE r.receiver = $username AND u.username = $username AND r.status = 1"+
+				"WHERE r.receiver = $username AND u.username = $username AND r.status = 1 "+
 				"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 			map[string]any{"username": username})
 		if err != nil {
@@ -95,7 +96,7 @@ func (store *FollowNeo4JStore) GetRequestsForUser(username string) ([]*domain.Fo
 				ID:        id.(string),
 				Requester: requester.(string),
 				Receiver:  receiver.(string),
-				Status:    status.(domain.Status),
+				Status:    domain.Status(status.(int64)),
 			})
 		}
 
@@ -115,8 +116,8 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(requester, receiver
 
 	requests, err := session.ExecuteRead(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, err := transaction.Run(ctx,
-			"MATCH (r:Request)"+
-				"WHERE r.requester = $requester AND r.receiver = receiver"+
+			"MATCH (r:Request) "+
+				"WHERE r.requester = $requester AND r.receiver = $receiver "+
 				"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 			map[string]any{"requester": requester, "receiver": receiver})
 		if err != nil {
@@ -135,11 +136,10 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(requester, receiver
 				ID:        id.(string),
 				Requester: requester.(string),
 				Receiver:  receiver.(string),
-				Status:    status.(domain.Status),
+				Status:    domain.Status(status.(int64)),
 			}
-		}
-		if result.Err() != nil {
-			return nil, err
+		} else {
+			return nil, fmt.Errorf(errors.ErrorRequestNotExists)
 		}
 		return request, nil
 	})
@@ -319,7 +319,7 @@ func (store *FollowNeo4JStore) SaveFollow(request *domain.FollowRequest) error {
 	_, err := session.ExecuteWrite(ctx,
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			_, err := transaction.Run(ctx,
-				"MATCH (requester:User), (receiver:User)"+
+				"MATCH (requester:User), (receiver:User) "+
 					"WHERE requester.username = $requester AND receiver.username = $receiver "+
 					"CREATE f = (requester)-[:FOLLOWS]->(receiver)",
 				map[string]any{"requester": request.Requester, "receiver": request.Receiver})
@@ -364,7 +364,7 @@ func (store *FollowNeo4JStore) AcceptRequest(id *string) (*domain.FollowRequest,
 					ID:        id.(string),
 					Requester: requester.(string),
 					Receiver:  receiver.(string),
-					Status:    status.(domain.Status),
+					Status:    domain.Status(status.(int64)),
 				}
 			}
 

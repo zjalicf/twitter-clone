@@ -28,14 +28,14 @@ func (service *FollowService) FollowExist(followRequest *domain.FollowRequest) (
 }
 
 func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, error) {
-	followers, err := service.store.GetFollowingsOfUser(username)
+	followings, err := service.store.GetFollowingsOfUser(username)
 	if err != nil {
 		return nil, err
 	}
 
 	var usernameList []*string
-	for i := 0; i < len(followers); i++ {
-		usernameList = append(usernameList, &followers[i].Username)
+	for i := 0; i < len(followings); i++ {
+		usernameList = append(usernameList, &followings[i].Username)
 	}
 	log.Println("LIST OF USERNAMES FOLLOW SERVICE: ")
 	log.Println(usernameList)
@@ -61,7 +61,7 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 		return fmt.Errorf("You already follow this user!")
 	}
 
-	if !visibility {
+	if visibility {
 		existing, err := service.store.GetRequestByRequesterReceiver(&request.Requester, &request.Receiver)
 		if err != nil {
 			if err.Error() == errors.ErrorRequestNotExists {

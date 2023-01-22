@@ -68,7 +68,8 @@ export class TweetAddComponent implements OnInit {
   getFile(event: any) {
     console.log("Desio se event")
     this.file = event.target.files[0];
-    if (this.file.type === 'image/jpeg' || this.file.type === 'image/jpg') {
+    let fileType = this.file.type.split("/")
+    if (fileType[0] === "image") {
         this.formData.append('image', this.file);
     } else {
         console.log('Wrong file type. Only jpeg images are allowed.');
