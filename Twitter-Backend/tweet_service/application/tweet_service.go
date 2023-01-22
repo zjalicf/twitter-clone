@@ -166,6 +166,10 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 	return &image, nil
 }
 
+func (service *TweetService) Retweet(id string, username string) (int, error) {
+	return service.store.Retweet(id, username)
+}
+
 func CircuitBreaker() *gobreaker.CircuitBreaker {
 	return gobreaker.NewCircuitBreaker(
 		gobreaker.Settings{

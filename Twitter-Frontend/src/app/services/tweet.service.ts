@@ -35,7 +35,7 @@ import { Tweet } from "../models/tweet.model";
         public GetLikesByTweet(tweetID: string): Observable<Favorite[]> {
             return this.http.get<Favorite[]>(`${environment.baseApiUrl}/${this.url}/whoLiked/` + tweetID)
         }
-
+        
         public GetImageByTweet(tweetID: string): Observable<Blob> {
             // let returnRet: Blob = new Blob()
             // fetch('https://localhost:8000/api/tweets/image/' + tweetID).then(response => response.blob())
@@ -49,5 +49,8 @@ import { Tweet } from "../models/tweet.model";
      
         }
 
+        public Retweet(tweetID: TweetID): Observable<void> {
+            return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/retweet/`,tweetID)
+        }
 
-    }
+}

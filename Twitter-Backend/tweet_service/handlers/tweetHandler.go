@@ -52,6 +52,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
 	router.HandleFunc("/whoLiked/{id}", handler.GetLikesByTweet).Methods("GET")
 	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
+	router.HandleFunc("/retweet", handler.Retweet).Methods("POST")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -262,4 +263,38 @@ func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http
 		jsonResponse(feed, writer)
 
 	}
+}
+
+func (handler *TweetHandler) Retweet(writer http.ResponseWriter, req *http.Request) {
+
+	bearer := req.Header.Get("Authorization")
+	bearerToken := strings.Split(bearer, "Bearer ")
+	tokenString := bearerToken[1]
+
+	token, err := jwt.Parse([]byte(tokenString), verifier)
+
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	var tweetID domain.TweetID
+	err = json.NewDecoder(req.Body).Decode(&tweetID)
+	if err != nil {
+		log.Println(err)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	code, err := handler.service.Retweet(tweetID.ID, username)
+	if err != nil {
+		http.Error(writer, err.Error(), code)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }

@@ -13,5 +13,5 @@ p, Business, /feed, GET
 p, Regular, /image/*, GET
 p, Business, /image/*, GET
 p, NotLoggedIn, /image/*, GET
-
-
+p, Regular, /retweet, POST
+p, Business, /retweet, POST
