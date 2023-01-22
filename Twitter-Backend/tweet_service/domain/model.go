@@ -7,13 +7,13 @@ import (
 type Tweet struct {
 	ID            gocql.UUID `json:"id"`
 	Text          string     `json:"text"`
-	Image         []byte     `json:"image"`
 	CreatedAt     int64      `json:"created_on"`
 	Favorited     bool       `json:"favorited"`
 	FavoriteCount int        `json:"favorite_count"`
 	Retweeted     bool       `json:"retweeted"`
 	RetweetCount  int        `json:"retweet_count"`
 	Username      string     `json:"username"`
+	Image         bool       `json:"image"`
 }
 
 type Favorite struct {

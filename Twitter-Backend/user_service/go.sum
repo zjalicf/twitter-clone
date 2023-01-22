@@ -64,8 +64,6 @@ github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7Jul
 github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a h1:fZHgsYlfvtyqToslyjUt3VOPF4J7aK/3MPcK7xp3PDk=
 github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a/go.mod h1:ul22v+Nro/R083muKhosV54bj5niojjWZvU8xrevuH4=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119210133-62c40ac9007e h1:yEX4S5qZDTQJjyTEkj6nDv6ZJ4UICOFMoQycD1UsgTg=
-github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119210133-62c40ac9007e/go.mod h1:6BAsELzdjegwBuYKEkyrDQHvPv+iBjMVjishIqcJ7Q8=
 github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119211805-4db3ea2db008 h1:ng6LjMjIZsmTO1BRC5AJeqKGIEw20roQo1A3ulVKwDI=
 github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119211805-4db3ea2db008/go.mod h1:6BAsELzdjegwBuYKEkyrDQHvPv+iBjMVjishIqcJ7Q8=
 go.mongodb.org/mongo-driver v1.11.1 h1:QP0znIRTuL0jf1oBQoAoM0C6ZJfBK4kx0Uumtv1A7w8=

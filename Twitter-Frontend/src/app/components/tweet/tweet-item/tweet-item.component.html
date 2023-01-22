@@ -1,12 +1,11 @@
 <div>
   <mat-card class="tweet-card">
     <mat-card-title class="tweet-username-icon">
-      <!-- <img class="tweet-user-icon" mat-card-image src="https://cdn-icons-png.flaticon.com/512/147/147142.png"> -->
       <mat-card-title *ngIf="isThatMe()" class="tweet-user-username" [routerLink]="['/My-Profile']"> {{tweet.username}}</mat-card-title>
       <mat-card-title *ngIf="!isThatMe()" class="tweet-user-username" [routerLink]="['/View-Profile', tweet.username]">{{tweet.username}}</mat-card-title>
     </mat-card-title>
     <mat-card-subtitle class="tweet-text">{{tweet.text}}</mat-card-subtitle>
-    <img class="tweet-image" mat-card-image src="https://time.com/wp-content/uploads/2017/10/229-westerlund-21.jpg?w=2000">
+    <img class="tweet-image" mat-card-image *ngIf="this.tweet.image" [src]="imagePath">
     <mat-card-actions>
 
       <button *ngIf="isLiked" (click)="likeTweet(tweet)" mat-icon-button color="warn">
@@ -20,7 +19,13 @@
       <b class="total-likes">{{tweet.favorite_count}}</b>
       <button mat-icon-button color="warn" class="who-liked" (click)="openDialog()">Likes</button>
 
+      <button *ngIf="isRetweeted" (click)="retweet(tweet)" mat-icon-button>
+        <mat-icon class="star-icon">star</mat-icon>
+      </button>
+
+      <button *ngIf="!isRetweeted" (click)="retweet(tweet)" mat-icon-button>
+        <mat-icon class="star-icon">star_border</mat-icon>
+      </button>
+
     </mat-card-actions>
 </mat-card>
-
-<!-- <router-outlet></router-outlet> -->
