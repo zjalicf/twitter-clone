@@ -176,7 +176,7 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(username string) ([]*domain.U
 			followings = append(followings, &domain.User{
 				ID:        id.(string),
 				Username:  username.(string),
-				Age:       age.(int),
+				Age:       int(age.(int64)),
 				Residence: residence.(string),
 			})
 		}
