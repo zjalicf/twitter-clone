@@ -14,6 +14,7 @@ export class MainPageComponent implements OnInit {
 
   tweets: Tweet[] = []
   user: User = new User()
+  peopleMockUp: string[] = ["Milan", "Filip", "Petar"];
 
   constructor(private tweetService: TweetService,
     private userService: UserService,
@@ -36,7 +37,6 @@ export class MainPageComponent implements OnInit {
             .subscribe({
               next: (data) => {
                 this.tweets = data;
-                console.log(this.tweets)
               },
               error: (error) => {
                 this.openSnackBar("The service is currently unavailable. Try again later.", "")
