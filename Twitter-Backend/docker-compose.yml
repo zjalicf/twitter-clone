@@ -17,15 +17,23 @@ services:
       FOLLOW_SERVICE_HOST: ${FOLLOW_SERVICE_HOST}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
       JAEGER_ADDRESS: ${JAEGER_ADDRESS}
       TWEET_CACHE_HOST: ${TWEET_CACHE_HOST}
       TWEET_CACHE_PORT: ${TWEET_CACHE_PORT}
+      CREATE_REPORT_COMMAND_SUBJECT: ${CREATE_REPORT_COMMAND_SUBJECT}
+      CREATE_REPORT_REPLY_SUBJECT: ${CREATE_REPORT_REPLY_SUBJECT}
     depends_on:
       jaeger:
         condition: service_started
       tweet_db:
         condition: service_healthy
       redis_db:
+        condition: service_started
+      nats:
         condition: service_started
     networks:
       - network
@@ -123,6 +131,32 @@ services:
     networks:
       - network
 
+  report_service:
+    image: report_service
+    container_name: report_service
+    build:
+      context: .
+      dockerfile: ./report_service/Dockerfile
+    restart: always
+    ports:
+      - ${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}
+    environment:
+      REPORT_DB_HOST: ${REPORT_DB_HOST}
+      REPORT_DB_PORT: ${REPORT_DB_PORT}
+      REPORT_SERVICE_PORT: ${REPORT_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_REPORT_COMMAND_SUBJECT: ${CREATE_REPORT_COMMAND_SUBJECT}
+      CREATE_REPORT_REPLY_SUBJECT: ${CREATE_REPORT_REPLY_SUBJECT}
+    depends_on:
+      - report_db
+      - nats
+    networks:
+      - network
+
   api_gateway:
     build:
       context: ./api_gateway/
@@ -170,12 +204,12 @@ services:
     networks:
       - network
 
-#  follow_db:
-#    image: mongo
-#    container_name: follow_db
-#    restart: on-failure
-#    networks:
-#      - network
+  report_db:
+    image: mongo
+    container_name: report_db
+    restart: on-failure
+    networks:
+      - network
 
   follow_db:
     image: neo4j
