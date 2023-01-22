@@ -16,8 +16,8 @@ import { Tweet } from "../models/tweet.model";
         constructor(private http: HttpClient) { }
     
 
-        public AddTweet(tweet: AddTweetDTO): Observable<Tweet> {
-            return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, tweet);
+        public AddTweet(formData: FormData): Observable<Tweet> {
+            return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, formData);
         }
 
         public GetHomeFeed(): Observable<any> {
