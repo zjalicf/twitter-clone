@@ -6,6 +6,10 @@
                 <form [formGroup]="formGroup">
 
                     <div class="mb-3 w-50">
+                        <div style="text-align: center;">
+                            <label style="font-size: 20px;" for="myfile">Select a file:</label><br>
+                            <input formControlName="image" (change)="getFile($event)" type="file" id="myfile" name="myfile"><br>
+                        </div><br>
                         <textarea type="text" class="form-control" formControlName="text" maxlength="281" id="text" rows="4"
                             placeholder="Enter your Tweet Text here."
                             [ngClass]="{ 'is-invalid': submitted && tweetForm['text'].errors}"></textarea>

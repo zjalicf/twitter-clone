@@ -5,6 +5,7 @@ import (
 	"follow_service/domain"
 	"follow_service/errors"
 	"github.com/google/uuid"
+	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"log"
 )
 
@@ -51,13 +52,6 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 	request.ID = uuid.New().String()
 	request.Requester = username
 
-	if visibility {
-		request.Status = 1
-	} else {
-		//service.store.
-		request.Status = 3
-	}
-
 	isExist, err := service.FollowExist(request)
 	if err != nil {
 		return err
@@ -67,10 +61,34 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 		return fmt.Errorf("You already follow this user!")
 	}
 
-	err = service.store.SaveRequest(request)
-	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("Follow not inserted in db")
+	if !visibility {
+		existing, err := service.store.GetRequestByRequesterReceiver(&request.Requester, &request.Receiver)
+		if err != nil {
+			if err.Error() == errors.ErrorRequestNotExists {
+				request.Status = 1
+				err = service.store.SaveRequest(request)
+				if err != nil {
+					log.Println(err)
+					return fmt.Errorf("Request not inserted in db")
+				}
+				return nil
+			} else {
+				return err
+			}
+		}
+
+		existing.Status = 1
+		err = service.store.UpdateRequest(existing)
+		if err != nil {
+			log.Println(err)
+			return fmt.Errorf("Request not inserted in db")
+		}
+
+	} else {
+		err := service.store.SaveFollow(request)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -87,17 +105,22 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 }
 
 func (service *FollowService) AcceptRequest(id *string) error {
-	err := service.store.AcceptRequest(id)
+	request, err := service.store.AcceptRequest(id)
 	if err != nil {
 		return fmt.Errorf(errors.ErrorInAcceptRequest)
 	}
 
-	err = service.store.SaveFollow(id)
+	err = service.store.SaveFollow(request)
 	if err != nil {
 		return fmt.Errorf(errors.ErrorInSaveFollow)
 	}
 
 	return nil
+
+}
+
+func (service *FollowService) DeleteUser(id *string) error {
+	return service.store.DeleteUser(id)
 }
 
 func (service *FollowService) DeclineRequest(id *string) error {
@@ -106,4 +129,14 @@ func (service *FollowService) DeclineRequest(id *string) error {
 
 func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) error {
 	return service.store.SaveRequest(followRequest)
+}
+
+func (service *FollowService) UserToDomain(userIn create_user.User) domain.User {
+	var user domain.User
+	user.ID = userIn.ID.Hex()
+	user.Age = userIn.Age
+	user.Residence = userIn.Residence
+	user.Username = userIn.Username
+
+	return user
 }

@@ -17,9 +17,16 @@ services:
       FOLLOW_SERVICE_HOST: ${FOLLOW_SERVICE_HOST}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
+      TWEET_CACHE_HOST: ${TWEET_CACHE_HOST}
+      TWEET_CACHE_PORT: ${TWEET_CACHE_PORT}
     depends_on:
-       tweet_db:
-         condition: service_healthy
+      jaeger:
+        condition: service_started
+      tweet_db:
+        condition: service_healthy
+      redis_db:
+        condition: service_started
     networks:
       - network
 
@@ -37,8 +44,17 @@ services:
       USER_DB_PORT: ${USER_DB_PORT}
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
+      CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - user_db
+      - jaeger
+      - auth_service
     networks:
       - network
 
@@ -62,9 +78,18 @@ services:
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       SMTP_AUTH_MAIL: ${SMTP_AUTH_MAIL}
       SMTP_AUTH_PASSWORD: ${SMTP_AUTH_PASSWORD}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
+      CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
+      JAEGER_ADDRESS: ${JAEGER_ADDRESS}
     depends_on:
       - auth_db
       - auth_cache
+      - jaeger
+      - nats
     networks:
       - network
 
@@ -84,8 +109,17 @@ services:
       FOLLOW_DB_PASS: ${FOLLOW_DB_PASS}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_USER_COMMAND_SUBJECT: ${CREATE_USER_COMMAND_SUBJECT}
+      CREATE_USER_REPLY_SUBJECT: ${CREATE_USER_REPLY_SUBJECT}
     depends_on:
       - follow_db
+      - jaeger
+      - auth_service
+      - user_service
     networks:
       - network
 
@@ -99,15 +133,11 @@ services:
       - "8000:8000"
     depends_on:
       - tweet_service
+      - auth_service
+      - user_service
+      - follow_service
     networks:
       - network
-
-#  tweet_db:
-#    image: mongo
-#    container_name: tweet_db
-#    restart: on-failure
-#    networks:
-#      - network
 
   tweet_db:
     image: cassandra
@@ -190,11 +220,49 @@ services:
     volumes:
       - auth_cache:/data
 
+  redis_db:
+    image: redis
+    restart: always
+    environment:
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - ${TWEET_CACHE_PORT}:${TWEET_CACHE_PORT}
+    command: --port 6380
+    volumes:
+      - redis_data:/data
+    networks:
+      - network
+
+  nats:
+    image: nats
+    container_name: nats
+    restart: on-failure
+    networks:
+      - network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - network
+
+  collector:
+    image: otel/opentelemetry-collector:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./api_gateway/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - network
+
 volumes:
   cassandra_store:
   neo4j_data:
   auth_cache:
     driver: local
+  redis_data:
 
 networks:
   network:

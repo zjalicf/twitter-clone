@@ -11,4 +11,5 @@ const (
 	NotVerificatedUser        = "user wasn't verified yet"
 	UsernameAlreadyExist      = "username already exists in database"
 	EmailAlreadyExist         = "email already exists in database"
+	ServiceUnavailable        = "service is unavailable at the moment"
 )

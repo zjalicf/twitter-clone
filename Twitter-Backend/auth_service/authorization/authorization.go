@@ -1,7 +1,6 @@
 package authorization
 
 import (
-	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/cristalhq/jwt/v4"
 	"log"
@@ -18,9 +17,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
-			fmt.Println(r.Header.Get("Authorization"))
-			fmt.Println(e.GetPolicy())
 
 			if r.Header.Get("Authorization") == "" {
 				res, err := e.EnforceSafe("NotLoggedIn", r.URL.Path, r.Method)
@@ -43,7 +39,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				bearer := r.Header.Get("Authorization")
 				bearerToken := strings.Split(bearer, "Bearer ")
 				tokenString := bearerToken[1]
-				fmt.Println(tokenString)
 				token, err := jwt.Parse([]byte(tokenString), verifier)
 				if err != nil {
 					log.Println(err)
@@ -52,8 +47,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				}
 
 				claims := GetMapClaims(token.Bytes())
-				fmt.Println(claims)
-				fmt.Println("proslo")
 
 				res, err := e.EnforceSafe(claims["userType"], r.URL.Path, r.Method)
 				if err != nil {
@@ -61,7 +54,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 					http.Error(w, "unauthorized user", http.StatusUnauthorized)
 					return
 				}
-				log.Println(res)
 
 				if res {
 					log.Println("redirect")

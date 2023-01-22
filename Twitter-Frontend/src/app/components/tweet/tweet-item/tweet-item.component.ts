@@ -10,6 +10,7 @@ import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dia
 import { Favorite } from 'src/app/models/favorite.model';
 import { Router } from '@angular/router';
 import { HttpHeaderResponse } from '@angular/common/http';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tweet-item',
@@ -20,21 +21,37 @@ export class TweetItemComponent implements OnInit {
 
   constructor(private userService: UserService,
     private tweetService: TweetService,
-    public dialog: MatDialog) { }
+    public dialog: MatDialog,
+    private sanitizer: DomSanitizer) { }
 
   @Input() tweet: Tweet = new Tweet();
+
+  imagePath: string = ""
 
   likesByTweet: Favorite[] = [];
 
   loggedInUser: User = new User();
   tweetID: TweetID = new TweetID();
   totalLikes: number = 0
-  isLiked?: boolean;
+  isLiked: boolean = false;
+  isRetweeted: boolean = false;
   liked: string = "favorite_border";
 
   ngOnInit(): void {
     this.totalLikes = this.tweet.favorite_count;
+    this.sanitizer.bypassSecurityTrustUrl(this.imagePath);
 
+    if(this.tweet.image) {
+      this.tweetService.GetImageByTweet(this.tweet.id).subscribe(response => {
+        const fileReader = new FileReader();
+        fileReader.readAsDataURL(response);
+        fileReader.onload = () => {
+          this.imagePath = fileReader.result as string;
+        }
+      });
+  
+    }
+    
     this.userService.GetMe()
       .subscribe({
         next: (data: User) => {
@@ -65,15 +82,6 @@ export class TweetItemComponent implements OnInit {
       })
   }
 
-  // isLiked(): boolean {
-  //   for (let favorite of this.likesByTweet) {
-  //     if (favorite.username == this.loggedInUser.username) {
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }
-
   isThatMe(): boolean {
     if (this.tweet.username == this.loggedInUser.username) {
       return true;
@@ -83,7 +91,6 @@ export class TweetItemComponent implements OnInit {
   }
 
   likeTweet(tweet: Tweet) {
-
     this.tweetID.id = tweet.id
     this.tweetService.LikeTweet(this.tweetID).subscribe(
       {
@@ -114,6 +121,10 @@ export class TweetItemComponent implements OnInit {
           }
         }
       });
+  }
+
+  retweet(tweet: Tweet) {
+    alert("retweeted")
   }
 
   openDialog(): void {

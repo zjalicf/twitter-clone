@@ -108,6 +108,48 @@ func (store *FollowNeo4JStore) GetRequestsForUser(username string) ([]*domain.Fo
 	return requests.([]*domain.FollowRequest), nil
 }
 
+func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(requester, receiver *string) (*domain.FollowRequest, error) {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	requests, err := session.ExecuteRead(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(ctx,
+			"MATCH (r:Request)"+
+				"WHERE r.requester = $requester AND r.receiver = receiver"+
+				"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
+			map[string]any{"requester": requester, "receiver": receiver})
+		if err != nil {
+			log.Printf("Error in getting request by requester and receiver: %s", err.Error())
+			return nil, err
+		}
+
+		var request *domain.FollowRequest
+		if result.Next(ctx) {
+			record := result.Record()
+			id, _ := record.Get("id")
+			requester, _ := record.Get("requester")
+			receiver, _ := record.Get("receiver")
+			status, _ := record.Get("status")
+			request = &domain.FollowRequest{
+				ID:        id.(string),
+				Requester: requester.(string),
+				Receiver:  receiver.(string),
+				Status:    status.(domain.Status),
+			}
+		}
+		if result.Err() != nil {
+			return nil, err
+		}
+		return request, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return requests.(*domain.FollowRequest), nil
+}
+
 func (store *FollowNeo4JStore) GetFollowingsOfUser(username string) ([]*domain.User, error) {
 	ctx := context.Background()
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
@@ -187,6 +229,33 @@ func (store *FollowNeo4JStore) SaveRequest(request *domain.FollowRequest) error 
 	return nil
 }
 
+func (store *FollowNeo4JStore) UpdateRequest(request *domain.FollowRequest) error {
+
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			_, err := transaction.Run(ctx,
+				"MATCH (request:Request) "+
+					"WHERE request.id = $id "+
+					"SET request.status = $status",
+				map[string]any{"id": request.ID, "status": request.Status})
+			if err != nil {
+				log.Printf("Error in creating request node and relationships because of: %s", err.Error())
+				return nil, err
+			}
+
+			return nil, nil
+		})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (store *FollowNeo4JStore) SaveUser(user *domain.User) error {
 
 	ctx := context.Background()
@@ -217,7 +286,32 @@ func (store *FollowNeo4JStore) SaveUser(user *domain.User) error {
 	return nil
 }
 
-func (store *FollowNeo4JStore) SaveFollow(requestID *string) error {
+func (store *FollowNeo4JStore) DeleteUser(id *string) error {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		_, err := transaction.Run(ctx,
+			"MATCH (u:User) "+
+				"WHERE u.id = $id "+
+				"DELETE u",
+			map[string]any{"id": id})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (store *FollowNeo4JStore) SaveFollow(request *domain.FollowRequest) error {
 	ctx := context.Background()
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -225,10 +319,10 @@ func (store *FollowNeo4JStore) SaveFollow(requestID *string) error {
 	_, err := session.ExecuteWrite(ctx,
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			_, err := transaction.Run(ctx,
-				"MATCH (requester:User), (receiver:User), (r:Request) "+
-					"WHERE r.id = $requestID requester.username = r.requester AND receiver.username = r.receiver "+
+				"MATCH (requester:User), (receiver:User)"+
+					"WHERE requester.username = $requester AND receiver.username = $receiver "+
 					"CREATE f = (requester)-[:FOLLOWS]->(receiver)",
-				map[string]any{"requestID": requestID})
+				map[string]any{"requester": request.Requester, "receiver": request.Receiver})
 			if err != nil {
 				return nil, err
 			}
@@ -242,29 +336,45 @@ func (store *FollowNeo4JStore) SaveFollow(requestID *string) error {
 	return nil
 }
 
-func (store *FollowNeo4JStore) AcceptRequest(id *string) error {
+func (store *FollowNeo4JStore) AcceptRequest(id *string) (*domain.FollowRequest, error) {
 	ctx := context.Background()
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
 
-	_, err := session.ExecuteWrite(ctx,
+	request, err := session.ExecuteWrite(ctx,
 		func(transaction neo4j.ManagedTransaction) (any, error) {
-			_, err := transaction.Run(ctx,
+			result, err := transaction.Run(ctx,
 				"MATCH (r:Request) "+
 					"WHERE r.id = $id "+
-					"SET r.status = 3",
+					"SET r.status = 3 "+
+					"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 				map[string]any{"id": id})
 			if err != nil {
 				return nil, err
 			}
 
-			return nil, nil
+			var request *domain.FollowRequest
+			if result.Next(ctx) {
+				record := result.Record()
+				id, _ := record.Get("id")
+				requester, _ := record.Get("requester")
+				receiver, _ := record.Get("receiver")
+				status, _ := record.Get("status")
+				request = &domain.FollowRequest{
+					ID:        id.(string),
+					Requester: requester.(string),
+					Receiver:  receiver.(string),
+					Status:    status.(domain.Status),
+				}
+			}
+
+			return request, nil
 		})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return request.(*domain.FollowRequest), nil
 }
 func (store *FollowNeo4JStore) DeclineRequest(id *string) error {
 	ctx := context.Background()
@@ -295,86 +405,3 @@ func (store *FollowNeo4JStore) HandleRequest() {
 	//TODO implement me
 	panic("implement me")
 }
-
-//func (store *FollowNeo4JStore) filter(filter interface{}) ([]*domain.FollowRequest, error) {
-//	cursor, err := store.follows.Find(context.TODO(), filter)
-//	defer cursor.Close(context.TODO())
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return decode(cursor)
-//}
-//
-//func (store *FollowNeo4JStore) filterOne(filter interface{}) (follow *domain.FollowRequest, err error) {
-//	result := store.follows.FindOne(context.TODO(), filter)
-//	err = result.Decode(&follow)
-//	return
-//}
-//
-//func decode(cursor *mongo.Cursor) (follows []*domain.FollowRequest, err error) {
-//	for cursor.Next(context.TODO()) {
-//		var follow domain.FollowRequest
-//		err = cursor.Decode(&follow)
-//		if err != nil {
-//			return
-//		}
-//		follows = append(follows, &follow)
-//	}
-//	err = cursor.Err()
-//	return
-//}
-
-//func (store *FollowMongoDBStore) GetAll() ([]*domain.User, error) {
-//	filter := bson.D{{}}
-//	return store.filter(filter)
-//}
-//
-//func (store *FollowMongoDBStore) Get(id primitive.ObjectID) (*domain.User, error) {
-//	filter := bson.M{"_id": id}
-//	return store.filterOne(filter)
-//}
-//
-//func (store *FollowMongoDBStore) GetByEmail(email string) (*domain.User, error) {
-//	filter := bson.M{"email": email}
-//	return store.filterOne(filter)
-//}
-//
-//func (store *FollowMongoDBStore) Post(user *domain.User) (*domain.User, error) {
-//	user.ID = primitive.NewObjectID()
-//
-//	result, err := store.users.InsertOne(context.TODO(), user)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	user.ID = result.InsertedID.(primitive.ObjectID)
-//
-//	return user, nil
-//}
-//
-//func (store *FollowMongoDBStore) UpdateUser(user *domain.User) error {
-//	_, err := store.users.UpdateOne(context.TODO(), bson.M{"_id": user.ID}, bson.M{"$set": user})
-//	if err != nil {
-//		log.Printf("Updating user error mongodb: %s", err.Error())
-//		return err
-//	}
-//
-//	return nil
-//}
-//
-
-//
-//func (store *FollowMongoDBStore) GetOneUser(username string) (*domain.User, error) {
-//
-//	filter := bson.M{"username": username}
-//
-//	user, err := store.filterOne(filter)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return user, nil
-//}

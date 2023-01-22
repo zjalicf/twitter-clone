@@ -28,7 +28,7 @@ func NewFollowHandler(service *application.FollowService) *FollowHandler {
 func (handler *FollowHandler) Init(router *mux.Router) {
 
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	log.Println("sucessful init of enforcer")
+	log.Println("successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
-	router.HandleFunc("/users", handler.CreateUser).Methods("POST")
+	//router.HandleFunc("/users", handler.CreateUser).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
@@ -56,7 +56,6 @@ func (handler *FollowHandler) GetAll(writer http.ResponseWriter, req *http.Reque
 }
 
 func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req *http.Request) {
-
 	token, err := authorization.GetToken(req)
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -76,7 +75,6 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 }
 
 func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, req *http.Request) {
-
 	token, _ := authorization.GetToken(req)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
