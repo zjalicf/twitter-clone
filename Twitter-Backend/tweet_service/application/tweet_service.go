@@ -93,7 +93,7 @@ func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error
 	return userFeed, nil
 }
 
-func (service *TweetService) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
+func (service *TweetService) saveImage(tweetID gocql.UUID, imageBytes []byte) error {
 	return service.store.SaveImage(tweetID, imageBytes)
 }
 
@@ -104,11 +104,25 @@ func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string
 	return service.store.GetLikesByTweet(ctx, tweetID)
 }
 
-func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, username string) (*domain.Tweet, error) {
+func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, username string, image *[]byte) (*domain.Tweet, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Post")
 	defer span.End()
 
 	tweet.ID, _ = gocql.RandomUUID()
+
+	tweet.Image = false
+	if len(*image) != 0 {
+		err := service.saveImage(tweet.ID, *image)
+		if err != nil {
+			return nil, err
+		}
+
+		err = service.cache.PostCacheData(tweet.ID.String(), image)
+		if err != nil {
+			return nil, err
+		}
+		tweet.Image = true
+	}
 	tweet.CreatedAt = time.Now().Unix()
 	tweet.Favorited = false
 	tweet.FavoriteCount = 0
@@ -124,6 +138,32 @@ func (service *TweetService) Favorite(ctx context.Context, id string, username s
 	defer span.End()
 
 	return service.store.Favorite(ctx, id, username)
+}
+
+func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
+	cachedImage, _ := service.cache.GetCachedValue(id)
+	//if err != nil {
+	//	log.Printf("GET REDIS ERR: %s", err.Error())
+	//	return nil, err
+	//}
+
+	if cachedImage != nil {
+		return cachedImage, nil
+	}
+
+	image, err := service.store.GetTweetImage(context.TODO(), id)
+	if err != nil {
+		log.Printf("CASSANDRA ERR: %s", err.Error())
+		return nil, err
+	}
+
+	err = service.cache.PostCacheData(id, &image)
+	if err != nil {
+		log.Printf("POST REDIS ERR: %s", err.Error())
+		return nil, err
+	}
+	log.Println(&image)
+	return &image, nil
 }
 
 func CircuitBreaker() *gobreaker.CircuitBreaker {

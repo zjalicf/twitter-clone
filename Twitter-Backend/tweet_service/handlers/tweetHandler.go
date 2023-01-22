@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -45,6 +46,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
+	router.HandleFunc("/image/{id}", handler.GetTweetImage).Methods("GET")
 	router.HandleFunc("/favorite", handler.Favorite).Methods("POST")
 	router.HandleFunc("/user/{username}", handler.GetTweetsByUser).Methods("GET")
 	router.HandleFunc("/whoLiked/{id}", handler.GetLikesByTweet).Methods("GET")
@@ -145,8 +147,8 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 }
 
 func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request) {
-	//ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
-	//defer span.End()
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Post")
+	defer span.End()
 
 	err := req.ParseMultipartForm(32 << 20)
 	if err != nil {
@@ -163,67 +165,74 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	file, fileHeader, err := req.FormFile("image")
-	if fileHeader != nil {
-		log.Println(fileHeader)
+	file, _, err := req.FormFile("image")
+
+	var imageBytes []byte
+	if err == nil {
+		bytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			fmt.Fprintln(writer, "Error reading image:", err)
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		imageBytes = bytes
+		defer file.Close()
 	}
+
+	tweet := req.FormValue("json")
+
+	var tweetVal domain.Tweet
+	err = json.Unmarshal([]byte(tweet), &tweetVal)
 	if err != nil {
-		fmt.Fprintln(writer, "Error getting image:", err)
+		http.Error(writer, "bad json format", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
-	jsonPostman := req.FormValue("json")
-	log.Println(jsonPostman)
+	log.Println(tweetVal)
 
-	log.Printf("Json je : %s", jsonPostman)
-	log.Printf("File je : %s", file)
-
-	writer.WriteHeader(http.StatusOK)
-	return
-	//imageBytes, err := ioutil.ReadAll(file)
-	//if err != nil {
-	//	fmt.Fprintln(writer, "Error reading image:", err)
-	//	http.Error(writer, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//var request domain.Tweet
-	//err = json.NewDecoder(req.Body).Decode(&request)
-	//if err != nil {
-	//	log.Printf("Error je : %s", err.Error())
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
-	//log.Println(request)
-	//return
-	//
+	log.Println(imageBytes)
 	//err = handler.service.SaveImage(request.ID, imageBytes)
 	//if err != nil {
 	//	http.Error(writer, err.Error(), http.StatusBadRequest)
 	//	return
 	//}
-	//
-	//if req.Header.Get("Authorization") == "" {
-	//	writer.WriteHeader(http.StatusUnauthorized)
-	//	return
-	//}
-	//
-	//bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
-	//tokenString := bearerToken[1]
-	//token := authorization.GetToken(tokenString)
-	//
-	//claims := authorization.GetMapClaims(token.Bytes())
-	//username := claims["username"]
-	//
-	//tweet, err := handler.service.Post(ctx, &request, username)
-	//
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//writer.WriteHeader(http.StatusOK)
-	//jsonResponse(tweet, writer)
+
+	if req.Header.Get("Authorization") == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	bearerToken := strings.Split(req.Header.Get("Authorization"), "Bearer ")
+	tokenString := bearerToken[1]
+	token := authorization.GetToken(tokenString)
+
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	ret, err := handler.service.Post(ctx, &tweetVal, username, &imageBytes)
+
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	jsonResponse(ret, writer)
+}
+
+func (handler *TweetHandler) GetTweetImage(writer http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	id, ok := vars["id"]
+	if !ok {
+		http.Error(writer, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	image, err := handler.service.GetTweetImage(id)
+	if err != nil {
+		return
+	}
+
+	writer.Write(*image)
 }
 
 func Post(handler *TweetHandler) http.HandlerFunc {

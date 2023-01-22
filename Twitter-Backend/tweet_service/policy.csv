@@ -10,4 +10,5 @@ p, Business, /favorite, POST
 p, Business, /whoLiked/*, GET
 p, Regular, /feed, GET
 p, Business, /feed, GET
+p, Regular, /image/*, GET
 

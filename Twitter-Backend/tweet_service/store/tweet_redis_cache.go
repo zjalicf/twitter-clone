@@ -17,9 +17,9 @@ func NewTweetRedisCache(client *redis.Client) domain.TweetCache {
 	}
 }
 
-func (a *TweetRedisCache) PostCacheData(key string, value string) error {
+func (a *TweetRedisCache) PostCacheData(key string, value *[]byte) error {
 	log.Println("redis post")
-	result := a.client.Set(key, value, 10*time.Minute)
+	result := a.client.Set(key, *value, 10*time.Minute)
 	log.Println(result.Err())
 	log.Println(result.Result())
 	if result.Err() != nil {
@@ -30,12 +30,15 @@ func (a *TweetRedisCache) PostCacheData(key string, value string) error {
 	return nil
 }
 
-func (a *TweetRedisCache) GetCachedValue(key string) (string, error) {
+func (a *TweetRedisCache) GetCachedValue(key string) (*[]byte, error) {
 	result := a.client.Get(key)
-	token, err := result.Result()
-	if err != nil {
-		log.Println(err)
-		return "", err
+
+	if result.Err() != nil {
+		token, err := result.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		return &token, nil
 	}
-	return token, nil
+	return nil, nil
 }

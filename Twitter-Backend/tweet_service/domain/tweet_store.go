@@ -13,4 +13,5 @@ type TweetStore interface {
 	Favorite(ctx context.Context, id string, username string) (int, error)
 	GetLikesByTweet(ctx context.Context, tweetID string) ([]*Favorite, error)
 	SaveImage(tweetID gocql.UUID, imageBytes []byte) error
+	GetTweetImage(ctx context.Context, id string) ([]byte, error)
 }
