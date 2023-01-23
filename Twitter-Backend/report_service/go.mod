@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/casbin/casbin v1.9.1
 	github.com/cristalhq/jwt/v4 v4.0.2
+	github.com/gocql/gocql v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230122185827-d45c61a26b78
 	go.mongodb.org/mongo-driver v1.11.1
@@ -19,6 +20,7 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.0 // indirect
@@ -35,4 +37,5 @@ require (
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
+	gopkg.in/inf.v0 v0.9.1 // indirect
 )

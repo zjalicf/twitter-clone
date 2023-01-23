@@ -64,6 +64,13 @@ func (server *Server) Start() {
 	tracer := tp.Tracer("report_service")
 
 	reportStore := server.initReportStore(mongoClient, tracer)
+	cassandraStore, err := store2.New(log.Default(), tracer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer cassandraStore.CloseSession()
+	cassandraStore.CreateTables()
 
 	reportService := server.initReportService(reportStore, tracer)
 

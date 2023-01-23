@@ -141,6 +141,7 @@ services:
     ports:
       - ${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}
     environment:
+      EVENT_DB: ${EVENT_DB}
       REPORT_DB_HOST: ${REPORT_DB_HOST}
       REPORT_DB_PORT: ${REPORT_DB_PORT}
       REPORT_SERVICE_PORT: ${REPORT_SERVICE_PORT}
@@ -154,6 +155,7 @@ services:
     depends_on:
       - report_db
       - nats
+      - event_db
     networks:
       - network
 
@@ -182,11 +184,28 @@ services:
     # Docker healthcheck - checks if database is "alive"
     healthcheck:
       test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 15
     volumes:
       - cassandra_store:/var/lib/cassandra/data
+    networks:
+      - network
+
+  event_db:
+    image: cassandra
+    container_name: event_db
+    restart: always
+    ports:
+      - "9043:9043"
+    # Docker healthcheck - checks if database is "alive"
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - event_store:/var/lib/cassandra/data
     networks:
       - network
 
@@ -196,6 +215,8 @@ services:
     restart: on-failure
     networks:
       - network
+    volumes:
+      - user_db:/data/db
 
   auth_db:
     image: mongo
@@ -203,6 +224,8 @@ services:
     restart: on-failure
     networks:
       - network
+    volumes:
+      - auth_db:/data/db
 
   report_db:
     image: mongo
@@ -210,6 +233,8 @@ services:
     restart: on-failure
     networks:
       - network
+    volumes:
+      - report_db:/data/db
 
   follow_db:
     image: neo4j
@@ -297,6 +322,10 @@ volumes:
   auth_cache:
     driver: local
   redis_data:
+  user_db:
+  auth_db:
+  report_db:
+  event_store:
 
 networks:
   network:
