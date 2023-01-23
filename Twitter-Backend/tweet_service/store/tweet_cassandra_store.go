@@ -29,6 +29,7 @@ type TweetRepo struct {
 
 func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 	db := os.Getenv("TWEET_DB")
+	log.Println(db)
 
 	cluster := gocql.NewCluster(db)
 	cluster.Keyspace = "system"

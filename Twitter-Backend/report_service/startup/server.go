@@ -3,17 +3,6 @@ package startup
 import (
 	"context"
 	"fmt"
-<<<<<<< HEAD
-	"follow_service/application"
-	"follow_service/domain"
-	"follow_service/handlers"
-	"follow_service/startup/config"
-	"follow_service/store"
-	"github.com/gorilla/mux"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
-	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
-=======
 	"github.com/gorilla/mux"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
@@ -24,19 +13,15 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-<<<<<<< HEAD
-=======
 	"report_service/application"
 	"report_service/domain"
 	"report_service/handlers"
 	"report_service/startup/config"
-	store2 "report_service/store"
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e
+	"report_service/store"
 	"syscall"
 	"time"
 )
@@ -45,69 +30,16 @@ type Server struct {
 	config *config.Config
 }
 
-<<<<<<< HEAD
-=======
 const (
 	QueueGroup = "report_service"
 )
 
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e
 func NewServer(config *config.Config) *Server {
 	return &Server{
 		config: config,
 	}
 }
 
-<<<<<<< HEAD
-const (
-	QueueGroup = "follow_service"
-)
-
-func (server *Server) initNeo4JDriver() *neo4j.DriverWithContext {
-	driver, err := store.GetClient(server.config.FollowDBHost, server.config.FollowDBPort,
-		server.config.FollowDBUser, server.config.FollowDBPass)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return driver
-}
-
-func (server *Server) initFollowStore(driver *neo4j.DriverWithContext) domain.FollowRequestStore {
-	store := store.NewFollowNeo4JStore(driver)
-
-	return store
-}
-
-func (server *Server) Start() {
-
-	neo4jDriver := server.initNeo4JDriver()
-	followStore := server.initFollowStore(neo4jDriver)
-	followService := server.initFollowService(followStore)
-	followHandler := server.initFollowHandler(followService)
-
-	//saga init
-	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
-	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
-
-	server.initCreateUserHandler(followService, replyPublisher, commandSubscriber)
-
-	server.start(followHandler)
-}
-
-func (server *Server) initFollowService(store domain.FollowRequestStore) *application.FollowService {
-	return application.NewFollowService(store)
-}
-
-func (server *Server) initFollowHandler(service *application.FollowService) *handlers.FollowHandler {
-	return handlers.NewFollowHandler(service)
-}
-
-func (server *Server) initCreateUserHandler(service *application.FollowService, publisher saga.Publisher, subscriber saga.Subscriber) {
-	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
-	if err != nil {
-		log.Fatal(err)
-	}
-=======
 //
 func (server *Server) Start() {
 	mongoClient := server.initMongoClient()
@@ -132,28 +64,29 @@ func (server *Server) Start() {
 	tracer := tp.Tracer("report_service")
 
 	reportStore := server.initReportStore(mongoClient, tracer)
-	cassandraStore, err := store2.New(log.Default(), tracer)
+	cassandraStore, err := store.New(log.Default(), tracer)
 	if err != nil {
 		log.Fatal(err)
+		log.Println("Ovde je puklo")
 	}
 
 	defer cassandraStore.CloseSession()
 	cassandraStore.CreateTables()
 
-	reportService := server.initReportService(reportStore, tracer)
-
 	replyPublisher := server.initPublisher(server.config.CreateReportReplySubject)
 	commandSubscriber := server.initSubscriber(server.config.CreateReportCommandSubject, QueueGroup)
 
-	server.initCreateEventHandler(reportService, replyPublisher, commandSubscriber)
+	reportService := server.initReportService(reportStore, tracer)
 	reportHandler := server.initAuthHandler(reportService, tracer)
+
+	server.initCreateEventHandler(reportService, replyPublisher, commandSubscriber)
 
 	server.start(reportHandler)
 
 }
 
 func (server *Server) initMongoClient() *mongo.Client {
-	client, err := store2.GetMongoClient(server.config.ReportDBHost, server.config.ReportDBPort)
+	client, err := store.GetMongoClient(server.config.ReportDBHost, server.config.ReportDBPort)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -188,7 +121,7 @@ func newTraceProvider(exp sdktrace.SpanExporter) *sdktrace.TracerProvider {
 }
 
 func (server *Server) initReportStore(client *mongo.Client, tracer trace.Tracer) domain.ReportStore {
-	store := store2.NewReportMongoDBStore(client, tracer)
+	store := store.NewReportMongoDBStore(client, tracer)
 	return store
 }
 
@@ -198,7 +131,6 @@ func (server *Server) initReportService(store domain.ReportStore, tracer trace.T
 
 func (server *Server) initAuthHandler(service *application.ReportService, tracer trace.Tracer) *handlers.ReportHandler {
 	return handlers.NewReportHandler(service, tracer)
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e
 }
 
 func (server *Server) initPublisher(subject string) saga.Publisher {
@@ -221,11 +153,6 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-<<<<<<< HEAD
-func (server *Server) start(followHandler *handlers.FollowHandler) {
-	router := mux.NewRouter()
-	followHandler.Init(router)
-=======
 func (server *Server) initCreateEventHandler(reportService *application.ReportService, publisher saga.Publisher, subscriber saga.Subscriber) {
 	_, err := handlers.NewCreateEventCommandHandler(reportService, publisher, subscriber)
 	if err != nil {
@@ -237,7 +164,6 @@ func (server *Server) initCreateEventHandler(reportService *application.ReportSe
 func (server *Server) start(authHandler *handlers.ReportHandler) {
 	router := mux.NewRouter()
 	authHandler.Init(router)
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", server.config.Port),
@@ -266,8 +192,6 @@ func (server *Server) start(authHandler *handlers.ReportHandler) {
 	}
 	log.Println("Server Gracefully Stopped")
 }
-<<<<<<< HEAD
-=======
 
 //
 //	redisClient := server.initRedisClient()
@@ -418,4 +342,3 @@ func (server *Server) start(authHandler *handlers.ReportHandler) {
 //		sdktrace.WithResource(r),
 //	)
 //}
->>>>>>> c6971b823f4a55168100d569282069d7cd75d51e

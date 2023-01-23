@@ -153,9 +153,12 @@ services:
       CREATE_REPORT_COMMAND_SUBJECT: ${CREATE_REPORT_COMMAND_SUBJECT}
       CREATE_REPORT_REPLY_SUBJECT: ${CREATE_REPORT_REPLY_SUBJECT}
     depends_on:
-      - report_db
-      - nats
-      - event_db
+      report_db:
+        condition: service_started
+      nats:
+        condition: service_started
+      event_db:
+        condition: service_healthy
     networks:
       - network
 
@@ -198,6 +201,9 @@ services:
     restart: always
     ports:
       - "9043:9043"
+    environment:
+      - CASSANDRA_START_RPC=true
+      - CASSANDRA_NATIVE_TRANSPORT_PORT=9042
     # Docker healthcheck - checks if database is "alive"
     healthcheck:
       test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]

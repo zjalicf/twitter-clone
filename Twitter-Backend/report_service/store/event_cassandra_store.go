@@ -10,6 +10,7 @@ import (
 
 const (
 	DATABASE_CASSANDRA = "events"
+	COLLECTION_EVENT   = "events"
 )
 
 type EventRepo struct {
@@ -20,12 +21,14 @@ type EventRepo struct {
 
 func New(logger *log.Logger, tracer trace.Tracer) (*EventRepo, error) {
 	db := os.Getenv("EVENT_DB")
+	log.Println(db)
 
 	cluster := gocql.NewCluster(db)
 	cluster.Keyspace = "system"
 	session, err := cluster.CreateSession()
 	if err != nil {
 		logger.Println(err)
+		log.Println("puklo na 31")
 		return nil, err
 	}
 
@@ -36,6 +39,7 @@ func New(logger *log.Logger, tracer trace.Tracer) (*EventRepo, error) {
 						'replication_factor' : %d
 					}`, DATABASE_CASSANDRA, 1)).Exec()
 	if err != nil {
+		log.Println("puklo na 42")
 		logger.Println(err)
 	}
 	session.Close()
@@ -45,6 +49,7 @@ func New(logger *log.Logger, tracer trace.Tracer) (*EventRepo, error) {
 	session, err = cluster.CreateSession()
 
 	if err != nil {
+		log.Println("puklo na 52")
 		logger.Println(err)
 		return nil, err
 	}
@@ -62,9 +67,7 @@ func (sr *EventRepo) CloseSession() {
 
 func (sr *EventRepo) CreateTables() {
 	err := sr.session.Query(
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
-					(id UUID, event_type text, timestamp time, PRIMARY KEY ((id), timestamp))`, //for now there is no clustering order!!
-			DATABASE_CASSANDRA)).Exec()
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp time, PRIMARY KEY ((id), timestamp))`, COLLECTION_EVENT)).Exec()
 
 	if err != nil {
 		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
