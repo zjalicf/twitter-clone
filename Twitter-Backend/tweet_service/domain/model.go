@@ -2,10 +2,10 @@ package domain
 
 import (
 	"github.com/gocql/gocql"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Tweet struct {
-
 	ID            gocql.UUID `json:"id"`
 	Text          string     `json:"text"`
 	CreatedAt     int64      `json:"created_on"`
@@ -16,8 +16,7 @@ type Tweet struct {
 	Username      string     `json:"username"`
 	OwnerUsername string     `json:"owner_username"`
 	Image         bool       `json:"image"`
-	Advertisement bool 		 `json:"advertisement"`
-
+	Advertisement bool       `json:"advertisement"`
 }
 
 type Favorite struct {
@@ -34,4 +33,10 @@ type Retweet struct {
 
 type TweetID struct {
 	ID string `json:"id"`
+}
+
+type Event struct {
+	TweetID   primitive.ObjectID
+	Type      string
+	Timestamp int
 }

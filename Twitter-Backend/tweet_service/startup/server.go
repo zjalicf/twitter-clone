@@ -6,6 +6,8 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -19,6 +21,7 @@ import (
 	"syscall"
 	"time"
 	"tweet_service/application"
+	application2 "tweet_service/application"
 	"tweet_service/domain"
 	"tweet_service/handlers"
 	"tweet_service/startup/config"
@@ -31,6 +34,10 @@ var Logger = logrus.New()
 type Server struct {
 	config *config.Config
 }
+
+const (
+	QueueGroup = "tweet_service"
+)
 
 func NewServer(config *config.Config) *Server {
 	return &Server{
@@ -99,14 +106,28 @@ func (server *Server) Start() {
 	defer tweetStore.CloseSession()
 	tweetStore.CreateTables()
 
-	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer)
+	//orchestrator
+	commandPublisher := server.initPublisher(server.config.CreateReportCommandSubject)
+	replySubscriber := server.initSubscriber(server.config.CreateReportReplySubject, QueueGroup)
+
+	//service
+	replyPublisher := server.initPublisher(server.config.CreateReportReplySubject)
+	commandSubscriber := server.initSubscriber(server.config.CreateReportCommandSubject, QueueGroup)
+
+	createReportOrchestrator := server.initCreateEventOrchestrator(commandPublisher, replySubscriber)
+
+	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer, createReportOrchestrator)
 	tweetHandler := server.initTweetHandler(tweetService, tracer)
+
+	server.initCreateEventHandler(tweetService, replyPublisher, commandSubscriber)
+
+	server.initCreateEventHandler(tweetService, commandPublisher, replySubscriber)
 
 	server.start(tweetHandler)
 }
 
-func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer) *application.TweetService {
-	service := application.NewTweetService(&store, cache, tracer)
+func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer, orchestrator *application2.CreateEventOrchestrator) *application.TweetService {
+	service := application.NewTweetService(&store, cache, tracer, orchestrator)
 	Logger.Info("Started tweet service")
 	return service
 }
@@ -126,6 +147,41 @@ func (server *Server) initRedisClient() *redis.Client {
 		log.Fatal(err)
 	}
 	return client
+}
+
+func (server *Server) initCreateEventHandler(reportService *application.TweetService, publisher saga.Publisher, subscriber saga.Subscriber) {
+	_, err := handlers.NewCreateEventCommandHandler(reportService, publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (server *Server) initPublisher(subject string) saga.Publisher {
+	publisher, err := nats.NewNATSPublisher(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return publisher
+}
+
+func (server *Server) initSubscriber(subject string, queueGroup string) saga.Subscriber {
+	subscriber, err := nats.NewNATSSubscriber(
+		server.config.NatsHost, server.config.NatsPort,
+		server.config.NatsUser, server.config.NatsPass, subject, queueGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subscriber
+}
+
+func (server *Server) initCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application2.CreateEventOrchestrator {
+	orchestrator, err := application2.NewCreateEventOrchestrator(publisher, subscriber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return orchestrator
 }
 
 func (server *Server) start(tweetHandler *handlers.TweetHandler) {

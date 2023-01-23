@@ -3,9 +3,9 @@ package application
 import (
 	"fmt"
 	"follow_service/domain"
+	"follow_service/errors"
 	"github.com/google/uuid"
 	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 )
 
@@ -35,7 +35,7 @@ func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, e
 
 	var usernameList []*string
 	for i := 0; i < len(followings); i++ {
-		usernameList = append(usernameList, &followings[i].Receiver)
+		usernameList = append(usernameList, &followings[i].Username)
 	}
 	log.Println("LIST OF USERNAMES FOLLOW SERVICE: ")
 	log.Println(usernameList)
@@ -52,12 +52,6 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 	request.ID = uuid.New().String()
 	request.Requester = username
 
-	if visibility {
-		request.Status = 1
-	} else {
-		request.Status = 3
-	}
-
 	isExist, err := service.FollowExist(request)
 	if err != nil {
 		return err
@@ -67,10 +61,34 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 		return fmt.Errorf("You already follow this user!")
 	}
 
-	err = service.store.SaveRequest(request)
-	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("Follow not inserted in db")
+	if visibility {
+		existing, err := service.store.GetRequestByRequesterReceiver(&request.Requester, &request.Receiver)
+		if err != nil {
+			if err.Error() == errors.ErrorRequestNotExists {
+				request.Status = 1
+				err = service.store.SaveRequest(request)
+				if err != nil {
+					log.Println(err)
+					return fmt.Errorf("Request not inserted in db")
+				}
+				return nil
+			} else {
+				return err
+			}
+		}
+
+		existing.Status = 1
+		err = service.store.UpdateRequest(existing)
+		if err != nil {
+			log.Println(err)
+			return fmt.Errorf("Request not inserted in db")
+		}
+
+	} else {
+		err := service.store.SaveFollow(request)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -82,18 +100,30 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 		log.Printf("Error with saving user node in neo4j: %s", err.Error())
 		return err
 	}
+
 	return nil
+}
+
+func (service *FollowService) AcceptRequest(id *string) error {
+	request, err := service.store.AcceptRequest(id)
+	if err != nil {
+		return fmt.Errorf(errors.ErrorInAcceptRequest)
+	}
+
+	err = service.store.SaveFollow(request)
+	if err != nil {
+		return fmt.Errorf(errors.ErrorInSaveFollow)
+	}
+
+	return nil
+
 }
 
 func (service *FollowService) DeleteUser(id *string) error {
 	return service.store.DeleteUser(id)
 }
 
-func (service *FollowService) AcceptRequest(id primitive.ObjectID) error {
-	return service.store.AcceptRequest(id)
-}
-
-func (service *FollowService) DeclineRequest(id primitive.ObjectID) error {
+func (service *FollowService) DeclineRequest(id *string) error {
 	return service.store.DeclineRequest(id)
 }
 

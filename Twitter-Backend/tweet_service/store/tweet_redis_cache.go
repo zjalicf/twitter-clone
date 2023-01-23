@@ -33,7 +33,6 @@ func (a *TweetRedisCache) PostCacheData(key string, value *[]byte) error {
 func (a *TweetRedisCache) GetCachedValue(key string) (*[]byte, error) {
 	result := a.client.Get(key)
 
-
 	if result.Err() == nil {
 		token, err := result.Bytes()
 		if err != nil {

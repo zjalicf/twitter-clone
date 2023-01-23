@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/sony/gobreaker"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log"
@@ -20,19 +21,23 @@ var (
 	followServicePort = os.Getenv("FOLLOW_SERVICE_PORT")
 )
 
+//eesa
+
 type TweetService struct {
-	store  domain.TweetStore
-	tracer trace.Tracer
-	cache  domain.TweetCache
-	cb     *gobreaker.CircuitBreaker
+	store        domain.TweetStore
+	tracer       trace.Tracer
+	cache        domain.TweetCache
+	cb           *gobreaker.CircuitBreaker
+	orchestrator *CreateEventOrchestrator
 }
 
-func NewTweetService(store domain.TweetStore, cache domain.TweetCache, tracer trace.Tracer) *TweetService {
+func NewTweetService(store domain.TweetStore, cache domain.TweetCache, tracer trace.Tracer, orchestrator *CreateEventOrchestrator) *TweetService {
 	return &TweetService{
-		store:  store,
-		cache:  cache,
-		cb:     CircuitBreaker(),
-		tracer: tracer,
+		store:        store,
+		cache:        cache,
+		cb:           CircuitBreaker(),
+		orchestrator: orchestrator,
+		tracer:       tracer,
 	}
 }
 
@@ -136,6 +141,17 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 func (service *TweetService) Favorite(ctx context.Context, id string, username string) (int, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Favorite")
 	defer span.End()
+
+	event := domain.Event{
+		TweetID:   primitive.ObjectID{},
+		Type:      "Liked",
+		Timestamp: 0,
+	}
+
+	err := service.orchestrator.Start(&event)
+	if err != nil {
+		return 0, err
+	}
 
 	return service.store.Favorite(ctx, id, username)
 }
