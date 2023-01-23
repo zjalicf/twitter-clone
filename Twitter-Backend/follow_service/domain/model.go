@@ -14,6 +14,14 @@ type User struct {
 	Residence string `json:"residence"`
 }
 
+type Ad struct {
+	TweetID   string `json:"tweetID"`
+	AgeFrom   int    `json:"ageFrom"`
+	AgeTo     int    `json:"ageTo"`
+	Gender    Gender `json:"gender"`
+	Residence string `json:"residence"`
+}
+
 type Status int
 
 const (
@@ -22,10 +30,26 @@ const (
 	Accepted
 )
 
+type Gender int
+
+const (
+	Male Status = iota + 1
+	Female
+	Both
+)
+
 func (status Status) String() string {
 	return [...]string{"Pending", "Declined", "Accepted"}[status-1]
 }
 
 func (status Status) EnumIndex() int {
 	return int(status)
+}
+
+func (gender *Gender) String() string {
+	return [...]string{"Male", "Female", "Both"}[*gender-1]
+}
+
+func (gender *Gender) EnumIndex() int {
+	return int(*gender)
 }

@@ -401,6 +401,37 @@ func (store *FollowNeo4JStore) DeclineRequest(id *string) error {
 	return nil
 }
 
+func (store *FollowNeo4JStore) SaveAd(ad *domain.Ad) error {
+
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				"CREATE (ad:Ad) SET ad.tweetID = $tweetID, ad.ageFrom = $ageFrom, "+
+					"ad.ageTo = $ageTo, ad.gender = $gender, ad.residence = $residence "+
+					"RETURN ad.id + ', from node ' + id(ad)",
+				map[string]any{"tweetID": ad.TweetID, "ageFrom": ad.AgeFrom, "ageTo": ad.AgeTo,
+					"gender": ad.Gender.EnumIndex(), "residence": ad.Residence})
+			if err != nil {
+				return nil, err
+			}
+
+			if result.Next(ctx) {
+				return result.Record().Values[0], nil
+			}
+
+			return nil, result.Err()
+		})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (store *FollowNeo4JStore) HandleRequest() {
 	//TODO implement me
 	panic("implement me")

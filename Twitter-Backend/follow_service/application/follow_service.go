@@ -131,6 +131,10 @@ func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest)
 	return service.store.SaveRequest(followRequest)
 }
 
+func (service *FollowService) SaveAd(ad *domain.Ad) error {
+	return service.store.SaveAd(ad)
+}
+
 func (service *FollowService) UserToDomain(userIn create_user.User) domain.User {
 	var user domain.User
 	user.ID = userIn.ID.Hex()
