@@ -90,7 +90,7 @@ export class TweetItemComponent implements OnInit {
   likeTweet(tweet: Tweet) {
 
     this.tweetID.id = tweet.id
-    this.tweetService.LikeTweet(this.tweetID).subscribe(
+    this.tweetService.LikeTweet(this.tweet).subscribe(
       {
         next: (data) => {
           if (data == 201) {

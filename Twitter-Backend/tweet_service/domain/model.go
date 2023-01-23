@@ -2,7 +2,6 @@ package domain
 
 import (
 	"github.com/gocql/gocql"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Tweet struct {
@@ -36,7 +35,7 @@ type TweetID struct {
 }
 
 type Event struct {
-	TweetID   primitive.ObjectID
+	TweetID   string
 	Type      string
 	Timestamp int
 }

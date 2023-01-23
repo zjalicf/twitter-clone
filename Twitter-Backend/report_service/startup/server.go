@@ -76,7 +76,7 @@ func (server *Server) Start() {
 	replyPublisher := server.initPublisher(server.config.CreateReportReplySubject)
 	commandSubscriber := server.initSubscriber(server.config.CreateReportCommandSubject, QueueGroup)
 
-	reportService := server.initReportService(reportStore, tracer)
+	reportService := server.initReportService(cassandraStore, reportStore, tracer)
 	reportHandler := server.initAuthHandler(reportService, tracer)
 
 	server.initCreateEventHandler(reportService, replyPublisher, commandSubscriber)
@@ -125,8 +125,8 @@ func (server *Server) initReportStore(client *mongo.Client, tracer trace.Tracer)
 	return store
 }
 
-func (server *Server) initReportService(store domain.ReportStore, tracer trace.Tracer) *application.ReportService {
-	return application.NewReportService(store, tracer)
+func (server *Server) initReportService(eventStore domain.EventStore, reportStore domain.ReportStore, tracer trace.Tracer) *application.ReportService {
+	return application.NewReportService(eventStore, reportStore, tracer)
 }
 
 func (server *Server) initAuthHandler(service *application.ReportService, tracer trace.Tracer) *handlers.ReportHandler {

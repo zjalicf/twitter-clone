@@ -7,7 +7,7 @@ require (
 	github.com/cristalhq/jwt/v4 v4.0.2
 	github.com/gocql/gocql v1.3.1
 	github.com/gorilla/mux v1.8.0
-	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230122185827-d45c61a26b78
+	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230123185349-707209818987
 	go.mongodb.org/mongo-driver v1.11.1
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
@@ -25,7 +25,7 @@ require (
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.0 // indirect
 	github.com/nats-io/jwt/v2 v2.3.0 // indirect
-	github.com/nats-io/nats.go v1.22.1 // indirect
+	github.com/nats-io/nats.go v1.23.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

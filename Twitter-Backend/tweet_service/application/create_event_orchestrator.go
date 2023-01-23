@@ -4,7 +4,6 @@ import (
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 	"log"
-	"tweet_service/domain"
 )
 
 type CreateEventOrchestrator struct {
@@ -24,18 +23,12 @@ func NewCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscr
 	return orchestrator, nil
 }
 
-func (o *CreateEventOrchestrator) Start(event *domain.Event) error {
-
-	var eventOut events.Event
-	eventOut.Type = event.Type
-	eventOut.TweetID = event.TweetID
-	eventOut.Timestamp = event.Timestamp
+func (o *CreateEventOrchestrator) Start(event events.Event) error {
 
 	eventPush := events.CreateEventCommand{
-		Event: eventOut,
-		Type:  events.UpdateMongo,
+		Event: event,
+		Type:  events.UpdateCassandra,
 	}
-	log.Println("PUBLISH EVENT UPDATE MONGO")
 
 	return o.commandPublisher.Publish(eventPush)
 }
@@ -52,10 +45,10 @@ func (o *CreateEventOrchestrator) nextCommandType(reply events.CreateEventReply)
 	switch reply.Type {
 	case events.MongoUpdated:
 		log.Println("MONGO UPDATED")
-		return events.UpdateCassandra
+		return events.UnknownCommand
 	case events.CassandraUpadated:
 		log.Println("CASSANDRA UPDATED")
-		return events.UnknownCommand
+		return events.UpdateMongo
 	case events.UnknownReply:
 		return events.UnknownCommand
 	default:

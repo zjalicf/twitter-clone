@@ -12,7 +12,7 @@ type Report struct {
 }
 
 type Event struct {
-	TweetID   primitive.ObjectID
+	TweetID   string
 	Type      string
 	Timestamp int
 }

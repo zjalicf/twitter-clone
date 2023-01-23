@@ -1,11 +1,13 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"github.com/gocql/gocql"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
+	"report_service/domain"
 )
 
 const (
@@ -13,13 +15,13 @@ const (
 	COLLECTION_EVENT   = "events"
 )
 
-type EventRepo struct {
+type EventCassandraStore struct {
 	session *gocql.Session
 	logger  *log.Logger
 	tracer  trace.Tracer
 }
 
-func New(logger *log.Logger, tracer trace.Tracer) (*EventRepo, error) {
+func New(logger *log.Logger, tracer trace.Tracer) (*EventCassandraStore, error) {
 	db := os.Getenv("EVENT_DB")
 	log.Println(db)
 
@@ -54,22 +56,43 @@ func New(logger *log.Logger, tracer trace.Tracer) (*EventRepo, error) {
 		return nil, err
 	}
 
-	return &EventRepo{
+	return &EventCassandraStore{
 		session: session,
 		logger:  logger,
 		tracer:  tracer,
 	}, nil
 }
 
-func (sr *EventRepo) CloseSession() {
-	sr.session.Close()
+func (store *EventCassandraStore) CloseSession() {
+	store.session.Close()
 }
 
-func (sr *EventRepo) CreateTables() {
-	err := sr.session.Query(
+func (store *EventCassandraStore) CreateTables() {
+	err := store.session.Query(
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp time, PRIMARY KEY ((id), timestamp))`, COLLECTION_EVENT)).Exec()
 
 	if err != nil {
-		sr.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
+		store.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
 	}
+}
+
+func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain.Event) (*domain.Event, error) {
+	ctx, span := store.tracer.Start(ctx, "EventStore.CreateEvent")
+	defer span.End()
+
+	log.Println("Uslo u create event u cassandra store linije 83")
+
+	tweetID, err := gocql.ParseUUID(event.TweetID)
+	insert := fmt.Sprintf("INSERT INTO %s (id, event_type, timestamp) VALUES (?, ?, ?)", COLLECTION_EVENT)
+
+	log.Println("Proslo upis u bazu")
+
+	err = store.session.Query(
+		insert, tweetID, event.Type, int64(event.Timestamp)).Exec()
+	if err != nil {
+		store.logger.Println(err)
+		log.Println("Ovde oucaa")
+		return nil, err
+	}
+	return event, nil
 }

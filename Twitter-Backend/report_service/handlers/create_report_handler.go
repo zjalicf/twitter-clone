@@ -3,7 +3,6 @@ package handlers
 import (
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
-	"log"
 	"report_service/application"
 )
 
@@ -34,11 +33,10 @@ func (handler *CreateReportCommandHandler) handle(command *events.CreateEventCom
 	switch command.Type {
 
 	case events.UpdateMongo:
-		log.Println("Uslo u mongo update")
 		reply.Type = events.MongoUpdated
 
 	case events.UpdateCassandra:
-		log.Println("Uslo u mongo update")
+		handler.reportService.CreateEvent(command.Event)
 		reply.Type = events.CassandraUpadated
 
 	default:

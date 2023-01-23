@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/sony/gobreaker"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log"
@@ -113,10 +113,13 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	ctx, span := service.tracer.Start(ctx, "TweetService.Post")
 	defer span.End()
 
+	log.Printf("Ad je : %t", tweet.Advertisement)
+
 	tweet.ID, _ = gocql.RandomUUID()
 
 	tweet.Image = false
 	if len(*image) != 0 {
+		log.Printf("USLO U SLIKU")
 		err := service.saveImage(tweet.ID, *image)
 		if err != nil {
 			return nil, err
@@ -138,22 +141,35 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	return service.store.Post(ctx, tweet)
 }
 
-func (service *TweetService) Favorite(ctx context.Context, id string, username string) (int, error) {
+func (service *TweetService) Favorite(ctx context.Context, id string, username string, isAd bool) (int, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Favorite")
 	defer span.End()
 
-	event := domain.Event{
-		TweetID:   primitive.ObjectID{},
-		Type:      "Liked",
-		Timestamp: 0,
-	}
-
-	err := service.orchestrator.Start(&event)
+	status, err := service.store.Favorite(ctx, id, username)
 	if err != nil {
-		return 0, err
+		log.Printf("Error in tweet_service, line 165 : %s", err.Error())
+		return status, err
 	}
 
-	return service.store.Favorite(ctx, id, username)
+	event := events.Event{
+		TweetID:   id,
+		Type:      "",
+		Timestamp: int(time.Now().Unix()),
+	}
+
+	if isAd {
+		if status == 200 {
+			event.Type = "Unliked"
+		} else {
+			event.Type = "Liked"
+		}
+	}
+	err = service.orchestrator.Start(event)
+	if err != nil {
+		return status, err
+	}
+
+	return status, nil
 }
 
 func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {

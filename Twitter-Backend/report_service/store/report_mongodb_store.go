@@ -17,6 +17,11 @@ type ReportMongoDBStore struct {
 	tracer  trace.Tracer
 }
 
+func (store *ReportMongoDBStore) CreateEvent(ctx context.Context, event domain.Event) (*domain.Event, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewReportMongoDBStore(client *mongo.Client, tracer trace.Tracer) domain.ReportStore {
 	reports := client.Database(DATABASE).Collection(COLLECTION)
 	return &ReportMongoDBStore{

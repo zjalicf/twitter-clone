@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"report_service/application"
 	"report_service/authorization"
-	"report_service/store"
+	"report_service/domain"
 )
 
 type KeyUser struct{}
 
 type ReportHandler struct {
 	service *application.ReportService
-	store   *store.ReportMongoDBStore
+	store   *domain.EventStore
 	tracer  trace.Tracer
 }
 

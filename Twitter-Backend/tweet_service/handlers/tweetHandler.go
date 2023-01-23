@@ -127,15 +127,15 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	var tweetID domain.TweetID
-	err = json.NewDecoder(req.Body).Decode(&tweetID)
+	var tweet domain.Tweet
+	err = json.NewDecoder(req.Body).Decode(&tweet)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	tweets, err := handler.service.Favorite(ctx, tweetID.ID, username)
+	tweets, err := handler.service.Favorite(ctx, tweet.ID.String(), username, tweet.Advertisement)
 
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -157,7 +157,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	log.Println(req.Header.Get("Content-Type"))
 	strs := strings.Split(req.Header.Get("Content-Type"), "; boundary")
 
 	if strs[0] != "multipart/form-data" {
@@ -188,11 +187,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, "bad json format", http.StatusBadRequest)
 		return
 	}
-	//err = handler.service.SaveImage(request.ID, imageBytes)
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
 
 	if req.Header.Get("Authorization") == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -248,7 +242,6 @@ func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
 }
 
 func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
-	log.Println(req.Header.Get("Authorization"))
 	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("error: %s", err.Error())
