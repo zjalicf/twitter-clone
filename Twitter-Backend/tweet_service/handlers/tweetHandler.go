@@ -138,6 +138,7 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 	tweets, err := handler.service.Favorite(ctx, tweet.ID.String(), username, tweet.Advertisement)
 
 	if err != nil {
+		log.Println("Ovde tweetHandler")
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
