@@ -26,7 +26,6 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 	if err != nil {
 		return nil, err
 	}
-
 	return o, nil
 }
 

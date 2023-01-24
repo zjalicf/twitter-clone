@@ -147,26 +147,25 @@ func (service *TweetService) Favorite(ctx context.Context, id string, username s
 
 	status, err := service.store.Favorite(ctx, id, username)
 	if err != nil {
-		log.Printf("Error in tweet_service, line 165 : %s", err.Error())
+		log.Printf("Error in tweet_service Favorite(): %s", err.Error())
 		return status, err
 	}
 
-	event := events.Event{
-		TweetID:   id,
-		Type:      "",
-		Timestamp: int(time.Now().Unix()),
-	}
-
 	if isAd {
+		event := events.Event{
+			TweetID:   id,
+			Type:      "",
+			Timestamp: int(time.Now().Unix()),
+		}
 		if status == 200 {
 			event.Type = "Unliked"
 		} else {
 			event.Type = "Liked"
 		}
-	}
-	err = service.orchestrator.Start(event)
-	if err != nil {
-		return status, err
+		err = service.orchestrator.Start(ctx, event)
+		if err != nil {
+			return status, err
+		}
 	}
 
 	return status, nil

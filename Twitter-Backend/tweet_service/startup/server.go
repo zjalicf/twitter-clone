@@ -114,14 +114,12 @@ func (server *Server) Start() {
 	replyPublisher := server.initPublisher(server.config.CreateReportReplySubject)
 	commandSubscriber := server.initSubscriber(server.config.CreateReportCommandSubject, QueueGroup)
 
-	createReportOrchestrator := server.initCreateEventOrchestrator(commandPublisher, replySubscriber)
+	createReportOrchestrator := server.initCreateEventOrchestrator(commandPublisher, replySubscriber, tracer)
 
 	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer, createReportOrchestrator)
-	tweetHandler := server.initTweetHandler(tweetService, tracer)
 
 	server.initCreateEventHandler(tweetService, replyPublisher, commandSubscriber)
-
-	server.initCreateEventHandler(tweetService, commandPublisher, replySubscriber)
+	tweetHandler := server.initTweetHandler(tweetService, tracer)
 
 	server.start(tweetHandler)
 }
@@ -176,8 +174,8 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-func (server *Server) initCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateEventOrchestrator {
-	orchestrator, err := application.NewCreateEventOrchestrator(publisher, subscriber)
+func (server *Server) initCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) *application.CreateEventOrchestrator {
+	orchestrator, err := application.NewCreateEventOrchestrator(publisher, subscriber, tracer)
 	if err != nil {
 		log.Fatalf("Error in server of report_service, line 182: %s", err.Error())
 	}

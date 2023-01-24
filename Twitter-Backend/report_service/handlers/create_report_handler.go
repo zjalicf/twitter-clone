@@ -31,19 +31,18 @@ func NewCreateEventCommandHandler(reportService *application.ReportService, repl
 func (handler *CreateReportCommandHandler) handle(command *events.CreateEventCommand) {
 	//ctx, span := handler.reportService.tracer.Start(context.TODO(), "AuthService.Login")
 	//defer span.End()
-
 	reply := events.CreateEventReply{Event: command.Event}
 
 	switch command.Type {
 
 	case events.UpdateCassandra:
 		log.Println("Primljen event update cassandra")
-		//handler.reportService.CreateEvent(command.Event)
+		handler.reportService.CreateEvent(command.Event)
 		reply.Type = events.CassandraUpadated
 
 	case events.UpdateMongo:
 		log.Println("Primljen event update mongo")
-		//handler.reportService.CreateReport(&command.Event)
+		handler.reportService.CreateReport(&command.Event)
 		reply.Type = events.MongoUpdated
 
 	default:

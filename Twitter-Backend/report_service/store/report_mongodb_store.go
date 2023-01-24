@@ -4,6 +4,7 @@ import (
 	"context"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/trace"
 	"log"
@@ -26,12 +27,21 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 
 	one, err := store.filterOne(bson.M{"tweet_id": event.TweetID})
 	if err != nil {
-		log.Println("Ne postoji report")
+		log.Println(err.Error())
 		report := domain.Report{
+			ID:          primitive.NewObjectID(),
 			TweetID:     event.TweetID,
 			LikeCount:   0,
 			UnlikeCount: 0,
 			ViewCount:   0,
+		}
+
+		if event.Type == "Liked" {
+			report.LikeCount++
+		} else if event.Type == "Unliked" {
+			report.UnlikeCount++
+		} else {
+			report.ViewCount++
 		}
 
 		_, err = store.reports.InsertOne(ctx, report)

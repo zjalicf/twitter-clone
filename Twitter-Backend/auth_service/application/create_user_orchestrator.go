@@ -61,7 +61,6 @@ func (o *CreateUserOrchestrator) Start(user *domain.User) error {
 		User: user1,
 		Type: events.UpdateAuth,
 	}
-	log.Println("PUBLISH EVENT UPDATE AUTH")
 
 	return o.commandPublisher.Publish(event)
 }
