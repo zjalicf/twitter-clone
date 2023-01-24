@@ -16,7 +16,6 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 	orchestrator := &CreateUserOrchestrator{
 		commandPublisher: publisher,
 		replySubscriber:  subscriber,
-		//authService:      service,
 	}
 	err := orchestrator.replySubscriber.Subscribe(orchestrator.handle)
 	if err != nil {

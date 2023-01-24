@@ -91,7 +91,6 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 		insert, tweetID, event.Type, int64(event.Timestamp)).Exec()
 	if err != nil {
 		store.logger.Println(err)
-		log.Println("Ovde oucaa")
 		return nil, err
 	}
 	return event, nil

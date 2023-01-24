@@ -31,7 +31,21 @@ func (service *ReportService) CreateEvent(event events.Event) {
 	}
 	_, err := service.eventStore.CreateEvent(context.TODO(), &eventOut)
 	if err != nil {
-		log.Printf(err.Error())
+		log.Printf("Error in report_service CreateEvent()", err.Error())
 		return
 	}
+}
+
+func (service *ReportService) CreateReport(event *events.Event) {
+	ctx, span := service.tracer.Start(context.TODO(), "ReportService.CreateReport")
+	defer span.End()
+
+	_, err := service.reportStore.CreateReport(ctx, event)
+	if err != nil {
+		log.Printf("Error in report_service CreateReport()", err.Error())
+		return
+	} else {
+		log.Println("Succesfull updated report")
+	}
+
 }

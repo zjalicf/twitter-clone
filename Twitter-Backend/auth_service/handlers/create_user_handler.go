@@ -27,11 +27,6 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 		return nil, err
 	}
 
-	//prijava za slusanje odgovora
-	//err1 := o.replySubscriber.Subscribe(o.handleReplays)
-	//if err1 != nil {
-	//	return nil, err1
-	//}
 	return o, nil
 }
 

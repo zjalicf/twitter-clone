@@ -1,11 +1,10 @@
 package domain
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
+import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Report struct {
-	TweetID     primitive.ObjectID `bson:"tweet_id"`
+	ID          primitive.ObjectID `bson:"_id"`
+	TweetID     string             `bson:"tweet_id"`
 	LikeCount   int                `bson:"like_count"`
 	UnlikeCount int                `bson:"unlike_count"`
 	ViewCount   int                `bson:"view_count"`

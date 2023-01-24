@@ -176,10 +176,10 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-func (server *Server) initCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application2.CreateEventOrchestrator {
-	orchestrator, err := application2.NewCreateEventOrchestrator(publisher, subscriber)
+func (server *Server) initCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateEventOrchestrator {
+	orchestrator, err := application.NewCreateEventOrchestrator(publisher, subscriber)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error in server of report_service, line 182: %s", err.Error())
 	}
 	return orchestrator
 }

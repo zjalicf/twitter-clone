@@ -3,19 +3,20 @@ package handlers
 import (
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"log"
 	"report_service/application"
 )
 
 type CreateReportCommandHandler struct {
 	reportService     *application.ReportService
-	publisher         saga.Publisher
+	replyPublisher    saga.Publisher
 	commandSubscriber saga.Subscriber
 }
 
-func NewCreateEventCommandHandler(reportService *application.ReportService, publisher saga.Publisher, subscriber saga.Subscriber) (*CreateReportCommandHandler, error) {
+func NewCreateEventCommandHandler(reportService *application.ReportService, replyPublisher saga.Publisher, subscriber saga.Subscriber) (*CreateReportCommandHandler, error) {
 	o := &CreateReportCommandHandler{
 		reportService:     reportService,
-		publisher:         publisher,
+		replyPublisher:    replyPublisher,
 		commandSubscriber: subscriber,
 	}
 	//prijava za slusanje komandi
@@ -23,27 +24,37 @@ func NewCreateEventCommandHandler(reportService *application.ReportService, publ
 	if err != nil {
 		return nil, err
 	}
-
 	return o, nil
 }
 
 //hendlovanje komandama
 func (handler *CreateReportCommandHandler) handle(command *events.CreateEventCommand) {
+	//ctx, span := handler.reportService.tracer.Start(context.TODO(), "AuthService.Login")
+	//defer span.End()
+
 	reply := events.CreateEventReply{Event: command.Event}
+
 	switch command.Type {
 
-	case events.UpdateMongo:
-		reply.Type = events.MongoUpdated
-
 	case events.UpdateCassandra:
-		handler.reportService.CreateEvent(command.Event)
+		log.Println("Primljen event update cassandra")
+		//handler.reportService.CreateEvent(command.Event)
 		reply.Type = events.CassandraUpadated
 
+	case events.UpdateMongo:
+		log.Println("Primljen event update mongo")
+		//handler.reportService.CreateReport(&command.Event)
+		reply.Type = events.MongoUpdated
+
 	default:
+		log.Println("Unknown reply report handler")
 		reply.Type = events.UnknownReply
 	}
 
 	if reply.Type != events.UnknownReply {
-		_ = handler.publisher.Publish(reply)
+		log.Println("event publish in report handler")
+		_ = handler.replyPublisher.Publish(reply)
+		log.Printf("event is %s", reply.Type)
+
 	}
 }

@@ -32,10 +32,10 @@ func (handler *CreateReportCommandHandler) handle(command *events.CreateEventCom
 	reply := events.CreateEventReply{Event: command.Event}
 	switch command.Type {
 
-	//case events.UpdateMongo:
-	//	log.Println("Uslo u mongo update")
-	//	reply.Type = events.MongoUpdated
-	//
+	//case events.SendMessageToReportService:
+	//	log.Println("Salje se poruka u tweet_service")
+	//	reply.Type = events.MessageRecieved
+
 	//case events.UpdateCassandra:
 	//	log.Println("Uslo u mongo update")
 	//	reply.Type = events.CassandraUpadated

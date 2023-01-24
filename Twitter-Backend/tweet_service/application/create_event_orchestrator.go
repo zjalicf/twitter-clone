@@ -18,12 +18,15 @@ func NewCreateEventOrchestrator(publisher saga.Publisher, subscriber saga.Subscr
 	}
 	err := orchestrator.replySubscriber.Subscribe(orchestrator.handle)
 	if err != nil {
+		log.Printf("Error in create orchestrator NewCreateEventOrchestrator(): %s", err.Error())
 		return nil, err
 	}
 	return orchestrator, nil
 }
 
 func (o *CreateEventOrchestrator) Start(event events.Event) error {
+
+	log.Printf("Starting orchestrator with event : %s", event)
 
 	eventPush := events.CreateEventCommand{
 		Event: event,
@@ -38,20 +41,26 @@ func (o *CreateEventOrchestrator) handle(reply *events.CreateEventReply) {
 	command.Type = o.nextCommandType(*reply)
 	if command.Type != events.UnknownCommand {
 		_ = o.commandPublisher.Publish(command)
+		log.Println(command.Type)
 	}
+	return
 }
 
 func (o *CreateEventOrchestrator) nextCommandType(reply events.CreateEventReply) events.CreateEventCommandType {
+
+	log.Println(reply)
+
 	switch reply.Type {
-	case events.MongoUpdated:
-		log.Println("MONGO UPDATED")
-		return events.UnknownCommand
 	case events.CassandraUpadated:
-		log.Println("CASSANDRA UPDATED")
+		log.Println("CassandraUpdated")
 		return events.UpdateMongo
-	case events.UnknownReply:
+
+	case events.MongoUpdated:
+		log.Println("MongoUpdated")
 		return events.UnknownCommand
+
 	default:
+		log.Println("unknown command nextCommandType orchestrator")
 		return events.UnknownCommand
 	}
 }
