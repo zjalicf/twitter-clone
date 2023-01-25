@@ -103,12 +103,12 @@ func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context,
 
 	date := time.Unix(event.Timestamp, 0)
 	firstMonthDate := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
-	lastMonthDate := time.Date(date.Year(), date.Month()+1, 0, 0, 0, 0, 0, time.UTC)
+	lastMonthDate := time.Date(date.Year(), date.Month()+1, 1, 0, 0, 0, 0, time.UTC)
 
 	log.Printf("first: %s  ,  last: %s", firstMonthDate, lastMonthDate)
 
 	insert := fmt.Sprintf("SELECT COUNT(timespent), SUM(timespent) FROM %s WHERE id = ? "+
-		"AND event_type = ? AND timestamp >= ? AND timestamp <= ?",
+		"AND event_type = ? AND timestamp >= ? AND timestamp < ?",
 		COLLECTION_EVENT)
 	//SELECT count(timespent),SUM(timespent) FROM events WHERE id=3f963ab1-6ce3-436c-9c65-de8844d9e26c AND event_type='Liked' AND timestamp >= 0 AND timestamp < 1674655884;
 	// moze ovo umesto timeSum i entries :)
@@ -147,7 +147,7 @@ func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, e
 	log.Printf("start of day: %s  ,  end of day: %s", startOfDay, endOfDay)
 
 	insert := fmt.Sprintf("SELECT COUNT(timespent), SUM(timespent) FROM %s WHERE id = ? "+
-		"AND event_type = ? AND timestamp >= ? AND timestamp <= ?", COLLECTION_EVENT)
+		"AND event_type = ? AND timestamp >= ? AND timestamp < ?", COLLECTION_EVENT)
 
 	scanner := store.session.Query(
 		insert, event.TweetID, event.Type, startOfDay.Unix(), endOfDay.Unix()).Iter().Scanner()
