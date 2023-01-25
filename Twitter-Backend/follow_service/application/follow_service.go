@@ -135,6 +135,41 @@ func (service *FollowService) SaveAd(ad *domain.Ad) error {
 	return service.store.SaveAd(ad)
 }
 
+func (service *FollowService) GetRecommendationsByUsername(username string) ([]string, error) {
+
+	countFollowings, err := service.store.CountFollowings(username)
+	if err != nil {
+		log.Println("Error in getting count of followings")
+		return nil, err
+	}
+
+	if countFollowings == 0 {
+		recommendations, err := service.store.RecommendationWithoutFollowings(username, []string{})
+		if err != nil {
+			log.Println("Error in getting similar recommendations without followings.")
+			return nil, err
+		}
+		return recommendations, nil
+	} else {
+		var allRecommendations []string
+		recommendations, err := service.store.RecommendWithFollowings(username)
+		if err != nil {
+			log.Println("Error in getting recommendations full with followings.")
+			return nil, err
+		}
+
+		recommendations2, err := service.store.RecommendationWithoutFollowings(username, recommendations)
+		if err != nil {
+			log.Println("Error in getting similar recommendations with followings.")
+			return nil, err
+		}
+
+		allRecommendations = append(recommendations, recommendations2...)
+		return allRecommendations, nil
+	}
+
+}
+
 func (service *FollowService) UserToDomain(userIn create_user.User) domain.User {
 	var user domain.User
 	user.ID = userIn.ID.Hex()

@@ -40,6 +40,8 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
+	router.HandleFunc("/recommendations", handler.GetRecommendationsForUser).Methods("GET")
+	router.HandleFunc("/ad", handler.SaveAd).Methods("POST")
 
 	http.Handle("/", router)
 	log.Println("Successful")
@@ -88,6 +90,25 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 
 	jsonResponse(users, writer)
 
+}
+
+func (handler *FollowHandler) GetRecommendationsForUser(writer http.ResponseWriter, req *http.Request) {
+	token, _ := authorization.GetToken(req)
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+	//vars := mux.Vars(req)
+	//username, ok := vars["username"]
+	//if !ok {
+	//	http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
+	//}
+
+	users, err := handler.service.GetRecommendationsByUsername(username)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(users, writer)
 }
 
 //	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
@@ -201,4 +222,21 @@ func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *ht
 
 	writer.WriteHeader(http.StatusOK)
 
+}
+
+func (handler *FollowHandler) SaveAd(writer http.ResponseWriter, req *http.Request) {
+	var request domain.Ad
+	err := json.NewDecoder(req.Body).Decode(&request)
+	if err != nil {
+		http.Error(writer, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	err = handler.service.SaveAd(&request)
+	if err != nil {
+		http.Error(writer, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
 }
