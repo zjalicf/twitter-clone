@@ -70,7 +70,7 @@ func (store *EventCassandraStore) CloseSession() {
 
 func (store *EventCassandraStore) CreateTables() {
 	err := store.session.Query(
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp int, timespent int, PRIMARY KEY ((id), timestamp))`, COLLECTION_EVENT)).Exec()
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp int, timespent int, PRIMARY KEY ((id), event_type, timestamp))`, COLLECTION_EVENT)).Exec()
 
 	if err != nil {
 		store.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
@@ -89,7 +89,7 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 	log.Println("Proslo upis u bazu")
 
 	err = store.session.Query(
-		insert, tweetID, event.Type, int64(event.Timestamp)).Exec()
+		insert, tweetID, event.Type, event.Timestamp, event.Timespent).Exec()
 	if err != nil {
 		store.logger.Println(err)
 		return nil, err
@@ -107,24 +107,32 @@ func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context,
 
 	log.Printf("first: %s  ,  last: %s", firstMonthDate, lastMonthDate)
 
-	insert := fmt.Sprintf("SELECT timespent FROM %s WHERE eventType = ? AND ? <= timestamp < ?", COLLECTION_EVENT)
-
+	insert := fmt.Sprintf("SELECT COUNT(timespent), SUM(timespent) FROM %s WHERE id = ? "+
+		"AND event_type = ? AND timestamp >= ? AND timestamp <= ?",
+		COLLECTION_EVENT)
+	//SELECT count(timespent),SUM(timespent) FROM events WHERE id=3f963ab1-6ce3-436c-9c65-de8844d9e26c AND event_type='Liked' AND timestamp >= 0 AND timestamp < 1674655884;
+	// moze ovo umesto timeSum i entries :)
 	scanner := store.session.Query(
-		insert, event.Type, firstMonthDate.Unix(), lastMonthDate.Unix()).Iter().Scanner()
+		insert, event.TweetID, event.Type, firstMonthDate.Unix(), lastMonthDate.Unix()).Iter().Scanner()
 
-	var timeSum int64 = 0
-	var entries int64 = 0
+	var timeSum int64
+	var entries int64
 	for scanner.Next() {
-		var timespentNow int
-		err := scanner.Scan(&timespentNow)
+		log.Println("NEXT1 is run by EventStore.GetTimespentMonthlyEvents")
+		//var timespentNow int
+		err := scanner.Scan(&entries, &timeSum)
+		log.Printf("NEXT2: timeSum is %s, entries is %s", timeSum, entries)
 		if err != nil {
 			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
 			return 0, err
 		}
-		timeSum += int64(timespentNow)
-		entries++
+		//timeSum += int64(timespentNow)
+		//entries++
 	}
 
+	if entries == 0 {
+		return 0, nil
+	}
 	return timeSum / entries, nil
 }
 
@@ -138,23 +146,30 @@ func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, e
 
 	log.Printf("start of day: %s  ,  end of day: %s", startOfDay, endOfDay)
 
-	insert := fmt.Sprintf("SELECT timespent FROM %s WHERE eventType = ? AND ? <= timestamp < ?", COLLECTION_EVENT)
+	insert := fmt.Sprintf("SELECT COUNT(timespent), SUM(timespent) FROM %s WHERE id = ? "+
+		"AND event_type = ? AND timestamp >= ? AND timestamp <= ?", COLLECTION_EVENT)
 
 	scanner := store.session.Query(
-		insert, event.Type, startOfDay.Unix(), endOfDay.Unix()).Iter().Scanner()
+		insert, event.TweetID, event.Type, startOfDay.Unix(), endOfDay.Unix()).Iter().Scanner()
 
-	var timeSum int64 = 0
-	var entries int64 = 0
+	var timeSum int64
+	var entries int64
 	for scanner.Next() {
-		var timespentNow int
-		err := scanner.Scan(&timespentNow)
+		log.Println("NEXT3 is run by EventStore.GetTimespentDailyEvents")
+		//var timespentNow int
+		err := scanner.Scan(&entries, &timeSum)
+		log.Printf("NEXT4: timeSum is %s, entries is %s", timeSum, entries)
 		if err != nil {
 			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
 			return 0, err
 		}
-		timeSum += int64(timespentNow)
-		entries++
+		//timeSum += int64(timespentNow)
+		//entries++
 	}
+	log.Printf("timeSum is %s, entries is %s", timeSum, entries)
 
+	if entries == 0 {
+		return 0, nil
+	}
 	return timeSum / entries, nil
 }

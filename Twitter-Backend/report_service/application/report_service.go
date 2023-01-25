@@ -25,11 +25,7 @@ func NewReportService(eventStore domain.EventStore, reportStore domain.ReportSto
 
 func (service *ReportService) CreateEvent(event events.Event) {
 
-	eventOut := domain.Event{
-		TweetID:   event.TweetID,
-		Type:      event.Type,
-		Timestamp: event.Timestamp,
-	}
+	eventOut := EventToDomain(event)
 	_, err := service.eventStore.CreateEvent(context.TODO(), &eventOut)
 	if err != nil {
 		log.Printf("Error in report_service CreateEvent()", err.Error())
@@ -40,6 +36,25 @@ func (service *ReportService) CreateEvent(event events.Event) {
 func (service *ReportService) CreateReport(event *events.Event) {
 	ctx, span := service.tracer.Start(context.TODO(), "ReportService.CreateReport")
 	defer span.End()
+
+	if event.Type == "Timespent" {
+		domainEvent := EventToDomain(*event)
+		timeSpendDaily, err := service.eventStore.GetTimespentDailyEvents(ctx, &domainEvent)
+		if err != nil {
+			log.Printf("Error in getting daily spent: %s", err.Error())
+			return
+		}
+		timeSpendMonthly, err := service.eventStore.GetTimespentMonthlyEvents(ctx, &domainEvent)
+		if err != nil {
+			log.Printf("Error in getting monthly spent: %s", err.Error())
+			return
+		}
+
+		event.DailySpent = timeSpendDaily
+		event.MonthlySpent = timeSpendMonthly
+	}
+
+	log.Printf("Timedaily :%s , TimeMonthly: %s", event.DailySpent, event.MonthlySpent)
 
 	thisT := time.Unix(int64(event.Timestamp), 0)
 	dailyUnix := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), 0, 0, 0, 0, time.UTC).Unix() //dailyRepDate
@@ -62,6 +77,30 @@ func (service *ReportService) GetReportForAd(ctx context.Context, tweetID string
 		return nil, err
 	}
 	return result, nil
+}
+
+func DomainToEvent(event domain.Event) events.Event {
+
+	return events.Event{
+		TweetID:      event.TweetID,
+		Type:         event.Type,
+		Timestamp:    event.Timestamp,
+		Timespent:    event.Timespent,
+		DailySpent:   event.DailySpent,
+		MonthlySpent: event.MonthlySpent,
+	}
+}
+
+func EventToDomain(event events.Event) domain.Event {
+
+	return domain.Event{
+		TweetID:      event.TweetID,
+		Type:         event.Type,
+		Timestamp:    event.Timestamp,
+		Timespent:    event.Timespent,
+		DailySpent:   event.DailySpent,
+		MonthlySpent: event.MonthlySpent,
+	}
 }
 
 //func (service *ReportService) (){}

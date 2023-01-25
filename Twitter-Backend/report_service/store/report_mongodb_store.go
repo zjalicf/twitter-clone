@@ -62,13 +62,15 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			LikeCount:   0,
 			UnlikeCount: 0,
 			ViewCount:   0,
-			TimeSpent:   0,
+			Timespent:   0,
 		}
 
 		if event.Type == "Liked" {
 			report.LikeCount++
 		} else if event.Type == "Unliked" {
 			report.UnlikeCount++
+		} else if event.Type == "Timespent" {
+			report.Timespent = int(event.DailySpent)
 		} else {
 			report.ViewCount++
 		}
@@ -81,26 +83,21 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 	} else {
 
 		//like update
-
 		if event.Type == "Liked" {
 			oneDaily.LikeCount = oneDaily.LikeCount + 1
-			_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"tweet_id": event.TweetID}, bson.M{"$set": oneDaily})
-			if err != nil {
-				log.Printf("Error in report_mongodb CreateReport() Like daily: %s", err.Error())
-				return nil, err
-			}
 		} else if event.Type == "Unliked" {
-
 			//unline update
-
 			oneDaily.UnlikeCount = oneDaily.UnlikeCount + 1
-			_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"tweet_id": event.TweetID}, bson.M{"$set": oneDaily})
-			if err != nil {
-				log.Printf("Error in report_mongodb CreateReport() Unlike daily: %s", err.Error())
-				return nil, err
-			}
+		} else if event.Type == "Timespent" {
+			oneDaily.Timespent = int(event.DailySpent)
 		} else {
 			//view update
+		}
+
+		_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"_id": oneDaily.ID}, bson.M{"$set": oneDaily})
+		if err != nil {
+			log.Printf("Error in report_mongodb CreateReport() Unlike monthly: %s", err.Error())
+			return nil, err
 		}
 
 	}
@@ -115,13 +112,15 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			LikeCount:   0,
 			UnlikeCount: 0,
 			ViewCount:   0,
-			TimeSpent:   0,
+			Timespent:   0,
 		}
 
 		if event.Type == "Liked" {
 			report.LikeCount++
 		} else if event.Type == "Unliked" {
 			report.UnlikeCount++
+		} else if event.Type == "Timespent" {
+			report.Timespent = int(event.MonthlySpent)
 		} else {
 			report.ViewCount++
 		}
@@ -133,26 +132,22 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 	} else {
 
 		//like update
-
 		if event.Type == "Liked" {
 			oneMonthly.LikeCount = oneMonthly.LikeCount + 1
-			_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"tweet_id": event.TweetID}, bson.M{"$set": oneMonthly})
-			if err != nil {
-				log.Printf("Error in report_mongodb CreateReport() Like monthly: %s", err.Error())
-				return nil, err
-			}
+
 		} else if event.Type == "Unliked" {
-
 			//unline update
-
 			oneMonthly.UnlikeCount = oneMonthly.UnlikeCount + 1
-			_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"tweet_id": event.TweetID}, bson.M{"$set": oneMonthly})
-			if err != nil {
-				log.Printf("Error in report_mongodb CreateReport() Unlike monthly: %s", err.Error())
-				return nil, err
-			}
+
+		} else if event.Type == "Timespent" {
+			oneMonthly.Timespent = int(event.MonthlySpent)
 		} else {
 			//view update
+		}
+		_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"_id": oneMonthly.ID}, bson.M{"$set": oneMonthly})
+		if err != nil {
+			log.Printf("Error in report_mongodb CreateReport() Like monthly: %s", err.Error())
+			return nil, err
 		}
 
 	}

@@ -89,6 +89,8 @@ github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124001859-e930b5f1fcc
 github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124001859-e930b5f1fcc9/go.mod h1:kAKIh2M/43RT1JjvuZwbX9W/2H0J5YrH+W+5kClugLQ=
 github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124013728-cc8fa85d24eb h1:fW2EcOqvXzxz0gwS4/C36uxY0DTOk0ogUGnco59gtFo=
 github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124013728-cc8fa85d24eb/go.mod h1:kAKIh2M/43RT1JjvuZwbX9W/2H0J5YrH+W+5kClugLQ=
+github.com/zjalicf/twitter-clone-common/common v0.0.0-20230125012816-e4c97078b24c h1:PGA933uMdpy491I1hmq2ETv0980cGuc39RmYVETMb9Y=
+github.com/zjalicf/twitter-clone-common/common v0.0.0-20230125012816-e4c97078b24c/go.mod h1:kAKIh2M/43RT1JjvuZwbX9W/2H0J5YrH+W+5kClugLQ=
 go.opentelemetry.io/otel v1.11.2 h1:YBZcQlsVekzFsFbjygXMOXSs6pialIZxcjfO/mBDmR0=
 go.opentelemetry.io/otel v1.11.2/go.mod h1:7p4EUV+AqgdlNV9gL97IgUZiVR3yrFXYo53f9BM3tRI=
 go.opentelemetry.io/otel/exporters/jaeger v1.11.2 h1:ES8/j2+aB+3/BUw51ioxa50V9btN1eew/2J7N7n1tsE=

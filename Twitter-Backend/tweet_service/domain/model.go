@@ -47,6 +47,11 @@ type TweetID struct {
 	ID string `json:"id"`
 }
 
+type Timespent struct {
+	TweetID   string `json:"tweet_id"`
+	Timespent int64  `json:"timespent"`
+}
+
 type Event struct {
 	TweetID   string
 	Type      string

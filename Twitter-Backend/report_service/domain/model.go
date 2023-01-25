@@ -9,14 +9,14 @@ type Report struct {
 	LikeCount   int                `json:"like_count" bson:"like_count"`
 	UnlikeCount int                `json:"unlike_count" bson:"unlike_count"`
 	ViewCount   int                `json:"view_count" bson:"view_count"`
-	TimeSpent   int                `json:"time_spended" bson:"time_spended"`
+	Timespent   int                `json:"time_spent" bson:"time_spent"`
 }
 
 type Event struct {
 	TweetID      string
 	Type         string
 	Timestamp    int64
-	TimeSpent    int64
+	Timespent    int64
 	DailySpent   int64
 	MonthlySpent int64
 }

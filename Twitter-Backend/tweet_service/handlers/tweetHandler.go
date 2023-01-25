@@ -52,6 +52,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/whoLiked/{id}", handler.GetLikesByTweet).Methods("GET")
 	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
 	router.HandleFunc("/retweet", handler.Retweet).Methods("POST")
+	router.HandleFunc("/timespent", handler.TimespentOnAd).Methods("POST")
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -288,6 +289,22 @@ func (handler *TweetHandler) Retweet(writer http.ResponseWriter, req *http.Reque
 		http.Error(writer, err.Error(), code)
 		return
 	}
+
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *TweetHandler) TimespentOnAd(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.TimespentOnAd")
+	defer span.End()
+
+	var timespent domain.Timespent
+	err := json.NewDecoder(req.Body).Decode(&timespent)
+	if err != nil {
+		log.Println("Error in decoding body in handler function TimespentOnAd")
+		http.Error(writer, "bad request", http.StatusBadRequest)
+	}
+
+	handler.service.TimeSpentOnAd(ctx, &timespent)
 
 	writer.WriteHeader(http.StatusOK)
 }

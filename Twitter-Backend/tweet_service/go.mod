@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/sony/gobreaker v0.5.0
-	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124013728-cc8fa85d24eb
+	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230125012816-e4c97078b24c
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	go.opentelemetry.io/otel/sdk v1.11.2

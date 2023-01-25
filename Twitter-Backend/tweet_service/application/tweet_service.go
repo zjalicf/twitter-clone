@@ -155,7 +155,8 @@ func (service *TweetService) Favorite(ctx context.Context, id string, username s
 		event := events.Event{
 			TweetID:   id,
 			Type:      "",
-			Timestamp: int(time.Now().Unix()),
+			Timestamp: time.Now().Unix(),
+			Timespent: 0,
 		}
 		if status == 200 {
 			event.Type = "Unliked"
@@ -169,6 +170,26 @@ func (service *TweetService) Favorite(ctx context.Context, id string, username s
 	}
 
 	return status, nil
+}
+
+func (service *TweetService) TimeSpentOnAd(ctx context.Context, timespent *domain.Timespent) error {
+	ctx, span := service.tracer.Start(ctx, "TweetService.TimeSpentOnAd")
+	defer span.End()
+	log.Printf("TIMESPENT IN tweet_service.TimeSpentOnAd: %s", timespent)
+	event := events.Event{
+		TweetID:   timespent.TweetID,
+		Type:      "Timespent",
+		Timestamp: time.Now().Unix(),
+		Timespent: timespent.Timespent,
+	}
+
+	err := service.orchestrator.Start(ctx, event)
+	if err != nil {
+		log.Printf("Error in starting orchestrator in TweetService.TimeSpentOnAd: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
