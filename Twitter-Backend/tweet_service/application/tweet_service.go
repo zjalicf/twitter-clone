@@ -218,6 +218,26 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 	return &image, nil
 }
 
+func (service *TweetService) ViewProfileFromAd(ctx context.Context, tweetID domain.TweetID) error {
+	ctx, span := service.tracer.Start(ctx, "TweetService.TimeSpentOnAd")
+	defer span.End()
+
+	event := events.Event{
+		TweetID:   tweetID.ID,
+		Type:      "ViewCount",
+		Timestamp: time.Now().Unix(),
+		Timespent: 0,
+	}
+
+	err := service.orchestrator.Start(ctx, event)
+	if err != nil {
+		log.Printf("Error in TweetService.ViewProfileFromAd: %s", err.Error())
+		return err
+	}
+	return nil
+
+}
+
 func (service *TweetService) Retweet(id string, username string) (int, error) {
 	return service.store.Retweet(id, username)
 }

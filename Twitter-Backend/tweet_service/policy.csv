@@ -16,3 +16,5 @@ p, NotLoggedIn, /image/*, GET
 p, Regular, /retweet, POST
 p, Business, /retweet, POST
 p, Business, /timespent, POST
+p, Business, /viewCount, POST
+

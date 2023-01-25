@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -71,8 +72,10 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			report.UnlikeCount++
 		} else if event.Type == "Timespent" {
 			report.Timespent = int(event.DailySpent)
-		} else {
+		} else if event.Type == "ViewCount" {
 			report.ViewCount++
+		} else {
+			return nil, fmt.Errorf("Unknown event type")
 		}
 
 		_, err = store.dailyReports.InsertOne(ctx, report)
@@ -90,8 +93,11 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			oneDaily.UnlikeCount = oneDaily.UnlikeCount + 1
 		} else if event.Type == "Timespent" {
 			oneDaily.Timespent = int(event.DailySpent)
-		} else {
+		} else if event.Type == "ViewCount" {
 			//view update
+			oneDaily.ViewCount = oneDaily.ViewCount + 1
+		} else {
+			return nil, fmt.Errorf("Unknown event type")
 		}
 
 		_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"_id": oneDaily.ID}, bson.M{"$set": oneDaily})
@@ -121,8 +127,10 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			report.UnlikeCount++
 		} else if event.Type == "Timespent" {
 			report.Timespent = int(event.MonthlySpent)
-		} else {
+		} else if event.Type == "ViewCount" {
 			report.ViewCount++
+		} else {
+			return nil, fmt.Errorf("Unknown event type")
 		}
 		_, err = store.monthlyReports.InsertOne(ctx, report)
 		if err != nil {
@@ -141,8 +149,11 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 
 		} else if event.Type == "Timespent" {
 			oneMonthly.Timespent = int(event.MonthlySpent)
-		} else {
+		} else if event.Type == "ViewCount" {
 			//view update
+			oneMonthly.ViewCount = oneMonthly.ViewCount + 1
+		} else {
+			return nil, fmt.Errorf("Unknown event type")
 		}
 		_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"_id": oneMonthly.ID}, bson.M{"$set": oneMonthly})
 		if err != nil {

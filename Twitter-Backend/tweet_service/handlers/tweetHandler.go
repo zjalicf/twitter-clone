@@ -53,6 +53,8 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
 	router.HandleFunc("/retweet", handler.Retweet).Methods("POST")
 	router.HandleFunc("/timespent", handler.TimespentOnAd).Methods("POST")
+	router.HandleFunc("/viewCount", handler.ViewProfileFromAdd).Methods("POST")
+
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -305,6 +307,22 @@ func (handler *TweetHandler) TimespentOnAd(writer http.ResponseWriter, req *http
 	}
 
 	handler.service.TimeSpentOnAd(ctx, &timespent)
+
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *TweetHandler) ViewProfileFromAdd(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.ViewProfileFromAdd")
+	defer span.End()
+
+	var tweetID domain.TweetID
+	err := json.NewDecoder(req.Body).Decode(&tweetID)
+	if err != nil {
+		log.Println("Error in decoding body in handler function ViewProfileFromAdd")
+		http.Error(writer, "bad request", http.StatusBadRequest)
+	}
+
+	handler.service.ViewProfileFromAd(ctx, tweetID)
 
 	writer.WriteHeader(http.StatusOK)
 }
