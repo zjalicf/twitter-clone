@@ -130,6 +130,33 @@ func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	return tweets, nil
 }
 
+func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetOne")
+	defer span.End()
+
+	scanner := sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, tweetID).Iter().Scanner()
+
+	var tweets []domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+
+		err := scanner.Scan(&tweet.ID, &tweet.Advertisement, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited,
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		if err != nil {
+			sr.logger.Println(err)
+			return nil, err
+		}
+
+		tweets = append(tweets, tweet)
+	}
+
+	if err := scanner.Err(); err != nil {
+		sr.logger.Println(err)
+		return nil, err
+	}
+	return &tweets[0], nil
+}
+
 func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetsByUser")
 	defer span.End()

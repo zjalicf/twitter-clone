@@ -3,8 +3,11 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AddTweetDTO } from 'src/app/dto/addTweetDTO';
+import { AdConfig } from 'src/app/models/adConfig';
 import { Tweet } from 'src/app/models/tweet.model';
+import { TweetAd } from 'src/app/models/tweetAd';
 import { User } from 'src/app/models/user.model';
+import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -21,7 +24,8 @@ export class TweetAddComponent implements OnInit {
     private tweetService: TweetService,
     private userService: UserService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private followService: FollowService
   ) 
   { }
 
@@ -101,29 +105,51 @@ export class TweetAddComponent implements OnInit {
       return;
     }
 
-    if (this.isChecked == true) {
-      if (this.advertisementFormGroup.invalid) {
-        return;
-      }
-    }
-
-    // let add advertisementDTO = new AddAdvertisementDTO();
     let addTweet: AddTweetDTO = new AddTweetDTO();
 
+
+    if (this.isChecked == true) {
+
+      if (this.advertisementFormGroup.invalid) {
+
+        addTweet.advertisement = true
+        return;
+
+      }else{
+
+        addTweet.advertisement = false
+        
+      }
+    }
     addTweet.text = this.tweetFormGroup.get("text")?.value;
-    addTweet.advertisement = true
-    console.log(addTweet)
-    console.log(JSON.stringify(addTweet))
+
     this.formData.append("json", JSON.stringify(addTweet))
-    this.tweetService.AddTweet(this.formData)
-      .subscribe({
+      this.tweetService.AddTweet(this.formData).subscribe({
         next: (data: Tweet) => {
+
+          if (data.advertisement){
+            var adConfig: AdConfig = new AdConfig()
+            adConfig.ageFrom = this.advertisementFormGroup.get("age_from")?.value
+            adConfig.ageTo = this.advertisementFormGroup.get("age_to")?.value   
+            adConfig.gender = this.advertisementFormGroup.get("gender")?.value
+            adConfig.residence = this.advertisementFormGroup.get("residence")?.value
+            
+
+
+          }
+
+
           this.router.navigate(['/Main-Page']);
         },
         error: (error) => {
           console.log(error);
         }
       })
+
+      
+
+
+    
   }
 
   getFile(event: any) {

@@ -1,5 +1,7 @@
 p, Regular, /, POST
 p, Regular, /, GET
+p, Regular, /getOneTweet/*, GET
+p, Business, /getOneTweet/*, GET
 p, Regular, /user/*, GET
 p, Regular, /favorite, POST
 p, Regular, /whoLiked/*, GET
@@ -16,5 +18,7 @@ p, NotLoggedIn, /image/*, GET
 p, Regular, /retweet, POST
 p, Business, /retweet, POST
 p, Business, /timespent, POST
+p, Regular, /timespent, POST
 p, Business, /viewCount, POST
+p, Regular, /viewCount, POST
 

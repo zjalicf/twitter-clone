@@ -43,7 +43,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 
 	router.Use(ExtractTraceInfoMiddleware)
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
+	router.HandleFunc("/getOneTweet/{id}", handler.GetOne).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/image/{id}", handler.GetTweetImage).Methods("GET")
@@ -65,6 +65,21 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 	defer span.End()
 
 	tweets, err := handler.service.GetAll(ctx)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(tweets, writer)
+}
+
+func (handler *TweetHandler) GetOne(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetOne")
+	defer span.End()
+
+	vars := mux.Vars(req)
+	tweetID := vars["id"]
+
+	tweets, err := handler.service.GetOne(ctx, tweetID)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -185,12 +200,26 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	tweet := req.FormValue("json")
 
+	//json without AdConfig
 	var tweetVal domain.Tweet
 	err = json.Unmarshal([]byte(tweet), &tweetVal)
 	if err != nil {
-		http.Error(writer, "bad json format", http.StatusBadRequest)
-		return
+		log.Printf("Error in TweetHandler.Post unmarshal json 1")
 	}
+
+	//json with AdConfig
+	var tweetAdVal domain.AdTweet
+	err = json.Unmarshal([]byte(tweet), &tweetAdVal)
+	if err != nil {
+		log.Printf("Error in TweetHandler.Post unmarshal json 2")
+	}
+
+	if err != nil {
+		http.Error(writer, "bad json format", http.StatusBadRequest)
+
+	}
+
+	//sta dalje?
 
 	if req.Header.Get("Authorization") == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -204,6 +233,7 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
+	//dodati adve
 	ret, err := handler.service.Post(ctx, &tweetVal, username, &imageBytes)
 
 	if err != nil {

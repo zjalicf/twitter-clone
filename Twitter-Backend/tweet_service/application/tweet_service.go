@@ -48,6 +48,13 @@ func (service *TweetService) GetAll(ctx context.Context) ([]domain.Tweet, error)
 	return service.store.GetAll(ctx)
 }
 
+func (service *TweetService) GetOne(ctx context.Context, tweetID string) (*domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetOne")
+	defer span.End()
+
+	return service.store.GetOne(ctx, tweetID)
+}
+
 func (service *TweetService) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetTweetsByUser")
 	defer span.End()
