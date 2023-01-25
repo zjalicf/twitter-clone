@@ -23,19 +23,46 @@ type ReportMongoDBStore struct {
 	tracer         trace.Tracer
 }
 
-func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events.Event) (*events.Event, error) {
+func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID string, reportType string) (*domain.Report, error) {
+
+	if reportType == "daily" {
+
+		result, err := store.filterOneDaily(bson.M{"tweet_id": tweetID})
+		if err != nil {
+			log.Printf("Error in ReportMongoDB filterOneDaily: &s", err.Error())
+			return nil, err
+		}
+		return result, nil
+
+	} else if reportType == "monthly" {
+
+		result, err := store.filterOneMonthly(bson.M{"tweet_id": tweetID})
+		if err != nil {
+			log.Printf("Error in ReportMongoDB filterOneMonthly: &s", err.Error())
+			return nil, err
+		}
+		return result, nil
+
+	}
+	return nil, nil
+}
+
+func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events.Event,
+	monthlyUnix, dailyUnix int64) (*events.Event, error) {
 	ctx, span := store.tracer.Start(ctx, "ReportMongoDBStore.CreateReport")
 	defer span.End()
 
-	oneDaily, err := store.filterOneDaily(bson.M{"tweet_id": event.TweetID})
+	oneDaily, err := store.filterOneDaily(bson.M{"tweet_id": event.TweetID, "timestamp": dailyUnix})
 	if err != nil {
 		log.Println(err.Error())
 		report := domain.Report{
 			ID:          primitive.NewObjectID(),
 			TweetID:     event.TweetID,
+			Timestamp:   dailyUnix,
 			LikeCount:   0,
 			UnlikeCount: 0,
 			ViewCount:   0,
+			TimeSpent:   0,
 		}
 
 		if event.Type == "Liked" {
@@ -78,15 +105,17 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 
 	}
 	//monthly
-	oneMonthly, err := store.filterOneMonthly(bson.M{"tweet_id": event.TweetID})
+	oneMonthly, err := store.filterOneMonthly(bson.M{"tweet_id": event.TweetID, "timestamp": monthlyUnix})
 	if err != nil {
 		log.Println(err.Error())
 		report := domain.Report{
 			ID:          primitive.NewObjectID(),
 			TweetID:     event.TweetID,
+			Timestamp:   monthlyUnix,
 			LikeCount:   0,
 			UnlikeCount: 0,
 			ViewCount:   0,
+			TimeSpent:   0,
 		}
 
 		if event.Type == "Liked" {

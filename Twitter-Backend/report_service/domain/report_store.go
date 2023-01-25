@@ -6,5 +6,6 @@ import (
 )
 
 type ReportStore interface {
-	CreateReport(context.Context, *events.Event) (*events.Event, error)
+	CreateReport(context.Context, *events.Event, int64, int64) (*events.Event, error)
+	GetReportForAd(ctx context.Context, tweetID string, reportType string) (*Report, error)
 }

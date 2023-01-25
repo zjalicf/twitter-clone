@@ -27,14 +27,35 @@ func NewReportHandler(service *application.ReportService, tracer trace.Tracer) *
 }
 
 func (handler *ReportHandler) Init(router *mux.Router) {
-	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	reportEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
 	log.Println("successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//router.HandleFunc("/login", handler.Login).Methods("POST")
-	http.Handle("/", router)
-	log.Fatal(http.ListenAndServe(":8003", authorization.Authorizer(authEnforcer)(router)))
+	log.Println(reportEnforcer.GetPolicy())
 
+	router.HandleFunc("/{id}/{reportType}", handler.GetReportForAd).Methods("GET")
+	http.Handle("/", router)
+	log.Fatal(http.ListenAndServe(":8005", authorization.Authorizer(reportEnforcer)(router)))
+
+}
+
+func (handler *ReportHandler) GetReportForAd(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Register")
+	defer span.End()
+
+	log.Println("Uslo u handler")
+
+	vars := mux.Vars(req)
+
+	log.Printf("TweetID : %s, reportType : %s", vars["id"], vars["reportType"])
+
+	ad, err := handler.service.GetReportForAd(ctx, vars["id"], vars["reportType"])
+	if err != nil {
+		http.Error(writer, "Error in handler GetReportForAd", http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(ad, writer)
+	writer.WriteHeader(http.StatusOK)
 }

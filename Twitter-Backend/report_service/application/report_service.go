@@ -41,10 +41,10 @@ func (service *ReportService) CreateReport(event *events.Event) {
 	ctx, span := service.tracer.Start(context.TODO(), "ReportService.CreateReport")
 	defer span.End()
 
-	thisT := time.Unix(int64(event.Timestamp), 1)
-	_ = time.Date(thisT.Year(), thisT.Month(), thisT.Day(), 0, 0, 0, 0, time.UTC) //dailyRepDate
-	_ = time.Date(thisT.Year(), thisT.Month(), 1, 0, 0, 0, 0, time.UTC)           //monthlyRepDate
-	_, err := service.reportStore.CreateReport(ctx, event)
+	thisT := time.Unix(int64(event.Timestamp), 0)
+	dailyUnix := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), 0, 0, 0, 0, time.UTC).Unix() //dailyRepDate
+	monthlyUnix := time.Date(thisT.Year(), thisT.Month(), 1, 0, 0, 0, 0, time.UTC).Unix()         //monthlyRepDate
+	_, err := service.reportStore.CreateReport(ctx, event, monthlyUnix, dailyUnix)
 	if err != nil {
 		log.Printf("Error in report_service CreateReport()", err.Error())
 		return
@@ -53,3 +53,15 @@ func (service *ReportService) CreateReport(event *events.Event) {
 	}
 
 }
+
+func (service *ReportService) GetReportForAd(ctx context.Context, tweetID string, reportType string) (*domain.Report, error) {
+
+	result, err := service.reportStore.GetReportForAd(ctx, tweetID, reportType)
+	if err != nil {
+		log.Printf("Error in ReportService GetReportForAd: %s", err.Error())
+		return nil, err
+	}
+	return result, nil
+}
+
+//func (service *ReportService) (){}
