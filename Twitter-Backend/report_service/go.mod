@@ -7,7 +7,7 @@ require (
 	github.com/cristalhq/jwt/v4 v4.0.2
 	github.com/gocql/gocql v1.3.1
 	github.com/gorilla/mux v1.8.0
-	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230124013728-cc8fa85d24eb
+	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230125012816-e4c97078b24c
 	go.mongodb.org/mongo-driver v1.11.1
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2

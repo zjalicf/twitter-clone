@@ -13,7 +13,10 @@ type Report struct {
 }
 
 type Event struct {
-	TweetID   string
-	Type      string
-	Timestamp int
+	TweetID      string
+	Type         string
+	Timestamp    int64
+	TimeSpent    int64
+	DailySpent   int64
+	MonthlySpent int64
 }

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"report_service/domain"
+	"time"
 )
 
 const (
@@ -69,7 +70,7 @@ func (store *EventCassandraStore) CloseSession() {
 
 func (store *EventCassandraStore) CreateTables() {
 	err := store.session.Query(
-		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp time, PRIMARY KEY ((id), timestamp))`, COLLECTION_EVENT)).Exec()
+		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (id UUID, event_type text, timestamp int, timespent int, PRIMARY KEY ((id), timestamp))`, COLLECTION_EVENT)).Exec()
 
 	if err != nil {
 		store.logger.Printf("CASSANDRA CREATE TABLE ERR: %s", err.Error())
@@ -83,7 +84,7 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 	log.Println("Uslo u create event u cassandra store linije 83")
 
 	tweetID, err := gocql.ParseUUID(event.TweetID)
-	insert := fmt.Sprintf("INSERT INTO %s (id, event_type, timestamp) VALUES (?, ?, ?)", COLLECTION_EVENT)
+	insert := fmt.Sprintf("INSERT INTO %s (id, event_type, timestamp, timespent) VALUES (?, ?, ?, ?)", COLLECTION_EVENT)
 
 	log.Println("Proslo upis u bazu")
 
@@ -94,4 +95,66 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 		return nil, err
 	}
 	return event, nil
+}
+
+func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context, event *domain.Event) (int64, error) {
+	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentMonthlyEvents")
+	defer span.End()
+
+	date := time.Unix(event.Timestamp, 0)
+	firstMonthDate := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
+	lastMonthDate := time.Date(date.Year(), date.Month()+1, 0, 0, 0, 0, 0, time.UTC)
+
+	log.Printf("first: %s  ,  last: %s", firstMonthDate, lastMonthDate)
+
+	insert := fmt.Sprintf("SELECT timespent FROM %s WHERE eventType = ? AND ? <= timestamp < ?", COLLECTION_EVENT)
+
+	scanner := store.session.Query(
+		insert, event.Type, firstMonthDate.Unix(), lastMonthDate.Unix()).Iter().Scanner()
+
+	var timeSum int64 = 0
+	var entries int64 = 0
+	for scanner.Next() {
+		var timespentNow int
+		err := scanner.Scan(&timespentNow)
+		if err != nil {
+			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
+			return 0, err
+		}
+		timeSum += int64(timespentNow)
+		entries++
+	}
+
+	return timeSum / entries, nil
+}
+
+func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, event *domain.Event) (int64, error) {
+	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentDailyEvents")
+	defer span.End()
+
+	date := time.Unix(event.Timestamp, 0)
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	log.Printf("start of day: %s  ,  end of day: %s", startOfDay, endOfDay)
+
+	insert := fmt.Sprintf("SELECT timespent FROM %s WHERE eventType = ? AND ? <= timestamp < ?", COLLECTION_EVENT)
+
+	scanner := store.session.Query(
+		insert, event.Type, startOfDay.Unix(), endOfDay.Unix()).Iter().Scanner()
+
+	var timeSum int64 = 0
+	var entries int64 = 0
+	for scanner.Next() {
+		var timespentNow int
+		err := scanner.Scan(&timespentNow)
+		if err != nil {
+			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
+			return 0, err
+		}
+		timeSum += int64(timespentNow)
+		entries++
+	}
+
+	return timeSum / entries, nil
 }
