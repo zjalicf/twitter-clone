@@ -15,10 +15,10 @@ type User struct {
 }
 
 type Ad struct {
-	TweetID   string `json:"tweetID"`
-	AgeFrom   int    `json:"ageFrom"`
-	AgeTo     int    `json:"ageTo"`
-	Gender    Gender `json:"gender"`
+	TweetID   string `json:"tweet_id"`
+	AgeFrom   int    `json:"age_from"`
+	AgeTo     int    `json:"age_to"`
+	Gender    string `json:"gender"`
 	Residence string `json:"residence"`
 }
 
