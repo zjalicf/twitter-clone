@@ -12,6 +12,7 @@ type User struct {
 	Username  string `json:"username"`
 	Age       int    `json:"age"`
 	Residence string `json:"residence"`
+	Gender    string `json:"gender"`
 }
 
 type Ad struct {

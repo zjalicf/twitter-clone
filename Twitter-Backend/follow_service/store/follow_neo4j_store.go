@@ -266,9 +266,9 @@ func (store *FollowNeo4JStore) SaveUser(user *domain.User) error {
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			result, err := transaction.Run(ctx,
 				"CREATE (u:User) SET u.id = $id, u.username = $username, "+
-					"u.age = $age, u.residence = $residence RETURN u.id + ', from node ' + id(u)",
+					"u.age = $age, u.residence = $residence, u.gender = $gender RETURN u.id + ', from node ' + id(u)",
 				map[string]any{"id": user.ID, "username": user.Username, "age": user.Age,
-					"residence": user.Residence})
+					"residence": user.Residence, "gender": user.Gender})
 			if err != nil {
 				return nil, err
 			}

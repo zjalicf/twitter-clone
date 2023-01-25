@@ -174,6 +174,10 @@ func (service *FollowService) UserToDomain(userIn create_user.User) domain.User 
 	user.Age = userIn.Age
 	user.Residence = userIn.Residence
 	user.Username = userIn.Username
+	user.Gender = string(userIn.Gender)
+	if user.Age == 0 {
+		user.Gender = ""
+	}
 
 	return user
 }
