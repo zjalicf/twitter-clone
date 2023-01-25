@@ -53,7 +53,7 @@
                                         [ngClass]="{ 'is-invalid': submittedAdvertisement && advertisementForm['age_from'].errors}">
                                     <div *ngIf="submittedAdvertisement && advertisementForm['age_to'].errors" class="invalid-feedback">
                                         <div *ngIf="advertisementForm['age_to'].errors['required']">Age is required.</div>
-                                        <div *ngIf="advertisementForm['age_to'].errors['min']">Minimum age is 1.</div>
+                                        <div *ngIf="advertisementForm['age_to'].errors['min']">Minimum age is 18.</div>
                                         <div *ngIf="advertisementForm['age_to'].errors['max']">Maximum age is 100.</div>
                                     </div> 
                                 </div>
@@ -76,6 +76,7 @@
                                         [ngClass]="{ 'is-invalid': submittedAdvertisement && advertisementForm['gender'].errors}">
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
+                                            <option value="Both">Both</option>
                                     </select>
                                     <div *ngIf="submittedAdvertisement && advertisementForm['gender'].errors" class="invalid-feedback">
                                         <div *ngIf="advertisementForm['gender'].errors['required']">Gender is required.</div>

@@ -58,8 +58,8 @@ export class TweetAddComponent implements OnInit {
     this.advertisementFormGroup = this.formBuilder.group({
       residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35)]],
       gender: ['', [Validators.required]],
-      age_from: ['', [Validators.required, Validators.min(5), Validators.max(100)]],
-      age_to: ['', [Validators.required, Validators.min(5), Validators.max(100)]]
+      age_from: ['', [Validators.required, Validators.min(18), Validators.max(100)]],
+      age_to: ['', [Validators.required, Validators.min(18), Validators.max(100)]]
     })
 
     this.userService.GetMe()
@@ -134,6 +134,7 @@ export class TweetAddComponent implements OnInit {
             adConfig.gender = this.advertisementFormGroup.get("gender")?.value
             adConfig.residence = this.advertisementFormGroup.get("residence")?.value
             
+            this.followService.CreateAdd(adConfig).subscribe()
 
 
           }

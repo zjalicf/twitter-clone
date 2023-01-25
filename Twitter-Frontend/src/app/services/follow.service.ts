@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, retry } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { AdConfig } from '../models/adConfig';
 import { FollowRequest } from '../models/followRequest.model';
 
 @Injectable({
@@ -28,6 +29,10 @@ export class FollowService {
 
   public SendRequest(visibility: string, receiver: FollowRequest): Observable<any>{
     return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/requests/` + visibility, receiver)
+  }
+
+  public CreateAdd(adConfig: AdConfig): Observable<void> {
+    return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/createAd`, adConfig)
   }
 
 }
