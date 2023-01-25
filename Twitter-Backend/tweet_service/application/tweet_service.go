@@ -56,7 +56,6 @@ func (service *TweetService) GetTweetsByUser(ctx context.Context, username strin
 }
 
 func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error) {
-
 	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
 	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
 	followServiceRequest.Header.Add("Authorization", token)
