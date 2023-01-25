@@ -414,7 +414,7 @@ func (store *FollowNeo4JStore) SaveAd(ad *domain.Ad) error {
 					"ad.ageTo = $ageTo, ad.gender = $gender, ad.residence = $residence "+
 					"RETURN ad.id + ', from node ' + id(ad)",
 				map[string]any{"tweetID": ad.TweetID, "ageFrom": ad.AgeFrom, "ageTo": ad.AgeTo,
-					"gender": ad.Gender.EnumIndex(), "residence": ad.Residence})
+					"gender": ad.Gender, "residence": ad.Residence})
 			if err != nil {
 				return nil, err
 			}
