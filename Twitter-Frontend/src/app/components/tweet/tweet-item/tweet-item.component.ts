@@ -30,7 +30,7 @@ export class TweetItemComponent implements OnInit {
 
   loggedInUser: User = new User();
   tweetID: TweetID = new TweetID();
-  totalLikes: number = 0
+  totalLikes: number = 0;
   isLiked: boolean = false;
   isRetweeted: boolean = false;
   liked: string = "favorite_border";
@@ -46,7 +46,6 @@ export class TweetItemComponent implements OnInit {
           this.imagePath = fileReader.result as string;
         }
       });
-  
     }
 
     this.userService.GetMe()
