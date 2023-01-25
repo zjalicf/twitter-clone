@@ -43,7 +43,7 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 
 	router.Use(ExtractTraceInfoMiddleware)
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
-	//router.HandleFunc("/{id}", handler.Get).Methods("GET")
+	router.HandleFunc("/getOneTweet/{id}", handler.GetOne).Methods("GET")
 	router.HandleFunc("/", Post(handler)).Methods("POST")
 	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/image/{id}", handler.GetTweetImage).Methods("GET")
@@ -52,6 +52,9 @@ func (handler *TweetHandler) Init(router *mux.Router) {
 	router.HandleFunc("/whoLiked/{id}", handler.GetLikesByTweet).Methods("GET")
 	router.HandleFunc("/feed", handler.GetFeedByUser).Methods("GET")
 	router.HandleFunc("/retweet", handler.Retweet).Methods("POST")
+	router.HandleFunc("/timespent", handler.TimespentOnAd).Methods("POST")
+	router.HandleFunc("/viewCount", handler.ViewProfileFromAdd).Methods("POST")
+
 	http.Handle("/", router)
 	log.Println("Successful")
 	log.Fatal(http.ListenAndServe(":8001", authorization.Authorizer(authEnforcer)(router)))
@@ -62,6 +65,21 @@ func (handler *TweetHandler) GetAll(writer http.ResponseWriter, req *http.Reques
 	defer span.End()
 
 	tweets, err := handler.service.GetAll(ctx)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(tweets, writer)
+}
+
+func (handler *TweetHandler) GetOne(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetOne")
+	defer span.End()
+
+	vars := mux.Vars(req)
+	tweetID := vars["id"]
+
+	tweets, err := handler.service.GetOne(ctx, tweetID)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -127,17 +145,18 @@ func (handler *TweetHandler) Favorite(writer http.ResponseWriter, req *http.Requ
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	var tweetID domain.TweetID
-	err = json.NewDecoder(req.Body).Decode(&tweetID)
+	var tweet domain.Tweet
+	err = json.NewDecoder(req.Body).Decode(&tweet)
 	if err != nil {
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	tweets, err := handler.service.Favorite(ctx, tweetID.ID, username)
+	tweets, err := handler.service.Favorite(ctx, tweet.ID.String(), username, tweet.Advertisement)
 
 	if err != nil {
+		log.Printf("Error in tweetHandler Favorite(): %s", err.Error())
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -157,7 +176,6 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	log.Println(req.Header.Get("Content-Type"))
 	strs := strings.Split(req.Header.Get("Content-Type"), "; boundary")
 
 	if strs[0] != "multipart/form-data" {
@@ -182,17 +200,26 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 
 	tweet := req.FormValue("json")
 
+	//json without AdConfig
 	var tweetVal domain.Tweet
 	err = json.Unmarshal([]byte(tweet), &tweetVal)
 	if err != nil {
-		http.Error(writer, "bad json format", http.StatusBadRequest)
-		return
+		log.Printf("Error in TweetHandler.Post unmarshal json 1")
 	}
-	//err = handler.service.SaveImage(request.ID, imageBytes)
-	//if err != nil {
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
+
+	//json with AdConfig
+	var tweetAdVal domain.AdTweet
+	err = json.Unmarshal([]byte(tweet), &tweetAdVal)
+	if err != nil {
+		log.Printf("Error in TweetHandler.Post unmarshal json 2")
+	}
+
+	if err != nil {
+		http.Error(writer, "bad json format", http.StatusBadRequest)
+
+	}
+
+	//sta dalje?
 
 	if req.Header.Get("Authorization") == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -206,6 +233,7 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
+	//dodati adve
 	ret, err := handler.service.Post(ctx, &tweetVal, username, &imageBytes)
 
 	if err != nil {
@@ -248,7 +276,6 @@ func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
 }
 
 func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
-	log.Println(req.Header.Get("Authorization"))
 	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("error: %s", err.Error())
@@ -294,6 +321,38 @@ func (handler *TweetHandler) Retweet(writer http.ResponseWriter, req *http.Reque
 		http.Error(writer, err.Error(), code)
 		return
 	}
+
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *TweetHandler) TimespentOnAd(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.TimespentOnAd")
+	defer span.End()
+
+	var timespent domain.Timespent
+	err := json.NewDecoder(req.Body).Decode(&timespent)
+	if err != nil {
+		log.Println("Error in decoding body in handler function TimespentOnAd")
+		http.Error(writer, "bad request", http.StatusBadRequest)
+	}
+
+	handler.service.TimeSpentOnAd(ctx, &timespent)
+
+	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *TweetHandler) ViewProfileFromAdd(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.ViewProfileFromAdd")
+	defer span.End()
+
+	var tweetID domain.TweetID
+	err := json.NewDecoder(req.Body).Decode(&tweetID)
+	if err != nil {
+		log.Println("Error in decoding body in handler function ViewProfileFromAdd")
+		http.Error(writer, "bad request", http.StatusBadRequest)
+	}
+
+	handler.service.ViewProfileFromAd(ctx, tweetID)
 
 	writer.WriteHeader(http.StatusOK)
 }

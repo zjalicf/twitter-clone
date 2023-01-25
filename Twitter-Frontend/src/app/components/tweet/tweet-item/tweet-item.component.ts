@@ -10,6 +10,7 @@ import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dia
 import { Favorite } from 'src/app/models/favorite.model';
 import { Router } from '@angular/router';
 import { HttpHeaderResponse } from '@angular/common/http';
+import { async } from '@angular/core/testing';
 
 @Component({
   selector: 'app-tweet-item',
@@ -30,12 +31,16 @@ export class TweetItemComponent implements OnInit {
 
   loggedInUser: User = new User();
   tweetID: TweetID = new TweetID();
-  totalLikes: number = 0
+  totalLikes: number = 0;
   isLiked: boolean = false;
   isRetweeted: boolean = false;
   liked: string = "favorite_border";
+  isThatMeLoggedIn: boolean = false;
 
   ngOnInit(): void {
+
+    
+
     this.totalLikes = this.tweet.favorite_count;
 
     if(this.tweet.image) {
@@ -46,18 +51,9 @@ export class TweetItemComponent implements OnInit {
           this.imagePath = fileReader.result as string;
         }
       });
-  
     }
 
-    this.userService.GetMe()
-      .subscribe({
-        next: (data: User) => {
-          this.loggedInUser = data;
-        },
-        error: (error) => {
-          console.log(error);
-        }
-      });
+    
 
     this.tweetService.GetLikesByTweet(this.tweet.id)
       .subscribe({
@@ -70,6 +66,7 @@ export class TweetItemComponent implements OnInit {
               } else {
                 this.isLiked = false;
               }
+              this.isThatMe()
             });
           }
         },
@@ -79,18 +76,30 @@ export class TweetItemComponent implements OnInit {
       })
   }
 
-  isThatMe(): boolean {
-    if (this.tweet.username == this.loggedInUser.username) {
-      return true;
-    } else {
-      return false;
-    }
+  isThatMe() {
+    this.userService.GetMe()
+      .subscribe({
+        next: (data: User) => {
+          this.loggedInUser = data;
+          if (this.tweet.username === this.loggedInUser.username) {
+            this.isThatMeLoggedIn = true;
+          } else {
+            this.isThatMeLoggedIn = false;
+          }
+          return this.isThatMeLoggedIn
+        },
+        error: (error) => {
+          console.log(error);
+          return this.isThatMeLoggedIn
+
+        }
+      });
   }
 
   likeTweet(tweet: Tweet) {
 
     this.tweetID.id = tweet.id
-    this.tweetService.LikeTweet(this.tweetID).subscribe(
+    this.tweetService.LikeTweet(this.tweet).subscribe(
       {
         next: (data) => {
           if (data == 201) {

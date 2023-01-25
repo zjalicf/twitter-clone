@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/sony/gobreaker"
+	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	"go.opentelemetry.io/otel/trace"
 	"io"
 	"log"
@@ -20,19 +21,23 @@ var (
 	followServicePort = os.Getenv("FOLLOW_SERVICE_PORT")
 )
 
+//eesa
+
 type TweetService struct {
-	store  domain.TweetStore
-	tracer trace.Tracer
-	cache  domain.TweetCache
-	cb     *gobreaker.CircuitBreaker
+	store        domain.TweetStore
+	tracer       trace.Tracer
+	cache        domain.TweetCache
+	cb           *gobreaker.CircuitBreaker
+	orchestrator *CreateEventOrchestrator
 }
 
-func NewTweetService(store domain.TweetStore, cache domain.TweetCache, tracer trace.Tracer) *TweetService {
+func NewTweetService(store domain.TweetStore, cache domain.TweetCache, tracer trace.Tracer, orchestrator *CreateEventOrchestrator) *TweetService {
 	return &TweetService{
-		store:  store,
-		cache:  cache,
-		cb:     CircuitBreaker(),
-		tracer: tracer,
+		store:        store,
+		cache:        cache,
+		cb:           CircuitBreaker(),
+		orchestrator: orchestrator,
+		tracer:       tracer,
 	}
 }
 
@@ -43,6 +48,13 @@ func (service *TweetService) GetAll(ctx context.Context) ([]domain.Tweet, error)
 	return service.store.GetAll(ctx)
 }
 
+func (service *TweetService) GetOne(ctx context.Context, tweetID string) (*domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetOne")
+	defer span.End()
+
+	return service.store.GetOne(ctx, tweetID)
+}
+
 func (service *TweetService) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetTweetsByUser")
 	defer span.End()
@@ -51,7 +63,6 @@ func (service *TweetService) GetTweetsByUser(ctx context.Context, username strin
 }
 
 func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error) {
-
 	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
 	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
 	followServiceRequest.Header.Add("Authorization", token)
@@ -108,10 +119,13 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	ctx, span := service.tracer.Start(ctx, "TweetService.Post")
 	defer span.End()
 
+	log.Printf("Ad je : %t", tweet.Advertisement)
+
 	tweet.ID, _ = gocql.RandomUUID()
 
 	tweet.Image = false
 	if len(*image) != 0 {
+		log.Printf("USLO U SLIKU")
 		err := service.saveImage(tweet.ID, *image)
 		if err != nil {
 			return nil, err
@@ -133,11 +147,55 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	return service.store.Post(ctx, tweet)
 }
 
-func (service *TweetService) Favorite(ctx context.Context, id string, username string) (int, error) {
+func (service *TweetService) Favorite(ctx context.Context, id string, username string, isAd bool) (int, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.Favorite")
 	defer span.End()
 
-	return service.store.Favorite(ctx, id, username)
+	status, err := service.store.Favorite(ctx, id, username)
+	if err != nil {
+		log.Printf("Error in tweet_service Favorite(): %s", err.Error())
+		return status, err
+	}
+
+	if isAd {
+		event := events.Event{
+			TweetID:   id,
+			Type:      "",
+			Timestamp: time.Now().Unix(),
+			Timespent: 0,
+		}
+		if status == 200 {
+			event.Type = "Unliked"
+		} else {
+			event.Type = "Liked"
+		}
+		err = service.orchestrator.Start(ctx, event)
+		if err != nil {
+			return status, err
+		}
+	}
+
+	return status, nil
+}
+
+func (service *TweetService) TimeSpentOnAd(ctx context.Context, timespent *domain.Timespent) error {
+	ctx, span := service.tracer.Start(ctx, "TweetService.TimeSpentOnAd")
+	defer span.End()
+	log.Printf("TIMESPENT IN tweet_service.TimeSpentOnAd: %s", timespent)
+	event := events.Event{
+		TweetID:   timespent.TweetID,
+		Type:      "Timespent",
+		Timestamp: time.Now().Unix(),
+		Timespent: timespent.Timespent,
+	}
+
+	err := service.orchestrator.Start(ctx, event)
+	if err != nil {
+		log.Printf("Error in starting orchestrator in TweetService.TimeSpentOnAd: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
@@ -164,6 +222,26 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 		return nil, err
 	}
 	return &image, nil
+}
+
+func (service *TweetService) ViewProfileFromAd(ctx context.Context, tweetID domain.TweetID) error {
+	ctx, span := service.tracer.Start(ctx, "TweetService.TimeSpentOnAd")
+	defer span.End()
+
+	event := events.Event{
+		TweetID:   tweetID.ID,
+		Type:      "ViewCount",
+		Timestamp: time.Now().Unix(),
+		Timespent: 0,
+	}
+
+	err := service.orchestrator.Start(ctx, event)
+	if err != nil {
+		log.Printf("Error in TweetService.ViewProfileFromAd: %s", err.Error())
+		return err
+	}
+	return nil
+
 }
 
 func (service *TweetService) Retweet(id string, username string) (int, error) {

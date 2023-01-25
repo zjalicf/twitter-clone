@@ -37,11 +37,3 @@ func (status Status) String() string {
 func (status Status) EnumIndex() int {
 	return int(status)
 }
-
-func (gender *Gender) String() string {
-	return [...]string{"Male", "Female", "Both"}[*gender-1]
-}
-
-func (gender *Gender) EnumIndex() int {
-	return int(*gender)
-}

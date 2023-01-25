@@ -37,8 +37,6 @@ func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, e
 	for i := 0; i < len(followings); i++ {
 		usernameList = append(usernameList, &followings[i].Username)
 	}
-	log.Println("LIST OF USERNAMES FOLLOW SERVICE: ")
-	log.Println(usernameList)
 	usernameList = append(usernameList, &username)
 	return usernameList, nil
 }
