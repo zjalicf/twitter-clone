@@ -25,7 +25,9 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 					http.Error(w, "unauthorized user", http.StatusUnauthorized)
 					return
 				}
+				log.Println(res)
 				if res {
+					log.Println("redirect")
 					next.ServeHTTP(w, r)
 				} else {
 					http.Error(w, "forbidden", http.StatusForbidden)
@@ -37,7 +39,6 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				bearer := r.Header.Get("Authorization")
 				bearerToken := strings.Split(bearer, "Bearer ")
 				tokenString := bearerToken[1]
-
 				token, err := jwt.Parse([]byte(tokenString), verifier)
 				if err != nil {
 					log.Println(err)
@@ -55,12 +56,14 @@ func Authorizer(e *casbin.Enforcer) func(next http.Handler) http.Handler {
 				}
 
 				if res {
+					log.Println("redirect")
 					next.ServeHTTP(w, r)
 				} else {
 					http.Error(w, "forbidden", http.StatusForbidden)
 					return
 				}
 			}
+
 		}
 
 		return http.HandlerFunc(fn)

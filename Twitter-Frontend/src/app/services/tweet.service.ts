@@ -28,8 +28,8 @@ import { Tweet } from "../models/tweet.model";
             return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/user/` + username)
         }
 
-        public LikeTweet(tweetID: TweetID): Observable<any> {
-            return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/favorite`, tweetID)
+        public LikeTweet(tweet: Tweet): Observable<any> {
+            return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/favorite`, tweet)
         }
 
         public GetLikesByTweet(tweetID: string): Observable<Favorite[]> {

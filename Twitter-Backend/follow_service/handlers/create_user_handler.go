@@ -19,6 +19,7 @@ func NewCreateUserCommandHandler(followService *application.FollowService, publi
 		replyPublisher:    publisher,
 		commandSubscriber: subscriber,
 	}
+	//prijava za slusanje komandi
 	err := o.commandSubscriber.Subscribe(o.handle)
 	if err != nil {
 		return nil, err
@@ -26,6 +27,7 @@ func NewCreateUserCommandHandler(followService *application.FollowService, publi
 	return o, nil
 }
 
+//hendlovanje komandama
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
 	user := handler.followService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}

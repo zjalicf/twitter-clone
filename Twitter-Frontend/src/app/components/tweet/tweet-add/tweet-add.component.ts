@@ -50,7 +50,8 @@ export class TweetAddComponent implements OnInit {
     let addTweet: AddTweetDTO = new AddTweetDTO();
 
     addTweet.text = this.formGroup.get("text")?.value;
-
+    addTweet.advertisement = true
+    console.log(addTweet)
     console.log(JSON.stringify(addTweet))
     this.formData.append("json", JSON.stringify(addTweet))
     this.tweetService.AddTweet(this.formData)

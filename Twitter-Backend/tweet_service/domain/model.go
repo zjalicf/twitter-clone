@@ -18,6 +18,19 @@ type Tweet struct {
 	Advertisement bool       `json:"advertisement"`
 }
 
+type AdConfig struct {
+	TweetID   string `json:"tweet_id"`
+	Residence string `json:"residence"`
+	Gender    string `json:"gender"`
+	AgeFrom   int    `json:"age_from"`
+	AgeTo     int    `json:"age_to"`
+}
+
+type AdTweet struct {
+	Tweet    Tweet    `json:"tweet"`
+	AdConfig AdConfig `json:"config"`
+}
+
 type Favorite struct {
 	TweetID  gocql.UUID `json:"tweet_id"`
 	Username string     `json:"username"`
@@ -32,4 +45,10 @@ type Retweet struct {
 
 type TweetID struct {
 	ID string `json:"id"`
+}
+
+type Event struct {
+	TweetID   string
+	Type      string
+	Timestamp int
 }

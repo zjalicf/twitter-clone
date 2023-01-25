@@ -16,7 +16,6 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 	orchestrator := &CreateUserOrchestrator{
 		commandPublisher: publisher,
 		replySubscriber:  subscriber,
-		//authService:      service,
 	}
 	err := orchestrator.replySubscriber.Subscribe(orchestrator.handle)
 	if err != nil {
@@ -62,7 +61,6 @@ func (o *CreateUserOrchestrator) Start(user *domain.User) error {
 		User: user1,
 		Type: events.UpdateAuth,
 	}
-	log.Println("PUBLISH EVENT UPDATE AUTH")
 
 	return o.commandPublisher.Publish(event)
 }
