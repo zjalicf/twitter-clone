@@ -15,4 +15,7 @@ type FollowRequestStore interface {
 	FollowExist(followRequest *FollowRequest) (bool, error)
 	UpdateRequest(request *FollowRequest) error
 	SaveAd(ad *Ad) error
+	CountFollowings(username string) (int, error)
+	RecommendWithFollowings(username string) ([]string, error)
+	RecommendationWithoutFollowings(username string, recommends []string) ([]string, error)
 }

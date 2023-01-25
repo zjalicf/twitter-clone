@@ -432,6 +432,112 @@ func (store *FollowNeo4JStore) SaveAd(ad *domain.Ad) error {
 	return nil
 }
 
+func (store *FollowNeo4JStore) CountFollowings(username string) (int, error) {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	followingsCount, err := session.ExecuteWrite(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				"MATCH (u:User)-[:FOLLOWS]->(u2:User) "+
+					"WHERE u.username=$username "+
+					"RETURN count(u2) as count",
+				map[string]any{"username": username})
+			if err != nil {
+				return nil, err
+			}
+
+			if result.Next(ctx) {
+				count, _ := result.Record().Get("count")
+				return count, nil
+			}
+
+			return nil, result.Err()
+		})
+	if err != nil {
+		return 0, err
+	}
+	log.Printf("COUNT FOLLOWINGS: %s", followingsCount.(int64))
+	return int(followingsCount.(int64)), nil
+}
+
+func (store *FollowNeo4JStore) RecommendWithFollowings(username string) ([]string, error) {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	users, err := session.ExecuteWrite(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				"OPTIONAL MATCH (u1:User)-[:FOLLOWS]->(u2:User)-[:FOLLOWS]->(u4:User) "+
+					"WHERE u1.username = $username AND NOT u1 = u4 AND NOT exists((u1)-[:FOLLOWS]->(u4)) "+
+					"OPTIONAL MATCH (u1:User)-[:FOLLOWS]->(u3:User)-[:FOLLOWS]->(u4:User) "+
+					"WHERE NOT u1 = u4 AND NOT u2 = u3 "+
+					"OPTIONAL MATCH (u4:User)-[:FOLLOWS]->(u5:User) "+
+					"WHERE NOT u5 = u2 AND NOT u5 = u3 AND NOT u5 = u1 "+
+					"MATCH (u1:User)-[:FOLLOWS]->(u2:User)-[:FOLLOWS]->(u6:User) "+
+					"WHERE NOT u6 = u1 AND NOT exists((u1:User)-[:FOLLOWS]->(u6:User)) "+
+					"WITH collect(distinct u4.username) + collect(distinct u5.username) + "+
+					"collect(distinct u6.username) AS undistUsernames "+
+					"UNWIND undistUsernames AS distUsernames "+
+					//"RETURN DISTINCT distUsernames as usernames",
+					"RETURN collect(DISTINCT distUsernames) as usernames",
+				map[string]any{"username": username})
+			if err != nil {
+				return nil, err
+			}
+
+			var users []string
+			if result.Next(ctx) {
+				usernames, _ := result.Record().Get("usernames")
+				for _, username := range usernames.([]interface{}) {
+					users = append(users, username.(string))
+				}
+			}
+
+			return users, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	log.Println("Recommends with followers: %s", users.([]string))
+	return users.([]string), nil
+}
+
+func (store *FollowNeo4JStore) RecommendationWithoutFollowings(username string, recommends []string) ([]string, error) {
+	ctx := context.Background()
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	users, err := session.ExecuteWrite(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				"MATCH (u1:User), (u2:User) "+
+					"WHERE u2.username = $username AND NOT u1.username IN $recommends AND NOT u1 = u2 "+
+					"AND u1.residence = u2.residence AND u2.age-3 <= u1.age <= u2.age+3 "+
+					"AND NOT exists((u1:User)-[:FOLLOWS]->(u2:User)) "+
+					"RETURN u1.username as username",
+				map[string]any{"username": username, "recommends": recommends})
+			if err != nil {
+				return nil, err
+			}
+
+			var users []string
+			if result.Next(ctx) {
+				username, _ := result.Record().Get("username")
+				users = append(users, username.(string))
+			}
+
+			return users, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	log.Println("Recommends without followers: %s", users.([]string))
+	return users.([]string), nil
+}
+
 func (store *FollowNeo4JStore) HandleRequest() {
 	//TODO implement me
 	panic("implement me")

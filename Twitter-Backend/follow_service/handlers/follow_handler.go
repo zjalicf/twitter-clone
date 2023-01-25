@@ -40,6 +40,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
+	router.HandleFunc("/recommendations/{username}", handler.GetRecommendationsForUser).Methods("GET")
 
 	http.Handle("/", router)
 	log.Println("Successful")
@@ -81,6 +82,29 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 
 	log.Printf("username is: %s", username)
 	users, err := handler.service.GetFollowingsOfUser(username)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(users, writer)
+
+}
+
+func (handler *FollowHandler) GetRecommendationsForUser(writer http.ResponseWriter, req *http.Request) {
+	//token, _ := authorization.GetToken(req)
+	//claims := authorization.GetMapClaims(token.Bytes())
+	//username := claims["username"]
+	vars := mux.Vars(req)
+	username, ok := vars["username"]
+
+	if !ok {
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
+	}
+
+	log.Printf("recommend handler func username is: %s", username)
+
+	users, err := handler.service.GetRecommendationsByUsername(username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
