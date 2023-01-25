@@ -32,7 +32,7 @@ export class FollowService {
   }
 
   public CreateAdd(adConfig: AdConfig): Observable<void> {
-    return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/createAd`, adConfig)
+    return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/ad`, adConfig)
   }
 
 }

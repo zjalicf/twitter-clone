@@ -110,18 +110,17 @@ export class TweetAddComponent implements OnInit {
 
     if (this.isChecked == true) {
 
+      addTweet.advertisement = true
+
       if (this.advertisementFormGroup.invalid) {
-
-        addTweet.advertisement = true
         return;
-
-      }else{
-
-        addTweet.advertisement = false
-        
       }
+    }else {
+      addTweet.advertisement = false
     }
     addTweet.text = this.tweetFormGroup.get("text")?.value;
+
+    console.log(addTweet)
 
     this.formData.append("json", JSON.stringify(addTweet))
       this.tweetService.AddTweet(this.formData).subscribe({
@@ -129,14 +128,13 @@ export class TweetAddComponent implements OnInit {
 
           if (data.advertisement){
             var adConfig: AdConfig = new AdConfig()
-            adConfig.ageFrom = this.advertisementFormGroup.get("age_from")?.value
-            adConfig.ageTo = this.advertisementFormGroup.get("age_to")?.value   
+            adConfig.tweet_id = data.id
+            adConfig.age_from = this.advertisementFormGroup.get("age_from")?.value
+            adConfig.age_to = this.advertisementFormGroup.get("age_to")?.value   
             adConfig.gender = this.advertisementFormGroup.get("gender")?.value
             adConfig.residence = this.advertisementFormGroup.get("residence")?.value
             
             this.followService.CreateAdd(adConfig).subscribe()
-
-
           }
 
 

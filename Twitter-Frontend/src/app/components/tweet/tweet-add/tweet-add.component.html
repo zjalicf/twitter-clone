@@ -41,7 +41,7 @@
                                         [ngClass]="{ 'is-invalid': submittedAdvertisement && advertisementForm['age_from'].errors}">
                                     <div *ngIf="submittedAdvertisement && advertisementForm['age_from'].errors" class="invalid-feedback">
                                         <div *ngIf="advertisementForm['age_from'].errors['required']">Age is required.</div>
-                                        <div *ngIf="advertisementForm['age_from'].errors['min']">Minimum age is 1.</div>
+                                        <div *ngIf="advertisementForm['age_from'].errors['min']">Minimum age is 18.</div>
                                         <div *ngIf="advertisementForm['age_from'].errors['max']">Maximum age is 100.</div>
                                     </div> 
                                 </div>

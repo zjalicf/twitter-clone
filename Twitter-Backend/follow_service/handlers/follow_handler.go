@@ -225,6 +225,8 @@ func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *ht
 }
 
 func (handler *FollowHandler) SaveAd(writer http.ResponseWriter, req *http.Request) {
+	log.Println("Uslo u handler")
+
 	var request domain.Ad
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {

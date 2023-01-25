@@ -1,15 +1,15 @@
 export class AdConfig {
-    tweetID:   string = ""
+    tweet_id:   string = ""
 	residence: string = ""
 	gender:    string = ""
-	ageFrom:   number = 0 
-	ageTo:     number = 0
+	age_from:   number = 0 
+	age_to:     number = 0
 
-    AdConfig(tweetID: string, residence: string, gender: string, ageFrom: number, ageTo: number) {
-        this.tweetID = tweetID
+    AdConfig(tweet_id: string, residence: string, gender: string, age_from: number, age_to: number) {
+        this.tweet_id = tweet_id
         this.residence = residence;
         this.gender = gender;
-        this.ageFrom = ageFrom;
-        this.ageTo = ageTo;
+        this.age_from = age_from;
+        this.age_to = age_to;
     }
 }
