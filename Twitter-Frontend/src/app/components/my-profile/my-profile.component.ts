@@ -18,12 +18,16 @@ export class MyProfileComponent implements OnInit {
 
   user: User = new User();
   tweets: Tweet[] = [];
+  isBusinessBool: boolean = false
     
   ngOnInit(): void {
     this.userService.GetMe()
       .subscribe({
         next: (data: User) => {
           this.user = data;
+          if (this.user.userType == "Business"){
+            this.isBusinessBool = true
+          }
         },
         error: (error) => {
           console.log(error);
@@ -49,5 +53,6 @@ export class MyProfileComponent implements OnInit {
   UpdateVisibility() {
     this.userService.ChangeVisibility().subscribe()
   }
+
 
 }

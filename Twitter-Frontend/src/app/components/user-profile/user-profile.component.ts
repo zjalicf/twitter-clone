@@ -71,7 +71,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   isPrivate(): boolean {
-    if (this.user.visibility == true) {
+    if (this.user.privacy == true) {
       return true;
     } else {
       return false;
@@ -81,7 +81,7 @@ export class UserProfileComponent implements OnInit {
   SendRequest(user: User){
     var followReq = new FollowRequest()
     followReq.receiver = user.username
-    if (user.visibility){
+    if (user.privacy){
       this.followService.SendRequest("private", followReq).subscribe(
         data => {
           console.log(data.status)
