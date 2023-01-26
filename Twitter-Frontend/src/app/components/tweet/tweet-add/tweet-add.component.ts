@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { AddTweetDTO } from 'src/app/dto/addTweetDTO';
 import { AdConfig } from 'src/app/models/adConfig';
 import { Tweet } from 'src/app/models/tweet.model';
-import { TweetAd } from 'src/app/models/tweetAd';
 import { User } from 'src/app/models/user.model';
 import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';

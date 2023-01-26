@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TimespentDTO } from 'src/app/dto/TimespentDTO';
 import { TweetID } from 'src/app/dto/tweetIdDTO';
 import { Favorite } from 'src/app/models/favorite.model';

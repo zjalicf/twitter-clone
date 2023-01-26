@@ -1,5 +1,4 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { User } from 'src/app/models/user.model';
 import { FollowService } from 'src/app/services/follow.service';

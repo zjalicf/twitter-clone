@@ -43,7 +43,6 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		}
 
 	case events.RollbackFollow:
-		//TODO
 		_ = handler.followService.DeleteUser(&user.ID)
 		log.Println("Rollback follow")
 		reply.Type = events.FollowFailed

@@ -28,7 +28,6 @@ export class TweetLikesDialogComponent {
   onUsernameClick(username: string): void {
     this.router.navigate(["/View-Profile/" + username])
     this.dialogRef.close("username");
-    // window.location.reload();
   }
 
 }

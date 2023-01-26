@@ -5,12 +5,8 @@ import { User } from 'src/app/models/user.model';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 import { MatDialog } from '@angular/material/dialog';
-import { MatDialogModule } from '@angular/material/dialog';
 import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
 import { Favorite } from 'src/app/models/favorite.model';
-import { Router } from '@angular/router';
-import { HttpHeaderResponse } from '@angular/common/http';
-import { async } from '@angular/core/testing';
 
 @Component({
   selector: 'app-tweet-item',

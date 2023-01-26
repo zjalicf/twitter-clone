@@ -35,7 +35,8 @@ type Server struct {
 }
 
 const (
-	QueueGroup = "auth_service"
+	QueueGroup  = "auth_service"
+	LogFilePath = "/app/logs/application.log"
 )
 
 func NewServer(config *config.Config) *Server {
@@ -45,7 +46,7 @@ func NewServer(config *config.Config) *Server {
 }
 
 func initLogger() {
-	file, err := os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(LogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -87,7 +88,7 @@ func (server *Server) Start() {
 	defer func(mongoClient *mongo.Client, ctx context.Context) {
 		err := mongoClient.Disconnect(ctx)
 		if err != nil {
-
+			log.Println(err)
 		}
 	}(mongoClient, context.Background())
 

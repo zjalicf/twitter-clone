@@ -537,8 +537,3 @@ func (store *FollowNeo4JStore) RecommendationWithoutFollowings(username string, 
 	log.Println("Recommends without followers: %s", users.([]string))
 	return users.([]string), nil
 }
-
-func (store *FollowNeo4JStore) HandleRequest() {
-	//TODO implement me
-	panic("implement me")
-}

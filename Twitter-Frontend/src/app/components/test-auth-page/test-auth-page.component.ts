@@ -24,12 +24,4 @@ export class TestAuthPageComponent implements OnInit {
     }
   }
 
-  // isBusiness(): boolean {
-  //   if (currentUserRole == "Business") {
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // }
-
 }

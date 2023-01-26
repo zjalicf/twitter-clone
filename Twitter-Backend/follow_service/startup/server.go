@@ -34,7 +34,8 @@ func NewServer(config *config.Config) *Server {
 }
 
 const (
-	QueueGroup = "follow_service"
+	QueueGroup  = "follow_service"
+	LogFilePath = "/app/logs/application.log"
 )
 
 func (server *Server) initNeo4JDriver() *neo4j.DriverWithContext {
@@ -53,7 +54,7 @@ func (server *Server) initFollowStore(driver *neo4j.DriverWithContext) domain.Fo
 }
 
 func initLogger() {
-	file, err := os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(LogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Fatal(err)
 	}

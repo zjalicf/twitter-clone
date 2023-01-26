@@ -57,7 +57,6 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		}
 
 	case events.RollbackAuth:
-		//TODO
 		_ = handler.authService.DeleteUserByID(context.TODO(), user.ID)
 		reply.Type = events.UnknownReply
 		fmt.Println("Rollback auth")

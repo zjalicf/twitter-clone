@@ -40,7 +40,7 @@ import { FollowRequestItemComponent } from './components/follow-request/follow-r
 import { FollowRequestListComponent } from './components/follow-request/follow-request-list/follow-request-list.component';
 import { TweetLikesDialogComponent } from './components/tweet/tweet-likes-dialog/tweet-likes-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   declarations: [

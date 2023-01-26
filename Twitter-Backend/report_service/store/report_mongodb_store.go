@@ -16,6 +16,7 @@ const (
 	DATABASE           = "report_mongo"
 	COLLECTION_DAILY   = "daily_reports"
 	COLLECTION_MONTHLY = "monthly_reports"
+	UnknownEventError  = "Unknown event type"
 )
 
 type ReportMongoDBStore struct {
@@ -75,7 +76,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 		} else if event.Type == "ViewCount" {
 			report.ViewCount++
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 
 		_, err = store.dailyReports.InsertOne(ctx, report)
@@ -97,7 +98,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			//view update
 			oneDaily.ViewCount = oneDaily.ViewCount + 1
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 
 		_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"_id": oneDaily.ID}, bson.M{"$set": oneDaily})
@@ -130,7 +131,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 		} else if event.Type == "ViewCount" {
 			report.ViewCount++
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 		_, err = store.monthlyReports.InsertOne(ctx, report)
 		if err != nil {
@@ -153,7 +154,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			//view update
 			oneMonthly.ViewCount = oneMonthly.ViewCount + 1
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 		_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"_id": oneMonthly.ID}, bson.M{"$set": oneMonthly})
 		if err != nil {
@@ -194,30 +195,7 @@ func (store *ReportMongoDBStore) filterOneDaily(filter interface{}) (user *domai
 	return
 }
 
-func (store *ReportMongoDBStore) UpdateOneDaily(filter interface{}) (user *domain.Report, err error) {
-	result := store.dailyReports.FindOne(context.TODO(), filter)
-	err = result.Decode(&user)
-	return
-}
-
-func (store *ReportMongoDBStore) filterMonthly(filter interface{}) ([]*domain.Report, error) {
-	cursor, err := store.monthlyReports.Find(context.TODO(), filter)
-	defer cursor.Close(context.TODO())
-
-	if err != nil {
-		log.Printf("Error in report_mongodb filter() Unlike monthly: %s", err.Error())
-		return nil, err
-	}
-	return decode(cursor)
-}
-
 func (store *ReportMongoDBStore) filterOneMonthly(filter interface{}) (user *domain.Report, err error) {
-	result := store.monthlyReports.FindOne(context.TODO(), filter)
-	err = result.Decode(&user)
-	return
-}
-
-func (store *ReportMongoDBStore) UpdateOneMonthly(filter interface{}) (user *domain.Report, err error) {
 	result := store.monthlyReports.FindOne(context.TODO(), filter)
 	err = result.Decode(&user)
 	return

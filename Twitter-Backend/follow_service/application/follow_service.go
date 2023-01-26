@@ -46,7 +46,6 @@ func (service *FollowService) GetRequestsForUser(username string) ([]*domain.Fol
 }
 
 func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string, visibility bool) error {
-
 	request.ID = uuid.New().String()
 	request.Requester = username
 
@@ -123,10 +122,6 @@ func (service *FollowService) DeleteUser(id *string) error {
 
 func (service *FollowService) DeclineRequest(id *string) error {
 	return service.store.DeclineRequest(id)
-}
-
-func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) error {
-	return service.store.SaveRequest(followRequest)
 }
 
 func (service *FollowService) SaveAd(ad *domain.Ad) error {

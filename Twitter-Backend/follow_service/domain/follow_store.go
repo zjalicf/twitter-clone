@@ -11,7 +11,6 @@ type FollowRequestStore interface {
 	SaveFollow(request *FollowRequest) error
 	AcceptRequest(id *string) (*FollowRequest, error)
 	DeclineRequest(id *string) error
-	//HandleRequest()
 	FollowExist(followRequest *FollowRequest) (bool, error)
 	UpdateRequest(request *FollowRequest) error
 	SaveAd(ad *Ad) error

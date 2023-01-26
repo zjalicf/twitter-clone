@@ -34,11 +34,12 @@ type Server struct {
 }
 
 const (
-	QueueGroup = "report_service"
+	QueueGroup  = "report_service"
+	LogFilePath = "/app/logs/application.log"
 )
 
 func initLogger() {
-	file, err := os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(LogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		logrus.Fatal(err)
 	}
