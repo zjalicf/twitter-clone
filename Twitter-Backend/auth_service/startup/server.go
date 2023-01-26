@@ -123,7 +123,7 @@ func (server *Server) Start() {
 	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer)
 
 	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber, tracer)
-	authHandler := server.initAuthHandler(authService, tracer)
+	authHandler := server.initAuthHandler(authService, tracer, Logger)
 
 	server.start(authHandler)
 }
@@ -158,8 +158,8 @@ func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthC
 	return application.NewAuthService(store, cache, orchestrator, tracer)
 }
 
-func (server *Server) initAuthHandler(service *application.AuthService, tracer trace.Tracer) *handlers.AuthHandler {
-	return handlers.NewAuthHandler(service, tracer)
+func (server *Server) initAuthHandler(service *application.AuthService, tracer trace.Tracer, logging *logrus.Logger) *handlers.AuthHandler {
+	return handlers.NewAuthHandler(service, tracer, logging)
 }
 
 //saga

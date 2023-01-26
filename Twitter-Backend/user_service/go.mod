@@ -6,6 +6,7 @@ require (
 	github.com/casbin/casbin v1.9.1
 	github.com/cristalhq/jwt/v4 v4.0.2
 	github.com/gorilla/mux v1.8.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119211805-4db3ea2db008
 	go.mongodb.org/mongo-driver v1.11.1
 	go.opentelemetry.io/otel v1.11.2

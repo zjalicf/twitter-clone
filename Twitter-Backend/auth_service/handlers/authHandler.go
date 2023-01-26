@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
@@ -26,12 +27,14 @@ type AuthHandler struct {
 	service *application.AuthService
 	store   *store.AuthMongoDBStore
 	tracer  trace.Tracer
+	logging *logrus.Logger
 }
 
-func NewAuthHandler(service *application.AuthService, tracer trace.Tracer) *AuthHandler {
+func NewAuthHandler(service *application.AuthService, tracer trace.Tracer, logging *logrus.Logger) *AuthHandler {
 	return &AuthHandler{
 		service: service,
 		tracer:  tracer,
+		logging: logging,
 	}
 }
 
@@ -214,6 +217,8 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request) {
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Login")
 	defer span.End()
+
+	handler.logging.Println("Login")
 
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)

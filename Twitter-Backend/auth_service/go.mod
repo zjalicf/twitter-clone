@@ -9,6 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230122175218-86cc05035eaa
 	go.mongodb.org/mongo-driver v1.11.1
 	go.opentelemetry.io/otel v1.11.2

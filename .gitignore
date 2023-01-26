@@ -1,5 +1,9 @@
 /certs
-Twitter-Backend/logs
+Twitter-Backend/tweet_service/logs
+Twitter-Backend/auth_service/logs
+Twitter-Backend/user_service/logs
+Twitter-Backend/follow_service/logs
+Twitter-Backend/report_service/logs
 
 # Binaries for programs and plugins
 *.exe
