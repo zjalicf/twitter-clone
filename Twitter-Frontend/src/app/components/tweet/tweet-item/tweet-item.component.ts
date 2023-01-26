@@ -31,12 +31,10 @@ export class TweetItemComponent implements OnInit {
   isLiked: boolean = false;
   isRetweeted: boolean = false;
   liked: string = "favorite_border";
+  retweeted: string = "star_border"
   isThatMeLoggedIn: boolean = false;
 
   ngOnInit(): void {
-
-    
-
     this.totalLikes = this.tweet.favorite_count;
 
     if(this.tweet.image) {
@@ -48,8 +46,6 @@ export class TweetItemComponent implements OnInit {
         }
       });
     }
-
-    
 
     this.tweetService.GetLikesByTweet(this.tweet.id)
       .subscribe({
@@ -93,7 +89,6 @@ export class TweetItemComponent implements OnInit {
   }
 
   likeTweet(tweet: Tweet) {
-
     this.tweetID.id = tweet.id
     this.tweetService.LikeTweet(this.tweet).subscribe(
       {
@@ -127,7 +122,25 @@ export class TweetItemComponent implements OnInit {
   }
 
   retweet(tweet: Tweet) {
-    alert("retweeted")
+    this.tweetID.id = tweet.id
+    this.tweetService.Retweet(this.tweet).subscribe(
+      {
+        next: (data) => {
+          if (data == 201) {
+            this.isRetweeted = true
+          } else {
+            this.isRetweeted = false
+          }
+        }
+      });
+  }
+
+  isAnAd(): boolean {
+    if (this.tweet.advertisement) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   openDialog(): void {

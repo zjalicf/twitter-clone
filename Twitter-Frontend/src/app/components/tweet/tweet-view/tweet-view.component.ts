@@ -160,4 +160,12 @@ export class TweetViewComponent implements OnInit, OnDestroy {
     console.log(event)
   }
 
+  isAnAd(): boolean {
+    if (this.tweet.advertisement) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
 }

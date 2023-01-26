@@ -24,6 +24,7 @@ import { TweetListComponent } from './components/tweet/tweet-list/tweet-list.com
 import { RegisterRegularComponent } from './components/register-regular/register-regular.component';
 import { RegisterBusinessComponent } from './components/register-business/register-business.component';
 import { LoginComponent } from './components/login/login.component';
+import {MatDatepickerModule} from '@angular/material/datepicker';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { VerifyAccountComponent } from './components/verify-account/verify-account.component';
 import { RecoveryEnterMailComponent } from './components/recovery-enter-mail/recovery-enter-mail.component';
@@ -86,7 +87,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatDialogModule,
     BrowserAnimationsModule,
     MatSnackBarModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatDatepickerModule
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,
