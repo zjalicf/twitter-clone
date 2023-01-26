@@ -99,7 +99,6 @@ export class TweetViewComponent implements OnInit, OnDestroy {
   }
 
   
-
   likeTweet(tweet: Tweet) {
 
     this.tweetID.id = tweet.id
