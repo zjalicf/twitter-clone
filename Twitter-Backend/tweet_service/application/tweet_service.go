@@ -244,8 +244,36 @@ func (service *TweetService) ViewProfileFromAd(ctx context.Context, tweetID doma
 
 }
 
-func (service *TweetService) Retweet(id string, username string) (int, error) {
-	return service.store.Retweet(id, username)
+func (service *TweetService) Retweet(ctx context.Context, id string, username string) (int, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.Retweet")
+	defer span.End()
+
+	tweet, err := service.store.GetOne(ctx, id)
+	if err != nil {
+		log.Printf("Error in getting one tweet in TweetService.Retweet: %s", err.Error())
+		return 500, err
+	}
+
+	newUUID, status, err := service.store.Retweet(ctx, id, username)
+	if err != nil {
+		return status, err
+	}
+
+	if tweet.Image {
+		image, err := service.store.GetTweetImage(ctx, tweet.ID.String())
+		if err != nil {
+			log.Printf("Error in getting image of root tweet in TweetService.Retweet: %s", err.Error())
+			return 500, err
+		}
+
+		err = service.saveImage(newUUID, image)
+		if err != nil {
+			log.Printf("Error in saving image of root tweet in retweet in TweetService.Retweet: %s", err.Error())
+			return 500, err
+		}
+	}
+
+	return status, nil
 }
 
 func CircuitBreaker() *gobreaker.CircuitBreaker {

@@ -13,7 +13,7 @@ type TweetStore interface {
 	Post(ctx context.Context, tweet *Tweet) (*Tweet, error)
 	Favorite(ctx context.Context, id string, username string) (int, error)
 	GetLikesByTweet(ctx context.Context, tweetID string) ([]*Favorite, error)
-	Retweet(id string, username string) (int, error)
+	Retweet(ctx context.Context, tweetID string, username string) (gocql.UUID, int, error)
 	SaveImage(tweetID gocql.UUID, imageBytes []byte) error
 	GetTweetImage(ctx context.Context, id string) ([]byte, error)
 	GetOne(ctx context.Context, tweetID string) (*Tweet, error)

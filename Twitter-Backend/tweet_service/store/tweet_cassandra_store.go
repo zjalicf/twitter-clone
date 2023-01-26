@@ -424,10 +424,13 @@ func (sr *TweetRepo) GetTweetImage(ctx context.Context, id string) ([]byte, erro
 	return byteImage, nil
 }
 
-func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
+func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username string) (*gocql.UUID, int, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.Retweet")
+	defer span.End()
+
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
-		return -1, nil
+		return nil, 500, nil
 	}
 
 	query := fmt.Sprintf(`SELECT * FROM retweet WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
@@ -440,13 +443,13 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 		err = scanner.Scan(&retweet.TweetID, &retweet.Username, &retweet.ID)
 		if err != nil {
 			sr.logger.Println(err)
-			return 502, err
+			return nil, 502, err
 		}
 		retweets = append(retweets, &retweet)
 	}
 
 	if len(retweets) != 0 {
-		return 406, fmt.Errorf(errors.RetweetAlreadyExist)
+		return nil, 406, fmt.Errorf(errors.RetweetAlreadyExist)
 	}
 
 	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
@@ -460,7 +463,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 		tweetUsername = tweet.Username
 		if err != nil {
 			sr.logger.Println(err)
-			return 500, err
+			return nil, 500, err
 		}
 
 		tweets = append(tweets, &tweet)
@@ -468,7 +471,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 
 	if len(tweets) == 0 {
 		sr.logger.Println("No such tweet")
-		return 500, nil
+		return nil, 500, nil
 	}
 
 	retweetCount := tweets[0].RetweetCount + 1
@@ -482,7 +485,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 		insert, retweetID.String(), tweets[0].ID.String(), username).Exec()
 	if err != nil {
 		sr.logger.Println(err)
-		return 502, err
+		return nil, 502, err
 	}
 
 	err = sr.session.Query(
@@ -490,7 +493,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 
 	if err != nil {
 		sr.logger.Println(err)
-		return 502, err
+		return nil, 502, err
 	}
 
 	err = sr.session.Query(
@@ -499,7 +502,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 
 	if err != nil {
 		sr.logger.Println(err)
-		return 502, err
+		return nil, 502, err
 	}
 
 	thisTweet := tweets[0]
@@ -507,7 +510,7 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 	newID, err := gocql.RandomUUID()
 	if err != nil {
 		sr.logger.Println(err.Error())
-		return 502, err
+		return nil, 502, err
 	}
 
 	timeNow := time.Now().Unix()
@@ -528,9 +531,9 @@ func (sr *TweetRepo) Retweet(tweetID string, username string) (int, error) {
 
 	if err != nil {
 		sr.logger.Println(err.Error())
-		return 502, err
+		return nil, 502, err
 	}
 
-	return 200, nil
+	return &newID, 200, nil
 
 }
