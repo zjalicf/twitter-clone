@@ -13,8 +13,8 @@ import { UserService } from 'src/app/services/user.service';
 })
 export class MainPageComponent implements OnInit {
 
-  tweets: Tweet[] = []
-  user: User = new User()
+  tweets: Tweet[] = [];
+  user: User = new User();
   recommendations: string[] = [];
 
   constructor(private tweetService: TweetService,
@@ -35,6 +35,19 @@ export class MainPageComponent implements OnInit {
           console.log(error);
         },
         complete: () => {
+
+          this.followService.Recommendations()
+            .subscribe({
+              next: (data) => {
+                this.recommendations = data;
+                console.log(this.recommendations);
+              },
+              error: (error) => {
+                this.openSnackBar("The service is currently unavailable. Try again later.", "")
+                console.log(error);
+              }
+            });
+            
           this.tweetService.GetHomeFeed()
             .subscribe({
               next: (data) => {
@@ -46,16 +59,7 @@ export class MainPageComponent implements OnInit {
               }
             });
           
-          this.followService.Recommendations()
-            .subscribe({
-              next: (data) => {
-                this.recommendations = data;
-              },
-              error: (error) => {
-                this.openSnackBar("The service is currently unavailable. Try again later.", "")
-                console.log(error);
-              }
-            });
+          
         }
       });
   }

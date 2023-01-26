@@ -48,7 +48,7 @@ export class RegisterRegularComponent implements OnInit {
       lastName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), Validators.pattern('[-_a-zA-Z]*')]],
       gender: ['', [Validators.required]],
       age: ['', [Validators.required, Validators.min(1), Validators.max(100)]],
-      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35), Validators.pattern('[-_a-zA-Z0-9]*')]],
+      residence: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(35), Validators.pattern('[a-zA-Z ]*')]],//Validators.pattern('[-_a-zA-Z]*')
       email: ['', [Validators.required, Validators.email, Validators.minLength(3), Validators.maxLength(35)]],
       username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(30), Validators.pattern('[-_a-zA-Z0-9]*')]],
       password: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(30), PasswordStrenghtValidator(), Validators.pattern('[-_a-zA-Z0-9]*')]],
