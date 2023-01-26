@@ -12,6 +12,15 @@ type User struct {
 	Username  string `json:"username"`
 	Age       int    `json:"age"`
 	Residence string `json:"residence"`
+	Gender    string `json:"gender"`
+}
+
+type Ad struct {
+	TweetID   string `json:"tweet_id"`
+	AgeFrom   int    `json:"age_from"`
+	AgeTo     int    `json:"age_to"`
+	Gender    string `json:"gender"`
+	Residence string `json:"residence"`
 }
 
 type Status int

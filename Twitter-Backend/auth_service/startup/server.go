@@ -122,7 +122,7 @@ func (server *Server) Start() {
 
 	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer)
 
-	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber)
+	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber, tracer)
 	authHandler := server.initAuthHandler(authService, tracer)
 
 	server.start(authHandler)
@@ -192,8 +192,8 @@ func (server *Server) initCreateUserOrchestrator(publisher saga.Publisher, subsc
 	return orchestrator
 }
 
-func (server *Server) initCreateUserHandler(service *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber) {
-	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+func (server *Server) initCreateUserHandler(service *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber, tracer)
 	if err != nil {
 		log.Fatal(err)
 	}

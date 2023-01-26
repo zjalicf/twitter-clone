@@ -4,6 +4,7 @@ import (
 	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,7 @@ var (
 	userServiceHost = os.Getenv("USER_SERVICE_HOST")
 	userServicePort = os.Getenv("USER_SERVICE_PORT")
 	smtpServer      = "smtp-mail.outlook.com"
-	smtpServerPort  = 5875
+	smtpServerPort  = 587
 	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
 	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
 )
@@ -58,7 +59,14 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
 	defer span.End()
 
-	_, err := service.store.GetOneUser(ctx, user.Username)
+	isUsernameExists, err := checkBlackList(user.Password)
+	log.Println(isUsernameExists)
+
+	if isUsernameExists {
+		return "", 55, fmt.Errorf("Password not acceptable, try another one!")
+	}
+
+	_, err = service.store.GetOneUser(ctx, user.Username)
 	if err == nil {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
@@ -117,7 +125,9 @@ func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.Obj
 	return service.store.DeleteUserByID(ctx, id)
 }
 
-func (service *AuthService) SendMail(user *domain.User) error {
+func (service *AuthService) SendMail(ctx context.Context, user *domain.User) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.SendMail")
+	defer span.End()
 
 	validationToken := uuid.New()
 	err := service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
@@ -126,7 +136,7 @@ func (service *AuthService) SendMail(user *domain.User) error {
 		return err
 	}
 
-	err = sendValidationMail(validationToken, user.Email)
+	err = service.sendValidationMail(ctx, validationToken, user.Email)
 	if err != nil {
 		log.Printf("Failed to send mail: %s", err.Error())
 		return err
@@ -135,7 +145,10 @@ func (service *AuthService) SendMail(user *domain.User) error {
 	return nil
 }
 
-func sendValidationMail(validationToken uuid.UUID, email string) error {
+func (service *AuthService) sendValidationMail(ctx context.Context, validationToken uuid.UUID, email string) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.sendValidationMail")
+	defer span.End()
+
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
 	message.SetHeader("To", email)
@@ -209,7 +222,7 @@ func (service *AuthService) ResendVerificationToken(ctx context.Context, request
 		return err
 	}
 
-	err = sendValidationMail(tokenUUID, request.UserMail)
+	err = service.sendValidationMail(ctx, tokenUUID, request.UserMail)
 	if err != nil {
 		log.Println("SEND VALIDATION MAIL PROBLEM")
 		return err
@@ -236,7 +249,7 @@ func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email
 	userID := buf.String()
 
 	recoverUUID, _ := uuid.NewUUID()
-	err := sendRecoverPasswordMail(recoverUUID, email)
+	err := service.sendRecoverPasswordMail(ctx, recoverUUID, email)
 	if err != nil {
 		return "", 500, err
 	}
@@ -270,7 +283,10 @@ func (service *AuthService) CheckRecoveryPasswordToken(ctx context.Context, requ
 	return nil
 }
 
-func sendRecoverPasswordMail(validationToken uuid.UUID, email string) error {
+func (service *AuthService) sendRecoverPasswordMail(ctx context.Context, validationToken uuid.UUID, email string) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.sendRecoverPasswordMail")
+	defer span.End()
+
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
 	message.SetHeader("To", email)
@@ -552,4 +568,25 @@ func isRegular(user *domain.User) bool {
 	}
 
 	return false
+}
+
+func checkBlackList(username string) (bool, error) {
+
+	file, err := os.Open("blacklist.txt")
+	if err != nil {
+		log.Printf("Error in authService.checkBlackList: %s", err.Error())
+		return false, err
+	}
+	defer file.Close()
+
+	blacklist := make(map[string]bool)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		blacklist[scanner.Text()] = true
+	}
+	if blacklist[username] {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

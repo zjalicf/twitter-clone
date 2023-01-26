@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
+import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -14,9 +15,11 @@ export class MainPageComponent implements OnInit {
 
   tweets: Tweet[] = []
   user: User = new User()
+  recommendations: string[] = [];
 
   constructor(private tweetService: TweetService,
     private userService: UserService,
+    private followService: FollowService,
     private _snackBar: MatSnackBar) { }
 
 
@@ -36,7 +39,17 @@ export class MainPageComponent implements OnInit {
             .subscribe({
               next: (data) => {
                 this.tweets = data;
-                console.log(this.tweets)
+              },
+              error: (error) => {
+                this.openSnackBar("The service is currently unavailable. Try again later.", "")
+                console.log(error);
+              }
+            });
+          
+          this.followService.Recommendations()
+            .subscribe({
+              next: (data) => {
+                this.recommendations = data;
               },
               error: (error) => {
                 this.openSnackBar("The service is currently unavailable. Try again later.", "")

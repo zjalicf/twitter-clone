@@ -92,6 +92,8 @@ export class RegisterRegularComponent implements OnInit {
         error: (error: HttpErrorResponse) => {
           if (error.status == 406) {
             this.openSnackBar(error.error, "Ok")
+          }else if (error.status == 302) {
+            this.openSnackBar(error.error, "Ok")
           }
         }
       });

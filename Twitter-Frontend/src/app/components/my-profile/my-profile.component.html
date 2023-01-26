@@ -10,10 +10,10 @@
         <div>
             <button class="btn btn-danger" (click)="updatePassword()">Change Password</button>
         </div>
-        <div class="toggle">
+        <div class="toggle" *ngIf="user.userType != 'Business'">
             <b class="public-text">Public</b>
-            <label class="switch">
-                <input type="checkbox" (click)="UpdateVisibility()" [checked]="user.visibility">
+            <label class="switch" >
+                <input type="checkbox" (click)="UpdateVisibility()" [checked]="user.privacy">
                 <span class="slider round"></span>
             </label>
             <b class="private-text">Private</b>

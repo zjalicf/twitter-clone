@@ -30,6 +30,11 @@
   transform: scale(1.5);
 }
 
+.star-icon {
+  transform: scale(1.5);
+  color: gold;
+}
+
 .total-likes {
   margin-left: 10px;
 }

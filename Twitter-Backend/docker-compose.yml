@@ -17,15 +17,23 @@ services:
       FOLLOW_SERVICE_HOST: ${FOLLOW_SERVICE_HOST}
       FOLLOW_SERVICE_PORT: ${FOLLOW_SERVICE_PORT}
       SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
       JAEGER_ADDRESS: ${JAEGER_ADDRESS}
       TWEET_CACHE_HOST: ${TWEET_CACHE_HOST}
       TWEET_CACHE_PORT: ${TWEET_CACHE_PORT}
+      CREATE_REPORT_COMMAND_SUBJECT: ${CREATE_REPORT_COMMAND_SUBJECT}
+      CREATE_REPORT_REPLY_SUBJECT: ${CREATE_REPORT_REPLY_SUBJECT}
     depends_on:
       jaeger:
         condition: service_started
       tweet_db:
         condition: service_healthy
       redis_db:
+        condition: service_started
+      nats:
         condition: service_started
     networks:
       - network
@@ -125,6 +133,37 @@ services:
     networks:
       - network
 
+  report_service:
+    image: report_service
+    container_name: report_service
+    build:
+      context: .
+      dockerfile: ./report_service/Dockerfile
+    restart: always
+    ports:
+      - ${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}
+    environment:
+      EVENT_DB: ${EVENT_DB}
+      REPORT_DB_HOST: ${REPORT_DB_HOST}
+      REPORT_DB_PORT: ${REPORT_DB_PORT}
+      REPORT_SERVICE_PORT: ${REPORT_SERVICE_PORT}
+      SECRET_KEY: ${SECRET_KEY}
+      NATS_HOST: ${NATS_HOST}
+      NATS_PORT: ${NATS_PORT}
+      NATS_USER: ${NATS_USER}
+      NATS_PASS: ${NATS_PASS}
+      CREATE_REPORT_COMMAND_SUBJECT: ${CREATE_REPORT_COMMAND_SUBJECT}
+      CREATE_REPORT_REPLY_SUBJECT: ${CREATE_REPORT_REPLY_SUBJECT}
+    depends_on:
+      report_db:
+        condition: service_started
+      nats:
+        condition: service_started
+      event_db:
+        condition: service_healthy
+    networks:
+      - network
+
   api_gateway:
     build:
       context: ./api_gateway/
@@ -150,11 +189,31 @@ services:
     # Docker healthcheck - checks if database is "alive"
     healthcheck:
       test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 15
     volumes:
       - cassandra_store:/var/lib/cassandra/data
+    networks:
+      - network
+
+  event_db:
+    image: cassandra
+    container_name: event_db
+    restart: always
+    ports:
+      - "9043:9043"
+    environment:
+      - CASSANDRA_START_RPC=true
+      - CASSANDRA_NATIVE_TRANSPORT_PORT=9042
+    # Docker healthcheck - checks if database is "alive"
+    healthcheck:
+      test: [ "CMD-SHELL", "cqlsh -e 'describe cluster'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - event_store:/var/lib/cassandra/data
     networks:
       - network
 
@@ -164,6 +223,8 @@ services:
     restart: on-failure
     networks:
       - network
+    volumes:
+      - user_db:/data/db
 
   auth_db:
     image: mongo
@@ -171,13 +232,17 @@ services:
     restart: on-failure
     networks:
       - network
+    volumes:
+      - auth_db:/data/db
 
-#  follow_db:
-#    image: mongo
-#    container_name: follow_db
-#    restart: on-failure
-#    networks:
-#      - network
+  report_db:
+    image: mongo
+    container_name: report_db
+    restart: on-failure
+    networks:
+      - network
+    volumes:
+      - report_db:/data/db
 
   follow_db:
     image: neo4j
@@ -265,6 +330,10 @@ volumes:
   auth_cache:
     driver: local
   redis_data:
+  user_db:
+  auth_db:
+  report_db:
+  event_store:
 
 networks:
   network:

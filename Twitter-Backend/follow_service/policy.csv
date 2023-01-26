@@ -17,4 +17,7 @@ p, Business, /declineRequest/*, PUT
 p, Regular, /followings, GET
 p, Business, /followings, GET
 p, NotLoggedIn, /users, POST
-
+p, Regular, /recommendations/*, GET
+p, Business, /recommendations/*, GET
+p, NotLoggedIn, /recommendations/*, GET
+p, Business, /ad, POST

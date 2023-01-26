@@ -1,6 +1,8 @@
 package domain
 
+import "context"
+
 type TweetCache interface {
-	PostCacheData(key string, value string) error
-	GetCachedValue(key string) (string, error)
+	PostCacheData(ctx context.Context, key string, value *[]byte) error
+	GetCachedValue(ctx context.Context, key string) (*[]byte, error)
 }

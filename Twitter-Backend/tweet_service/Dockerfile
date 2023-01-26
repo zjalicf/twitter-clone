@@ -9,6 +9,7 @@ FROM alpine:latest
 WORKDIR /root/
 COPY --from=builder /app/main .
 COPY /rbac/auth_model.conf/ .
+COPY /logs/application.log /app/logs/
 COPY /tweet_service/policy.csv .
 EXPOSE 8000
 CMD ["./main"]
