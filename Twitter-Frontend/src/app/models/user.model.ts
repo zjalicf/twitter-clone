@@ -10,9 +10,9 @@ export class User {
     email: string = "";
     website: string = "";
     userType: string = "";
-    visibility: boolean = true;
+    privacy: boolean = true;
 
-    User(firstName: string, lastName: string, gender: string, age: number, residence: string, username: string, password: string, companyName: string, email: string, website: string, userType: string, visibility: boolean) {
+    User(firstName: string, lastName: string, gender: string, age: number, residence: string, username: string, password: string, companyName: string, email: string, website: string, userType: string, privacy: boolean) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.gender = gender;
@@ -24,6 +24,6 @@ export class User {
         this.email = email;
         this.website = website;
         this.userType = userType;
-        this.visibility = visibility
+        this.privacy = privacy
     }
 }
