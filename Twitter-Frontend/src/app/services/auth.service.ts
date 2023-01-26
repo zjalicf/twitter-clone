@@ -1,7 +1,6 @@
-import { VerticalConnectionPos } from "@angular/cdk/overlay";
-import { HttpClient, HttpHeaders, HttpResponse } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable, retry } from "rxjs";
+import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { ChangePasswordDTO } from "../dto/changePasswordDTO";
 import { LoginDTO } from "../dto/loginDTO";

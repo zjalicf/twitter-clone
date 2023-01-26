@@ -4,7 +4,7 @@ import { AbstractControl, FormBuilder, FormControl, FormGroup, ValidationErrors,
 import { Router } from '@angular/router';
 import { User } from 'src/app/models/user.model';
 import { AuthService } from 'src/app/services/auth.service';
-import { PasswordSpecialCharacterValidator, PasswordStrenghtValidator } from 'src/app/services/customValidators';
+import { PasswordStrenghtValidator } from 'src/app/services/customValidators';
 import { VerificationService } from 'src/app/services/verify.service';
 
 @Component({

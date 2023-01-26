@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
 	"github.com/zjalicf/twitter-clone-common/common/saga/messaging/nats"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,12 +27,15 @@ import (
 	"user_service/store"
 )
 
+var Logger = logrus.New()
+
 type Server struct {
 	config *config.Config
 }
 
 const (
-	QueueGroup = "user_service"
+	QueueGroup  = "user_service"
+	LogFilePath = "/app/logs/application.log"
 )
 
 func NewServer(config *config.Config) *Server {
@@ -40,12 +44,49 @@ func NewServer(config *config.Config) *Server {
 	}
 }
 
+func initLogger() {
+	file, err := os.OpenFile(LogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	Logger.SetOutput(file)
+
+	rotationInterval := 24 * time.Hour
+	ticker := time.NewTicker(rotationInterval)
+	defer ticker.Stop()
+
+	go func() {
+		for range ticker.C {
+			rotateLogs(file)
+		}
+	}()
+}
+
+func rotateLogs(file *os.File) {
+	currentTime := time.Now().Format("2006-01-02_15-04-05")
+	err := os.Rename("/app/logs/application.log", "/app/logs/application_"+currentTime+".log")
+	if err != nil {
+		Logger.Error(err)
+	}
+	file.Close()
+
+	file, err = os.OpenFile("/app/logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		Logger.Error(err)
+	}
+
+	Logger.SetOutput(file)
+}
+
 func (server *Server) Start() {
+	initLogger()
+
 	mongoClient := server.initMongoClient()
 	defer func(mongoClient *mongo.Client, ctx context.Context) {
 		err := mongoClient.Disconnect(ctx)
 		if err != nil {
-
+			log.Println(err)
 		}
 	}(mongoClient, context.Background())
 

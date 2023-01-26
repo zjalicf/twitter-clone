@@ -12,10 +12,6 @@ export class VerificationService {
  private verificationToken = new BehaviorSubject('');
  currentVerificationToken = this.verificationToken.asObservable();
 
- constructor() {
-
- }
-
  updateVerificationToken(message: string){
    this.verificationToken.next(message)
  }

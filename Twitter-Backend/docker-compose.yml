@@ -37,6 +37,8 @@ services:
         condition: service_started
     networks:
       - network
+    volumes:
+      - ./tweet_service/logs:/app/logs
 
   user_service:
     image: user_service
@@ -65,6 +67,8 @@ services:
       - auth_service
     networks:
       - network
+    volumes:
+      - ./user_service/logs:/app/logs
 
   auth_service:
     image: auth_service
@@ -100,6 +104,8 @@ services:
       - nats
     networks:
       - network
+    volumes:
+      - ./auth_service/logs:/app/logs
 
   follow_service:
     image: follow_service
@@ -130,6 +136,8 @@ services:
       - user_service
     networks:
       - network
+    volumes:
+      - ./follow_service/logs:/app/logs
 
   report_service:
     image: report_service
@@ -161,6 +169,8 @@ services:
         condition: service_healthy
     networks:
       - network
+    volumes:
+      - ./report_service/logs:/app/logs
 
   api_gateway:
     build:

@@ -15,10 +15,6 @@
                     <div *ngIf="formGroup.errors?.['userNotExist']" class="invalid-email">
                         User with this email not exist. Check if your email is valid.
                     </div>
-                    <!-- <div *ngIf="formGroup.errors?.['expiredToken']" class="invalid-token"> -->
-                        <!-- Your token is expired.<br> -->
-                        <!-- <a *ngIf="!resend" (click)="resendVerifyToken()">Resend verification token.</a> -->
-                    <!-- </div>  -->
                 </div>
                 
                 <button type="submit" class="btn btn-primary" (click)="onSubmit()">Request token</button>

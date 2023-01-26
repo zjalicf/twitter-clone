@@ -14,7 +14,6 @@ import { VerifyAccountComponent } from './components/verify-account/verify-accou
 import { RecoveryNewPasswordsComponent } from './components/recovery-new-passwords/recovery-new-passwords.component';
 import { TweetAddComponent } from './components/tweet/tweet-add/tweet-add.component';
 import { UserProfileComponent } from './components/user-profile/user-profile.component';
-import { RoleGuard } from './services/role-guard.service';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { FollowRequestsComponent } from './components/my-follow-requests/follow-requests.component';
 import { TweetViewComponent } from './components/tweet/tweet-view/tweet-view.component';

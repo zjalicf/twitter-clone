@@ -16,6 +16,7 @@ const (
 	DATABASE           = "report_mongo"
 	COLLECTION_DAILY   = "daily_reports"
 	COLLECTION_MONTHLY = "monthly_reports"
+	UnknownEventError  = "Unknown event type"
 )
 
 type ReportMongoDBStore struct {
@@ -77,7 +78,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 		} else if event.Type == "ViewCount" {
 			report.ViewCount++
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 
 		_, err = store.dailyReports.InsertOne(ctx, report)
@@ -99,7 +100,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			//view update
 			oneDaily.ViewCount = oneDaily.ViewCount + 1
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 
 		_, err = store.dailyReports.UpdateOne(context.TODO(), bson.M{"_id": oneDaily.ID}, bson.M{"$set": oneDaily})
@@ -132,7 +133,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 		} else if event.Type == "ViewCount" {
 			report.ViewCount++
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 		_, err = store.monthlyReports.InsertOne(ctx, report)
 		if err != nil {
@@ -155,7 +156,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 			//view update
 			oneMonthly.ViewCount = oneMonthly.ViewCount + 1
 		} else {
-			return nil, fmt.Errorf("Unknown event type")
+			return nil, fmt.Errorf(UnknownEventError)
 		}
 		_, err = store.monthlyReports.UpdateOne(context.TODO(), bson.M{"_id": oneMonthly.ID}, bson.M{"$set": oneMonthly})
 		if err != nil {

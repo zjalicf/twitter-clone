@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TimespentDTO } from 'src/app/dto/TimespentDTO';
 import { TweetID } from 'src/app/dto/tweetIdDTO';
 import { Favorite } from 'src/app/models/favorite.model';
@@ -99,7 +99,6 @@ export class TweetViewComponent implements OnInit, OnDestroy {
   }
 
   
-
   likeTweet(tweet: Tweet) {
 
     this.tweetID.id = tweet.id
@@ -159,6 +158,14 @@ export class TweetViewComponent implements OnInit, OnDestroy {
 
   handleClick() {
     console.log(event)
+  }
+
+  isAnAd(): boolean {
+    if (this.tweet.advertisement) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
 }

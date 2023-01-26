@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FollowRequest } from 'src/app/models/followRequest.model';
 import { FollowService } from 'src/app/services/follow.service';
@@ -8,17 +8,13 @@ import { FollowService } from 'src/app/services/follow.service';
   templateUrl: './follow-request-item.component.html',
   styleUrls: ['./follow-request-item.component.css']
 })
-export class FollowRequestItemComponent implements OnInit {
+export class FollowRequestItemComponent {
 
   @Input() followRequest: FollowRequest = new FollowRequest();
   @Output() answerFollowRequest = new EventEmitter<any>()
 
   constructor(private followService: FollowService,
     private _snackBar: MatSnackBar) { }
-
-  ngOnInit(): void {
-
-  }
 
   AcceptRequest(id: string){
     this.followService.AcceptRequest(id)

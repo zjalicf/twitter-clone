@@ -1,8 +1,7 @@
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
-import { AddTweetDTO } from "../dto/addTweetDTO";
 import { TimespentDTO } from "../dto/TimespentDTO";
 import { TweetID } from "../dto/tweetIdDTO";
 import { Favorite } from "../models/favorite.model";
@@ -38,6 +37,10 @@ import { Tweet } from "../models/tweet.model";
         return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/favorite`, tweet)
     }
 
+    public Retweet(tweet: Tweet): Observable<any> {
+        return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/retweet`, tweet)
+    }
+
     public GetLikesByTweet(tweetID: string): Observable<Favorite[]> {
         return this.http.get<Favorite[]>(`${environment.baseApiUrl}/${this.url}/whoLiked/` + tweetID)
     }
@@ -53,10 +56,6 @@ import { Tweet } from "../models/tweet.model";
         return this.http.get(`${environment.baseApiUrl}/${this.url}/image/${tweetID}`, { responseType: 'blob' })
         
     
-    }
-
-    public Retweet(tweetID: TweetID): Observable<void> {
-        return this.http.post<void>(`${environment.baseApiUrl}/${this.url}/retweet/`,tweetID)
     }
 
     public TimespentOnAd(timespent: TimespentDTO): Observable<void> {

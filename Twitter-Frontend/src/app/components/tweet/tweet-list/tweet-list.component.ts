@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Tweet } from 'src/app/models/tweet.model';
 
 @Component({
@@ -6,14 +6,9 @@ import { Tweet } from 'src/app/models/tweet.model';
   templateUrl: './tweet-list.component.html',
   styleUrls: ['./tweet-list.component.css']
 })
-export class TweetListComponent implements OnInit {
+export class TweetListComponent {
 
-  constructor() { }
 
   @Input() tweets: Tweet[] = []
-
-  ngOnInit(): void {
-    console.log(this.tweets)
-  }
 
 }

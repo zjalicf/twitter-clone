@@ -12,9 +12,11 @@
   margin-left: 10px;
   color: blue;
   cursor: pointer;
+  display: inline;
 }
 
 .tweet-text {
+  margin-top: 20px;
   font-size: 19px;
   margin-left: 10px;
   color:black;
@@ -42,4 +44,11 @@
 .who-liked {
   font-size: 15px;
   margin-left: 10px;
+}
+
+.tweet-is-advertisement {
+  font-size: 16px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+  color: green;
 }

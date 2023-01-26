@@ -1,4 +1,4 @@
-import { HttpBackend, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -68,8 +68,6 @@ export class ChangePasswordComponent implements OnInit {
           } else if (err.status == 200){
             alert("Password changed successfully!")
           }
-          // localStorage.setItem("authToken", "")
-          // this.router.navigate(["/Login"])
         }
       }
       )
