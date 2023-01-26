@@ -37,6 +37,8 @@ services:
         condition: service_started
     networks:
       - network
+    volumes:
+      - ./logs:/app/logs
 
   user_service:
     image: user_service
