@@ -246,6 +246,9 @@ func (handler *TweetHandler) Post(writer http.ResponseWriter, req *http.Request)
 }
 
 func (handler *TweetHandler) GetTweetImage(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetTweetImage")
+	defer span.End()
+
 	vars := mux.Vars(req)
 	id, ok := vars["id"]
 	if !ok {
@@ -253,7 +256,7 @@ func (handler *TweetHandler) GetTweetImage(writer http.ResponseWriter, req *http
 		return
 	}
 
-	image, err := handler.service.GetTweetImage(id)
+	image, err := handler.service.GetTweetImage(ctx, id)
 	if err != nil {
 		return
 	}
@@ -276,7 +279,10 @@ func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
 }
 
 func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http.Request) {
-	feed, err := handler.service.GetFeedByUser(req.Header.Get("Authorization"))
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.GetFeedByUser")
+	defer span.End()
+
+	feed, err := handler.service.GetFeedByUser(ctx, req.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("error: %s", err.Error())
 		if err.Error() == "FollowServiceError" {
@@ -292,6 +298,8 @@ func (handler *TweetHandler) GetFeedByUser(writer http.ResponseWriter, req *http
 }
 
 func (handler *TweetHandler) Retweet(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "TweetHandler.Retweet")
+	defer span.End()
 
 	bearer := req.Header.Get("Authorization")
 	bearerToken := strings.Split(bearer, "Bearer ")
@@ -311,12 +319,12 @@ func (handler *TweetHandler) Retweet(writer http.ResponseWriter, req *http.Reque
 	var tweetID domain.TweetID
 	err = json.NewDecoder(req.Body).Decode(&tweetID)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error in decoding http request body in TweetHandler.Retweet: %s", err.Error())
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	code, err := handler.service.Retweet(tweetID.ID, username)
+	code, err := handler.service.Retweet(ctx, tweetID.ID, username)
 	if err != nil {
 		http.Error(writer, err.Error(), code)
 		return

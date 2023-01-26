@@ -98,7 +98,7 @@ func (server *Server) Start() {
 	tracer := tp.Tracer("tweet_service")
 
 	redisClient := server.initRedisClient()
-	tweetCache := server.initTweetCache(redisClient)
+	tweetCache := server.initTweetCache(redisClient, tracer)
 	tweetStore, err := store.New(log.Default(), tracer)
 	if err != nil {
 		log.Fatal(err)
@@ -130,8 +130,8 @@ func (server *Server) initTweetService(store store.TweetRepo, cache domain.Tweet
 	return service
 }
 
-func (server *Server) initTweetCache(client *redis.Client) domain.TweetCache {
-	cache := store2.NewTweetRedisCache(client)
+func (server *Server) initTweetCache(client *redis.Client, tracer trace.Tracer) domain.TweetCache {
+	cache := store2.NewTweetRedisCache(client, tracer)
 	return cache
 }
 
