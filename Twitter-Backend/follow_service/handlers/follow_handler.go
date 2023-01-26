@@ -9,6 +9,7 @@ import (
 	"follow_service/errors"
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 	"net/http"
 )
@@ -16,12 +17,14 @@ import (
 type FollowHandler struct {
 	service            *application.FollowService
 	counterUnavailable int
+	tracer             trace.Tracer
 }
 
-func NewFollowHandler(service *application.FollowService) *FollowHandler {
+func NewFollowHandler(service *application.FollowService, tracer trace.Tracer) *FollowHandler {
 	return &FollowHandler{
 		service:            service,
 		counterUnavailable: 3,
+		tracer:             tracer,
 	}
 }
 
@@ -33,10 +36,8 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 		log.Fatal(err)
 	}
 
-	router.HandleFunc("/", handler.GetAll).Methods("GET")
 	router.HandleFunc("/requests/", handler.GetRequestsForUser).Methods("GET")
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
-	//router.HandleFunc("/users", handler.CreateUser).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
@@ -48,16 +49,10 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	log.Fatal(http.ListenAndServe(":8004", authorization.Authorizer(authEnforcer)(router)))
 }
 
-func (handler *FollowHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
-	tweets, err := handler.service.GetAll()
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	jsonResponse(tweets, writer)
-}
-
 func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetRequestsForUser")
+	defer span.End()
+
 	token, err := authorization.GetToken(req)
 	if err != nil {
 		writer.WriteHeader(http.StatusUnauthorized)
@@ -66,7 +61,7 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 
 	claims := authorization.GetMapClaims(token.Bytes())
 
-	returnRequests, err := handler.service.GetRequestsForUser(claims["username"])
+	returnRequests, err := handler.service.GetRequestsForUser(ctx, claims["username"])
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
@@ -77,12 +72,15 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 }
 
 func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetFollowingsByUser")
+	defer span.End()
+
 	token, _ := authorization.GetToken(req)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
 	log.Printf("username is: %s", username)
-	users, err := handler.service.GetFollowingsOfUser(username)
+	users, err := handler.service.GetFollowingsOfUser(ctx, username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -93,16 +91,14 @@ func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, re
 }
 
 func (handler *FollowHandler) GetRecommendationsForUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetRecommendationsForUser")
+	defer span.End()
+
 	token, _ := authorization.GetToken(req)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
-	//vars := mux.Vars(req)
-	//username, ok := vars["username"]
-	//if !ok {
-	//	http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
-	//}
 
-	users, err := handler.service.GetRecommendationsByUsername(username)
+	users, err := handler.service.GetRecommendationsByUsername(ctx, username)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -111,26 +107,9 @@ func (handler *FollowHandler) GetRecommendationsForUser(writer http.ResponseWrit
 	jsonResponse(users, writer)
 }
 
-//	func (handler *TweetHandler) Get(writer http.ResponseWriter, req *http.Request) {
-//		vars := mux.Vars(req)
-//		id, ok := vars["id"]
-//		if !ok {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		objectId, err := primitive.ObjectIDFromHex(id)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		tweet, err := handler.service.Get(objectId)
-//		if err != nil {
-//			writer.WriteHeader(http.StatusNotFound)
-//			return
-//		}
-//		jsonResponse(tweet, writer)
-//	}
 func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.CreateRequest")
+	defer span.End()
 
 	var request domain.FollowRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -160,7 +139,7 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 		visibility = false
 	}
 
-	err = handler.service.CreateRequest(&request, claims["username"], visibility)
+	err = handler.service.CreateRequest(ctx, &request, claims["username"], visibility)
 	if err != nil {
 		log.Println("ERR")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -168,29 +147,11 @@ func (handler *FollowHandler) CreateRequest(writer http.ResponseWriter, req *htt
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	//jsonResponse(followRequest, writer)
-}
-
-func (handler *FollowHandler) CreateUser(writer http.ResponseWriter, req *http.Request) {
-	var request domain.User
-	err := json.NewDecoder(req.Body).Decode(&request)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = handler.service.CreateUser(&request)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(writer, errors.ServiceUnavailable, http.StatusInternalServerError)
-		return
-	}
-
-	writer.WriteHeader(http.StatusOK)
 }
 
 func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.AcceptRequest")
+	defer span.End()
 
 	vars := mux.Vars(req)
 	followId, ok := vars["id"]
@@ -198,7 +159,7 @@ func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *htt
 		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
-	err := handler.service.AcceptRequest(&followId)
+	err := handler.service.AcceptRequest(ctx, &followId)
 	if err != nil {
 		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
@@ -208,6 +169,8 @@ func (handler *FollowHandler) AcceptRequest(writer http.ResponseWriter, req *htt
 }
 
 func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetAll")
+	defer span.End()
 
 	vars := mux.Vars(req)
 	followId, ok := vars["id"]
@@ -215,7 +178,7 @@ func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *ht
 		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
 
-	err := handler.service.DeclineRequest(&followId)
+	err := handler.service.DeclineRequest(ctx, &followId)
 	if err != nil {
 		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
 	}
@@ -225,7 +188,8 @@ func (handler *FollowHandler) DeclineRequest(writer http.ResponseWriter, req *ht
 }
 
 func (handler *FollowHandler) SaveAd(writer http.ResponseWriter, req *http.Request) {
-	log.Println("Uslo u handler")
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.SaveAd")
+	defer span.End()
 
 	var request domain.Ad
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -234,7 +198,7 @@ func (handler *FollowHandler) SaveAd(writer http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	err = handler.service.SaveAd(&request)
+	err = handler.service.SaveAd(ctx, &request)
 	if err != nil {
 		http.Error(writer, "internal server error", http.StatusInternalServerError)
 		return

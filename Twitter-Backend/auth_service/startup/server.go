@@ -77,7 +77,7 @@ func (server *Server) Start() {
 	replyPublisher := server.initPublisher(server.config.CreateUserReplySubject)
 	commandSubscriber := server.initSubscriber(server.config.CreateUserCommandSubject, QueueGroup)
 
-	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber)
+	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber, tracer)
 
 	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer)
 
@@ -143,8 +143,8 @@ func (server *Server) initSubscriber(subject string, queueGroup string) saga.Sub
 	return subscriber
 }
 
-func (server *Server) initCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) *application.CreateUserOrchestrator {
-	orchestrator, err := application.NewCreateUserOrchestrator(publisher, subscriber)
+func (server *Server) initCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) *application.CreateUserOrchestrator {
+	orchestrator, err := application.NewCreateUserOrchestrator(publisher, subscriber, tracer)
 	if err != nil {
 		log.Fatal(err)
 	}

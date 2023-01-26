@@ -2,20 +2,24 @@ package application
 
 import (
 	"auth_service/domain"
+	"context"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 )
 
 type CreateUserOrchestrator struct {
 	commandPublisher saga.Publisher
 	replySubscriber  saga.Subscriber
+	tracer           trace.Tracer
 }
 
-func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserOrchestrator, error) {
+func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) (*CreateUserOrchestrator, error) {
 	orchestrator := &CreateUserOrchestrator{
 		commandPublisher: publisher,
 		replySubscriber:  subscriber,
+		tracer:           tracer,
 	}
 	err := orchestrator.replySubscriber.Subscribe(orchestrator.handle)
 	if err != nil {
@@ -24,7 +28,9 @@ func NewCreateUserOrchestrator(publisher saga.Publisher, subscriber saga.Subscri
 	return orchestrator, nil
 }
 
-func (o *CreateUserOrchestrator) Start(user *domain.User) error {
+func (o *CreateUserOrchestrator) Start(ctx context.Context, user *domain.User) error {
+	ctx, span := o.tracer.Start(ctx, "AuthService.CreateUserOrchestrator.Start")
+	defer span.End()
 
 	var gender events.Gender
 	var userType events.UserType

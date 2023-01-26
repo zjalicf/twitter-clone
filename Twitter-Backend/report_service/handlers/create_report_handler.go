@@ -29,8 +29,6 @@ func NewCreateEventCommandHandler(reportService *application.ReportService, repl
 
 // hendlovanje komandama
 func (handler *CreateReportCommandHandler) handle(command *events.CreateEventCommand) {
-	//ctx, span := handler.reportService.tracer.Start(context.TODO(), "AuthService.Login")
-	//defer span.End()
 	reply := events.CreateEventReply{Event: command.Event}
 
 	switch command.Type {

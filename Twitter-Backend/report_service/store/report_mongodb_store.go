@@ -25,6 +25,8 @@ type ReportMongoDBStore struct {
 }
 
 func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID string, reportType string) (*domain.Report, error) {
+	ctx, span := store.tracer.Start(ctx, "ReportMongoDBStore.GetReportForAd")
+	defer span.End()
 
 	if reportType == "daily" {
 
@@ -194,30 +196,7 @@ func (store *ReportMongoDBStore) filterOneDaily(filter interface{}) (user *domai
 	return
 }
 
-func (store *ReportMongoDBStore) UpdateOneDaily(filter interface{}) (user *domain.Report, err error) {
-	result := store.dailyReports.FindOne(context.TODO(), filter)
-	err = result.Decode(&user)
-	return
-}
-
-func (store *ReportMongoDBStore) filterMonthly(filter interface{}) ([]*domain.Report, error) {
-	cursor, err := store.monthlyReports.Find(context.TODO(), filter)
-	defer cursor.Close(context.TODO())
-
-	if err != nil {
-		log.Printf("Error in report_mongodb filter() Unlike monthly: %s", err.Error())
-		return nil, err
-	}
-	return decode(cursor)
-}
-
 func (store *ReportMongoDBStore) filterOneMonthly(filter interface{}) (user *domain.Report, err error) {
-	result := store.monthlyReports.FindOne(context.TODO(), filter)
-	err = result.Decode(&user)
-	return
-}
-
-func (store *ReportMongoDBStore) UpdateOneMonthly(filter interface{}) (user *domain.Report, err error) {
 	result := store.monthlyReports.FindOne(context.TODO(), filter)
 	err = result.Decode(&user)
 	return

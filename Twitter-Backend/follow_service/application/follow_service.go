@@ -1,34 +1,40 @@
 package application
 
 import (
+	"context"
 	"fmt"
 	"follow_service/domain"
 	"follow_service/errors"
 	"github.com/google/uuid"
 	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 )
 
 type FollowService struct {
-	store domain.FollowRequestStore
+	store  domain.FollowRequestStore
+	tracer trace.Tracer
 }
 
-func NewFollowService(store domain.FollowRequestStore) *FollowService {
+func NewFollowService(store domain.FollowRequestStore, tracer trace.Tracer) *FollowService {
 	return &FollowService{
-		store: store,
+		store:  store,
+		tracer: tracer,
 	}
 }
 
-func (service *FollowService) GetAll() ([]*domain.FollowRequest, error) {
-	return service.store.GetAll()
+func (service *FollowService) FollowExist(ctx context.Context, followRequest *domain.FollowRequest) (bool, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.FollowExist")
+	defer span.End()
+
+	return service.store.FollowExist(ctx, followRequest)
 }
 
-func (service *FollowService) FollowExist(followRequest *domain.FollowRequest) (bool, error) {
-	return service.store.FollowExist(followRequest)
-}
+func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username string) ([]*string, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetFollowingsOfUser")
+	defer span.End()
 
-func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, error) {
-	followings, err := service.store.GetFollowingsOfUser(username)
+	followings, err := service.store.GetFollowingsOfUser(ctx, username)
 	if err != nil {
 		return nil, err
 	}
@@ -41,16 +47,21 @@ func (service *FollowService) GetFollowingsOfUser(username string) ([]*string, e
 	return usernameList, nil
 }
 
-func (service *FollowService) GetRequestsForUser(username string) ([]*domain.FollowRequest, error) {
-	return service.store.GetRequestsForUser(username)
+func (service *FollowService) GetRequestsForUser(ctx context.Context, username string) ([]*domain.FollowRequest, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetRequestsForUser")
+	defer span.End()
+
+	return service.store.GetRequestsForUser(ctx, username)
 }
 
-func (service *FollowService) CreateRequest(request *domain.FollowRequest, username string, visibility bool) error {
+func (service *FollowService) CreateRequest(ctx context.Context, request *domain.FollowRequest, username string, visibility bool) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.CreateRequest")
+	defer span.End()
 
 	request.ID = uuid.New().String()
 	request.Requester = username
 
-	isExist, err := service.FollowExist(request)
+	isExist, err := service.FollowExist(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -60,11 +71,11 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 	}
 
 	if visibility {
-		existing, err := service.store.GetRequestByRequesterReceiver(&request.Requester, &request.Receiver)
+		existing, err := service.store.GetRequestByRequesterReceiver(ctx, &request.Requester, &request.Receiver)
 		if err != nil {
 			if err.Error() == errors.ErrorRequestNotExists {
 				request.Status = 1
-				err = service.store.SaveRequest(request)
+				err = service.store.SaveRequest(ctx, request)
 				if err != nil {
 					log.Println(err)
 					return fmt.Errorf("Request not inserted in db")
@@ -76,14 +87,14 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 		}
 
 		existing.Status = 1
-		err = service.store.UpdateRequest(existing)
+		err = service.store.UpdateRequest(ctx, existing)
 		if err != nil {
 			log.Println(err)
 			return fmt.Errorf("Request not inserted in db")
 		}
 
 	} else {
-		err := service.store.SaveFollow(request)
+		err := service.store.SaveFollow(ctx, request)
 		if err != nil {
 			return err
 		}
@@ -92,8 +103,11 @@ func (service *FollowService) CreateRequest(request *domain.FollowRequest, usern
 	return nil
 }
 
-func (service *FollowService) CreateUser(user *domain.User) error {
-	err := service.store.SaveUser(user)
+func (service *FollowService) CreateUser(ctx context.Context, user *domain.User) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.CreateUser")
+	defer span.End()
+
+	err := service.store.SaveUser(ctx, user)
 	if err != nil {
 		log.Printf("Error with saving user node in neo4j: %s", err.Error())
 		return err
@@ -102,13 +116,16 @@ func (service *FollowService) CreateUser(user *domain.User) error {
 	return nil
 }
 
-func (service *FollowService) AcceptRequest(id *string) error {
-	request, err := service.store.AcceptRequest(id)
+func (service *FollowService) AcceptRequest(ctx context.Context, id *string) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.AcceptRequest")
+	defer span.End()
+
+	request, err := service.store.AcceptRequest(ctx, id)
 	if err != nil {
 		return fmt.Errorf(errors.ErrorInAcceptRequest)
 	}
 
-	err = service.store.SaveFollow(request)
+	err = service.store.SaveFollow(ctx, request)
 	if err != nil {
 		return fmt.Errorf(errors.ErrorInSaveFollow)
 	}
@@ -117,32 +134,46 @@ func (service *FollowService) AcceptRequest(id *string) error {
 
 }
 
-func (service *FollowService) DeleteUser(id *string) error {
-	return service.store.DeleteUser(id)
+func (service *FollowService) DeleteUser(ctx context.Context, id *string) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.AcceptRequest")
+	defer span.End()
+
+	return service.store.DeleteUser(ctx, id)
 }
 
-func (service *FollowService) DeclineRequest(id *string) error {
-	return service.store.DeclineRequest(id)
+func (service *FollowService) DeclineRequest(ctx context.Context, id *string) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.DeclineRequest")
+	defer span.End()
+
+	return service.store.DeclineRequest(ctx, id)
 }
 
-func (service *FollowService) HandleRequest(followRequest *domain.FollowRequest) error {
-	return service.store.SaveRequest(followRequest)
+func (service *FollowService) HandleRequest(ctx context.Context, followRequest *domain.FollowRequest) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.HandleRequest")
+	defer span.End()
+
+	return service.store.SaveRequest(ctx, followRequest)
 }
 
-func (service *FollowService) SaveAd(ad *domain.Ad) error {
-	return service.store.SaveAd(ad)
+func (service *FollowService) SaveAd(ctx context.Context, ad *domain.Ad) error {
+	ctx, span := service.tracer.Start(ctx, "FollowService.SaveAd")
+	defer span.End()
+
+	return service.store.SaveAd(ctx, ad)
 }
 
-func (service *FollowService) GetRecommendationsByUsername(username string) ([]string, error) {
+func (service *FollowService) GetRecommendationsByUsername(ctx context.Context, username string) ([]string, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetRecommendationsByUsername")
+	defer span.End()
 
-	countFollowings, err := service.store.CountFollowings(username)
+	countFollowings, err := service.store.CountFollowings(ctx, username)
 	if err != nil {
 		log.Println("Error in getting count of followings")
 		return nil, err
 	}
 
 	if countFollowings == 0 {
-		recommendations, err := service.store.RecommendationWithoutFollowings(username, []string{})
+		recommendations, err := service.store.RecommendationWithoutFollowings(ctx, username, []string{})
 		if err != nil {
 			log.Println("Error in getting similar recommendations without followings.")
 			return nil, err
@@ -150,13 +181,13 @@ func (service *FollowService) GetRecommendationsByUsername(username string) ([]s
 		return recommendations, nil
 	} else {
 		var allRecommendations []string
-		recommendations, err := service.store.RecommendWithFollowings(username)
+		recommendations, err := service.store.RecommendWithFollowings(ctx, username)
 		if err != nil {
 			log.Println("Error in getting recommendations full with followings.")
 			return nil, err
 		}
 
-		recommendations2, err := service.store.RecommendationWithoutFollowings(username, recommendations)
+		recommendations2, err := service.store.RecommendationWithoutFollowings(ctx, username, recommendations)
 		if err != nil {
 			log.Println("Error in getting similar recommendations with followings.")
 			return nil, err

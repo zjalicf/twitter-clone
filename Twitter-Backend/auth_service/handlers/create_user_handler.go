@@ -34,8 +34,6 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 
 // hendlovanje komandama
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
-	ctx, span := handler.tracer.Start(context.TODO(), "AuthService.DeleteUserByID")
-	defer span.End()
 
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
@@ -47,7 +45,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		reply.Type = events.AuthUpdated
 
 	case events.SendMail:
-		err := handler.authService.SendMail(ctx, &user)
+		err := handler.authService.SendMail(context.Background(), &user)
 		if err != nil {
 			log.Printf("Failed to send mail: %s", err.Error())
 			reply.Type = events.MailFailed
@@ -58,7 +56,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	case events.RollbackAuth:
 		//TODO
-		_ = handler.authService.DeleteUserByID(context.TODO(), user.ID)
+		_ = handler.authService.DeleteUserByID(context.Background(), user.ID)
 		reply.Type = events.UnknownReply
 		fmt.Println("Rollback auth")
 

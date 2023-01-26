@@ -15,7 +15,7 @@ type User struct {
 	Lastname   string             `bson:"lastName,omitempty" json:"lastName,omitempty" validate:"onlyChar"`
 	Gender     Gender             `bson:"gender,omitempty" json:"gender,omitempty" validate:"onlyChar"`
 	Age        int                `bson:"age,omitempty" json:"age,omitempty"`
-	Residence  string             `bson:"residence,omitempty" json:"residence,omitempty" validate:"onlyCharAndNum"`
+	Residence  string             `bson:"residence,omitempty" json:"residence,omitempty" validate:"onlyCharAndSpace"`
 	Email      string             `bson:"email" json:"email" validate:"required,email"`
 	Username   string             `bson:"username" json:"username" validate:"onlyCharAndNum,required"`
 	Password   string             `bson:"password" json:"password" validate:"onlyCharAndNum,required"`
@@ -86,7 +86,12 @@ type RecoverPasswordRequest struct {
 func (user *User) ValidateUser() error {
 	validate := validator.New()
 
-	err := validate.RegisterValidation("onlyChar", onlyCharactersField)
+	err := validate.RegisterValidation("onlyCharAndSpace", onlyCharactersAndSpaceField)
+	if err != nil {
+		return err
+	}
+
+	err = validate.RegisterValidation("onlyChar", onlyCharactersField)
 	if err != nil {
 		return err
 	}
@@ -102,6 +107,17 @@ func (user *User) ValidateUser() error {
 // Allows only letters [a-z]
 func onlyCharactersField(fl validator.FieldLevel) bool {
 	re := regexp.MustCompile("[-_a-zA-Z]*")
+	matches := re.FindAllString(fl.Field().String(), -1)
+
+	if len(matches) != 1 {
+		return false
+	}
+
+	return true
+}
+
+func onlyCharactersAndSpaceField(fl validator.FieldLevel) bool {
+	re := regexp.MustCompile("[a-zA-Z ]*")
 	matches := re.FindAllString(fl.Field().String(), -1)
 
 	if len(matches) != 1 {

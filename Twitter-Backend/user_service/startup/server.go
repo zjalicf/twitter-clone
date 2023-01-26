@@ -70,7 +70,7 @@ func (server *Server) Start() {
 	userService := server.initUserService(userStore, tracer)
 	userHandler := server.initUserHandler(userService, tracer)
 
-	server.initCreateUserHandler(userService, replyPublisher, commandSubscriber)
+	server.initCreateUserHandler(userService, replyPublisher, commandSubscriber, tracer)
 
 	server.start(userHandler)
 }
@@ -96,8 +96,8 @@ func (server *Server) initMongoClient() *mongo.Client {
 	return client
 }
 
-func (server *Server) initCreateUserHandler(service *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber) {
-	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber)
+func (server *Server) initCreateUserHandler(service *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) {
+	_, err := handlers.NewCreateUserCommandHandler(service, publisher, subscriber, tracer)
 	if err != nil {
 		log.Fatal(err)
 	}

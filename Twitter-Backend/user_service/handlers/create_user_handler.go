@@ -5,6 +5,7 @@ import (
 	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"go.opentelemetry.io/otel/trace"
 	"user_service/application"
 )
 
@@ -12,13 +13,15 @@ type CreateUserCommandHandler struct {
 	userService       *application.UserService
 	replyPublisher    saga.Publisher
 	commandSubscriber saga.Subscriber
+	tracer            trace.Tracer
 }
 
-func NewCreateUserCommandHandler(userService *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserCommandHandler, error) {
+func NewCreateUserCommandHandler(userService *application.UserService, publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) (*CreateUserCommandHandler, error) {
 	o := &CreateUserCommandHandler{
 		userService:       userService,
 		replyPublisher:    publisher,
 		commandSubscriber: subscriber,
+		tracer:            tracer,
 	}
 	err := o.commandSubscriber.Subscribe(o.handle)
 	if err != nil {
@@ -28,6 +31,7 @@ func NewCreateUserCommandHandler(userService *application.UserService, publisher
 }
 
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
+
 	user := handler.userService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
@@ -35,7 +39,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 
 	case events.UpdateUsers:
 
-		_, err := handler.userService.Register(&user)
+		_, err := handler.userService.Register(context.Background(), &user)
 		if err != nil {
 			reply.Type = events.UsersFailed
 		} else {
@@ -44,7 +48,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		}
 
 	case events.RollbackUsers:
-		_ = handler.userService.DeleteUserByID(context.TODO(), user.ID)
+		_ = handler.userService.DeleteUserByID(context.Background(), user.ID)
 		reply.Type = events.UsersFailed
 		fmt.Println("Rollback users")
 

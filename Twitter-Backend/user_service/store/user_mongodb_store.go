@@ -53,8 +53,8 @@ func (store *UserMongoDBStore) GetByEmail(ctx context.Context, email string) (*d
 }
 
 func (store *UserMongoDBStore) Post(ctx context.Context, user *domain.User) (*domain.User, error) {
-	//ctx, span := store.tracer.Start(ctx, "UserStore.Post")
-	//defer span.End()
+	ctx, span := store.tracer.Start(ctx, "UserStore.Post")
+	defer span.End()
 
 	result, err := store.users.InsertOne(context.TODO(), user)
 	if err != nil {

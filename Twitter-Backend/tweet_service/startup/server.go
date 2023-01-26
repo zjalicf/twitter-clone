@@ -110,15 +110,10 @@ func (server *Server) Start() {
 	commandPublisher := server.initPublisher(server.config.CreateReportCommandSubject)
 	replySubscriber := server.initSubscriber(server.config.CreateReportReplySubject, QueueGroup)
 
-	//service
-	replyPublisher := server.initPublisher(server.config.CreateReportReplySubject)
-	commandSubscriber := server.initSubscriber(server.config.CreateReportCommandSubject, QueueGroup)
-
 	createReportOrchestrator := server.initCreateEventOrchestrator(commandPublisher, replySubscriber, tracer)
 
 	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer, createReportOrchestrator)
 
-	server.initCreateEventHandler(tweetService, replyPublisher, commandSubscriber)
 	tweetHandler := server.initTweetHandler(tweetService, tracer)
 
 	server.start(tweetHandler)
@@ -145,13 +140,6 @@ func (server *Server) initRedisClient() *redis.Client {
 		log.Fatal(err)
 	}
 	return client
-}
-
-func (server *Server) initCreateEventHandler(reportService *application.TweetService, publisher saga.Publisher, subscriber saga.Subscriber) {
-	_, err := handlers.NewCreateEventCommandHandler(reportService, publisher, subscriber)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func (server *Server) initPublisher(subject string) saga.Publisher {

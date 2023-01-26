@@ -61,9 +61,9 @@ func (service *UserService) GetOneUser(ctx context.Context, username string) (*d
 	return retUser, nil
 }
 
-func (service *UserService) Register(user *domain.User) (*domain.User, error) {
+func (service *UserService) Register(ctx context.Context, user *domain.User) (*domain.User, error) {
 
-	ctx, span := service.tracer.Start(context.TODO(), "UserService.Register")
+	ctx, span := service.tracer.Start(ctx, "UserService.Register")
 	defer span.End()
 
 	validatedUser, err := validateUserType(user)

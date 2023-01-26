@@ -70,6 +70,8 @@ func (service *ReportService) CreateReport(event *events.Event) {
 }
 
 func (service *ReportService) GetReportForAd(ctx context.Context, tweetID string, reportType string) (*domain.Report, error) {
+	ctx, span := service.tracer.Start(context.TODO(), "ReportService.GetReportForAd")
+	defer span.End()
 
 	result, err := service.reportStore.GetReportForAd(ctx, tweetID, reportType)
 	if err != nil {
@@ -77,18 +79,6 @@ func (service *ReportService) GetReportForAd(ctx context.Context, tweetID string
 		return nil, err
 	}
 	return result, nil
-}
-
-func DomainToEvent(event domain.Event) events.Event {
-
-	return events.Event{
-		TweetID:      event.TweetID,
-		Type:         event.Type,
-		Timestamp:    event.Timestamp,
-		Timespent:    event.Timespent,
-		DailySpent:   event.DailySpent,
-		MonthlySpent: event.MonthlySpent,
-	}
 }
 
 func EventToDomain(event events.Event) domain.Event {
@@ -102,5 +92,3 @@ func EventToDomain(event events.Event) domain.Event {
 		MonthlySpent: event.MonthlySpent,
 	}
 }
-
-//func (service *ReportService) (){}

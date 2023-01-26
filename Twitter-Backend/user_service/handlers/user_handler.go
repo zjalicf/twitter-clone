@@ -55,31 +55,6 @@ func (handler *UserHandler) Init(router *mux.Router) {
 	log.Fatal(http.ListenAndServe(":8002", authorization.Authorizer(authEnforcer)(router)))
 }
 
-//func (handler *UserHandler) Register(writer http.ResponseWriter, req *http.Request) {
-//	ctx, span := handler.tracer.Start(req.Context(), "UserHandler.Register")
-//	defer span.End()
-//
-//	var user domain.User
-//	err := json.NewDecoder(req.Body).Decode(&user)
-//	if err != nil {
-//		log.Println(err)
-//		http.Error(writer, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	saved, err := handler.service.Register(ctx, &user)
-//	if err != nil {
-//		if err.Error() == errors.DatabaseError {
-//			http.Error(writer, err.Error(), http.StatusInternalServerError)
-//		} else {
-//			http.Error(writer, err.Error(), http.StatusBadRequest)
-//		}
-//		return
-//	}
-//
-//	jsonResponse(saved, writer)
-//}
-
 func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request) {
 	ctx, span := handler.tracer.Start(req.Context(), "UserHandler.GetAll")
 	defer span.End()

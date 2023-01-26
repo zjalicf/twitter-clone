@@ -109,7 +109,7 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 		return "", 0, err
 	}
 
-	err = service.orchestrator.Start(validatedUser)
+	err = service.orchestrator.Start(ctx, validatedUser)
 	if err != nil {
 		log.Println("ERR IN START ORCHESTRATOR")
 		return "", 0, err
