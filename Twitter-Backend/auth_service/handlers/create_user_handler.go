@@ -6,6 +6,7 @@ import (
 	"fmt"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	saga "github.com/zjalicf/twitter-clone-common/common/saga/messaging"
+	"go.opentelemetry.io/otel/trace"
 	"log"
 )
 
@@ -13,13 +14,15 @@ type CreateUserCommandHandler struct {
 	authService       *application.AuthService
 	publisher         saga.Publisher
 	commandSubscriber saga.Subscriber
+	tracer            trace.Tracer
 }
 
-func NewCreateUserCommandHandler(authService *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber) (*CreateUserCommandHandler, error) {
+func NewCreateUserCommandHandler(authService *application.AuthService, publisher saga.Publisher, subscriber saga.Subscriber, tracer trace.Tracer) (*CreateUserCommandHandler, error) {
 	o := &CreateUserCommandHandler{
 		authService:       authService,
 		publisher:         publisher,
 		commandSubscriber: subscriber,
+		tracer:            tracer,
 	}
 	//prijava za slusanje komandi
 	err := o.commandSubscriber.Subscribe(o.handle)
@@ -31,6 +34,9 @@ func NewCreateUserCommandHandler(authService *application.AuthService, publisher
 
 // hendlovanje komandama
 func (handler *CreateUserCommandHandler) handle(command *events.CreateUserCommand) {
+	ctx, span := handler.tracer.Start(context.TODO(), "AuthService.DeleteUserByID")
+	defer span.End()
+
 	user := handler.authService.UserToDomain(command.User)
 	reply := events.CreateUserReply{User: command.User}
 
@@ -41,7 +47,7 @@ func (handler *CreateUserCommandHandler) handle(command *events.CreateUserComman
 		reply.Type = events.AuthUpdated
 
 	case events.SendMail:
-		err := handler.authService.SendMail(&user)
+		err := handler.authService.SendMail(ctx, &user)
 		if err != nil {
 			log.Printf("Failed to send mail: %s", err.Error())
 			reply.Type = events.MailFailed

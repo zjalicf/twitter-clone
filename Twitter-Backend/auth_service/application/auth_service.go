@@ -125,7 +125,9 @@ func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.Obj
 	return service.store.DeleteUserByID(ctx, id)
 }
 
-func (service *AuthService) SendMail(user *domain.User) error {
+func (service *AuthService) SendMail(ctx context.Context, user *domain.User) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.SendMail")
+	defer span.End()
 
 	validationToken := uuid.New()
 	err := service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
@@ -134,7 +136,7 @@ func (service *AuthService) SendMail(user *domain.User) error {
 		return err
 	}
 
-	err = sendValidationMail(validationToken, user.Email)
+	err = service.sendValidationMail(ctx, validationToken, user.Email)
 	if err != nil {
 		log.Printf("Failed to send mail: %s", err.Error())
 		return err
@@ -143,7 +145,10 @@ func (service *AuthService) SendMail(user *domain.User) error {
 	return nil
 }
 
-func sendValidationMail(validationToken uuid.UUID, email string) error {
+func (service *AuthService) sendValidationMail(ctx context.Context, validationToken uuid.UUID, email string) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.sendValidationMail")
+	defer span.End()
+
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
 	message.SetHeader("To", email)
@@ -217,7 +222,7 @@ func (service *AuthService) ResendVerificationToken(ctx context.Context, request
 		return err
 	}
 
-	err = sendValidationMail(tokenUUID, request.UserMail)
+	err = service.sendValidationMail(ctx, tokenUUID, request.UserMail)
 	if err != nil {
 		log.Println("SEND VALIDATION MAIL PROBLEM")
 		return err
@@ -244,7 +249,7 @@ func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email
 	userID := buf.String()
 
 	recoverUUID, _ := uuid.NewUUID()
-	err := sendRecoverPasswordMail(recoverUUID, email)
+	err := service.sendRecoverPasswordMail(ctx, recoverUUID, email)
 	if err != nil {
 		return "", 500, err
 	}
@@ -278,7 +283,10 @@ func (service *AuthService) CheckRecoveryPasswordToken(ctx context.Context, requ
 	return nil
 }
 
-func sendRecoverPasswordMail(validationToken uuid.UUID, email string) error {
+func (service *AuthService) sendRecoverPasswordMail(ctx context.Context, validationToken uuid.UUID, email string) error {
+	ctx, span := service.tracer.Start(ctx, "AuthService.sendRecoverPasswordMail")
+	defer span.End()
+
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
 	message.SetHeader("To", email)

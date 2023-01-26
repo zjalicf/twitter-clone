@@ -244,6 +244,7 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 
 func MiddlewareUserValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+
 		user := &domain.User{}
 		err := user.FromJSON(request.Body)
 		if err != nil {
@@ -295,10 +296,6 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 		return
 	}
 	writer.WriteHeader(http.StatusOK)
-
-	//_, err = writer.Write([]byte("Password successfully changed."))
-	//if err != nil {
-	//}
 }
 
 func ExtractTraceInfoMiddleware(next http.Handler) http.Handler {
