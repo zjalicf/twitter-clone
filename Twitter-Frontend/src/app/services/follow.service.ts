@@ -35,4 +35,7 @@ export class FollowService {
     return this.http.post<any>(`${environment.baseApiUrl}/${this.url}/ad`, adConfig)
   }
 
+  public Recommendations(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/recommendations`)
+  }
 }

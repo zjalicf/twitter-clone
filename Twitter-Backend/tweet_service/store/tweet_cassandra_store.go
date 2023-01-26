@@ -185,7 +185,10 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	return tweets, nil
 }
 
-func (sr *TweetRepo) GetFeedByUser(followings []string) ([]*domain.Tweet, error) {
+func (sr *TweetRepo) GetFeedByUser(ctx context.Context, followings []string) ([]*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetFeedByUser")
+	defer span.End()
+
 	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ? ORDER BY created_at DESC`, followings)
 	query.PageSize(0)
 	scanner := query.Iter().Scanner()
@@ -239,7 +242,9 @@ func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Twe
 	return tweet, nil
 }
 
-func (sr *TweetRepo) SaveImage(tweetID gocql.UUID, imageBytes []byte) error {
+func (sr *TweetRepo) SaveImage(ctx context.Context, tweetID gocql.UUID, imageBytes []byte) error {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.SaveImage")
+	defer span.End()
 
 	insert := fmt.Sprintf("INSERT INTO %s (tweet_id, image) VALUES (?, ?)", COLLECTION_TWEET_IMAGE)
 

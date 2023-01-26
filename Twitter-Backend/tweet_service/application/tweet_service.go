@@ -62,7 +62,10 @@ func (service *TweetService) GetTweetsByUser(ctx context.Context, username strin
 	return service.store.GetTweetsByUser(ctx, username)
 }
 
-func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error) {
+func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([]*domain.Tweet, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetFeedByUser")
+	defer span.End()
+
 	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
 	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
 	followServiceRequest.Header.Add("Authorization", token)
@@ -95,7 +98,7 @@ func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error
 		return nil, err
 	}
 
-	userFeed, err := service.store.GetFeedByUser(bodyBytes.([]string))
+	userFeed, err := service.store.GetFeedByUser(ctx, bodyBytes.([]string))
 	if err != nil {
 		log.Printf("Error in getting feed by user: %s", err.Error())
 		return nil, err
@@ -104,8 +107,11 @@ func (service *TweetService) GetFeedByUser(token string) ([]*domain.Tweet, error
 	return userFeed, nil
 }
 
-func (service *TweetService) saveImage(tweetID gocql.UUID, imageBytes []byte) error {
-	return service.store.SaveImage(tweetID, imageBytes)
+func (service *TweetService) saveImage(ctx context.Context, tweetID gocql.UUID, imageBytes []byte) error {
+	ctx, span := service.tracer.Start(ctx, "TweetService.saveImage")
+	defer span.End()
+
+	return service.store.SaveImage(ctx, tweetID, imageBytes)
 }
 
 func (service *TweetService) GetLikesByTweet(ctx context.Context, tweetID string) ([]*domain.Favorite, error) {
@@ -126,12 +132,12 @@ func (service *TweetService) Post(ctx context.Context, tweet *domain.Tweet, user
 	tweet.Image = false
 	if len(*image) != 0 {
 		log.Printf("USLO U SLIKU")
-		err := service.saveImage(tweet.ID, *image)
+		err := service.saveImage(ctx, tweet.ID, *image)
 		if err != nil {
 			return nil, err
 		}
 
-		err = service.cache.PostCacheData(tweet.ID.String(), image)
+		err = service.cache.PostCacheData(ctx, tweet.ID.String(), image)
 		if err != nil {
 			return nil, err
 		}
@@ -198,25 +204,23 @@ func (service *TweetService) TimeSpentOnAd(ctx context.Context, timespent *domai
 	return nil
 }
 
-func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
-	cachedImage, _ := service.cache.GetCachedValue(id)
-	//if err != nil {
-	//	log.Printf("GET REDIS ERR: %s", err.Error())
-	//	return nil, err
-	//}
+func (service *TweetService) GetTweetImage(ctx context.Context, id string) (*[]byte, error) {
+	ctx, span := service.tracer.Start(ctx, "TweetService.GetTweetImage")
+	defer span.End()
+
+	cachedImage, _ := service.cache.GetCachedValue(ctx, id)
 
 	if cachedImage != nil {
-
 		return cachedImage, nil
 	}
 
-	image, err := service.store.GetTweetImage(context.TODO(), id)
+	image, err := service.store.GetTweetImage(ctx, id)
 	if err != nil {
-		log.Printf("CASSANDRA ERR: %s", err.Error())
+		log.Printf("Error in getting image from tweetStore: %s", err.Error())
 		return nil, err
 	}
 
-	err = service.cache.PostCacheData(id, &image)
+	err = service.cache.PostCacheData(ctx, id, &image)
 	if err != nil {
 		log.Printf("POST REDIS ERR: %s", err.Error())
 		return nil, err
@@ -225,7 +229,7 @@ func (service *TweetService) GetTweetImage(id string) (*[]byte, error) {
 }
 
 func (service *TweetService) ViewProfileFromAd(ctx context.Context, tweetID domain.TweetID) error {
-	ctx, span := service.tracer.Start(ctx, "TweetService.TimeSpentOnAd")
+	ctx, span := service.tracer.Start(ctx, "TweetService.ViewProfileFromAd")
 	defer span.End()
 
 	event := events.Event{
@@ -266,7 +270,7 @@ func (service *TweetService) Retweet(ctx context.Context, id string, username st
 			return 500, err
 		}
 
-		err = service.saveImage(newUUID, image)
+		err = service.saveImage(ctx, *newUUID, image)
 		if err != nil {
 			log.Printf("Error in saving image of root tweet in retweet in TweetService.Retweet: %s", err.Error())
 			return 500, err
