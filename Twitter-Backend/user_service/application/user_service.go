@@ -71,7 +71,11 @@ func (service *UserService) Register(user *domain.User) (*domain.User, error) {
 		log.Println(errors.ValidationError)
 		return nil, fmt.Errorf(errors.ValidationError)
 	}
-	validatedUser.Visibility = true
+	if validatedUser.UserType == "Business" {
+		validatedUser.Privacy = false
+	} else {
+		validatedUser.Privacy = true
+	}
 
 	retUser, err := service.store.Post(ctx, validatedUser)
 	if err != nil {
@@ -99,7 +103,7 @@ func (service *UserService) ChangeUserVisibility(ctx context.Context, userID str
 		return fmt.Errorf(errors.UserNotFound)
 	}
 
-	user.Visibility = !user.Visibility
+	user.Privacy = !user.Privacy
 	err = service.store.UpdateUser(ctx, user)
 	if err != nil {
 		log.Printf("Updating user error in service: %s", err.Error())
@@ -177,7 +181,7 @@ func (service *UserService) UserToDomain(userIn create_user.User) domain.User {
 	} else {
 		user.UserType = "Business"
 	}
-	user.Visibility = userIn.Visibility
+	user.Privacy = userIn.Visibility
 	user.CompanyName = userIn.CompanyName
 	user.Website = userIn.Website
 

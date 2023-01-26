@@ -4,6 +4,7 @@ import (
 	"auth_service/authorization"
 	"auth_service/domain"
 	"auth_service/errors"
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -58,7 +59,14 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
 	defer span.End()
 
-	_, err := service.store.GetOneUser(ctx, user.Username)
+	isUsernameExists, err := checkBlackList(user.Password)
+	log.Println(isUsernameExists)
+
+	if isUsernameExists {
+		return "", 55, fmt.Errorf("Password not acceptable, try another one!")
+	}
+
+	_, err = service.store.GetOneUser(ctx, user.Username)
 	if err == nil {
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
@@ -552,4 +560,25 @@ func isRegular(user *domain.User) bool {
 	}
 
 	return false
+}
+
+func checkBlackList(username string) (bool, error) {
+
+	file, err := os.Open("blacklist.txt")
+	if err != nil {
+		log.Printf("Error in authService.checkBlackList: %s", err.Error())
+		return false, err
+	}
+	defer file.Close()
+
+	blacklist := make(map[string]bool)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		blacklist[scanner.Text()] = true
+	}
+	if blacklist[username] {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

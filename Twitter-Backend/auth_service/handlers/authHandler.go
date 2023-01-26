@@ -73,6 +73,11 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 	myUser := req.Context().Value(domain.User{}).(domain.User)
 
 	token, statusCode, err := handler.service.Register(ctx, &myUser)
+	if statusCode == 55 {
+		writer.WriteHeader(http.StatusFound)
+		http.Error(writer, err.Error(), 302)
+		return
+	}
 	if err != nil {
 		http.Error(writer, err.Error(), statusCode)
 		return
