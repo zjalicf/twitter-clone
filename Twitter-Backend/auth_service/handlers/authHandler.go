@@ -193,9 +193,12 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.RecoverPassword")
 	defer span.End()
 
+	handler.logging.Info("Endpoint recoverPassword reached")
+
 	var request domain.RecoverPasswordRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
+		handler.logging.Errorln(err)
 		http.Error(writer, errors.InvalidRequestFormatError, http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
@@ -204,6 +207,7 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 	err = handler.service.RecoverPassword(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotMatchingPasswordsError {
+			handler.logging.Errorln("passwords dont match")
 			http.Error(writer, err.Error(), http.StatusNotAcceptable)
 			return
 		}
@@ -218,28 +222,34 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Login")
 	defer span.End()
 
-	handler.logging.Println("Login")
+	
+	//Println, Error, Fatal, Print, Errorln, Info, Infoln, Warn, Warnln, Warnf
+
+	handler.logging.Info("Endpoint login reached")
 
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
 		log.Println(err)
+		handler.logging.Errorln(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println(request)
 
 	token, err := handler.service.Login(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotVerificatedUser {
+			handler.logging.Errorln(err)
 			http.Error(writer, token, http.StatusLocked)
 			return
 		}
+		handler.logging.Errorln(err)
 		http.Error(writer, "Username not exist!", http.StatusBadRequest)
 		return
 	}
 
 	if token == "not_same" {
+		handler.logging.Errorln("wrong password")
 		http.Error(writer, "Wrong password", http.StatusUnauthorized)
 		return
 	}
@@ -274,6 +284,8 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.ChangePassword")
 	defer span.End()
 
+	handler.logging.Info("Endpoint changePassword reached")
+
 	var token string = req.Header.Get("Authorization")
 	bearerToken := strings.Split(token, "Bearer ")
 	tokenString := bearerToken[1]
@@ -283,6 +295,7 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 	var password domain.PasswordChange
 	err := json.NewDecoder(req.Body).Decode(&password)
 	if err != nil {
+		handler.logging.Errorln(err)
 		log.Println(err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -291,12 +304,15 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 	status := handler.service.ChangePassword(ctx, password, tokenString)
 
 	if status == "oldPassErr" {
+		handler.logging.Errorln("wrong old password")
 		http.Error(writer, "Wrong old password", http.StatusConflict) //409
 		return
 	} else if status == "newPassErr" {
+		handler.logging.Errorln("wrong new password")
 		http.Error(writer, "Wrong new password", http.StatusNotAcceptable) //406
 		return
 	} else if status == "baseErr" {
+		handler.logging.Errorln("internal")
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
