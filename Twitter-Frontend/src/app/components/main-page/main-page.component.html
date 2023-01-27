@@ -13,7 +13,7 @@
         <mat-card class="people-suggestions-card">
             <mat-card-title class="people-suggestions-title">People you may know</mat-card-title>
             <mat-card-content *ngFor="let name of recommendations">
-                <mat-card-header class="people-suggestions-header">{{name}}</mat-card-header>
+                <mat-card-header class="people-suggestions-header" (click)="OpenProfile(name)" >{{name}}</mat-card-header>
             </mat-card-content>
         </mat-card>
     </div>

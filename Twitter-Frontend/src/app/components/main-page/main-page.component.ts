@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import {  Router } from '@angular/router';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
 import { FollowService } from 'src/app/services/follow.service';
@@ -20,7 +21,9 @@ export class MainPageComponent implements OnInit {
   constructor(private tweetService: TweetService,
     private userService: UserService,
     private followService: FollowService,
-    private _snackBar: MatSnackBar) { }
+    private _snackBar: MatSnackBar,
+    private router: Router
+    ) { }
 
 
   //treba napraviti da se prikazu samo tvitovi usera koje pratimo i tvitovi ulogovanog usera
@@ -68,5 +71,10 @@ export class MainPageComponent implements OnInit {
     this._snackBar.open(message, action,  {
       duration: 3500
     });
+  }
+
+  OpenProfile(name: string){
+    this.router.navigate(["View-Profile/:" + name])
+
   }
 }

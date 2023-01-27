@@ -55,8 +55,6 @@ export class TweetViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    console.log(this.report)
-
     this.reportGroup = this.formBuilder.group({
       date: ['', [Validators.required]],
       button: ['', [Validators.required]]
