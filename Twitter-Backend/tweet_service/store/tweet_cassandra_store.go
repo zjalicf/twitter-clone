@@ -529,10 +529,10 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION_BY_USER)
 
 	err = sr.session.Query(insertTweet,
-		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image).Exec()
+		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image, false).Exec()
 
 	err = sr.session.Query(insertByUser,
-		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image).Exec()
+		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image, false).Exec()
 
 	if err != nil {
 		sr.logger.Println(err.Error())

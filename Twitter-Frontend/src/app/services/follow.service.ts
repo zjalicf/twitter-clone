@@ -38,4 +38,8 @@ export class FollowService {
   public Recommendations(): Observable<string[]> {
     return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/recommendations`)
   }
+
+  public IsFollowExist(username: string): Observable<boolean> {
+    return this.http.get<boolean>(`${environment.baseApiUrl}/${this.url}/followExist/${username}`)
+  }
 }

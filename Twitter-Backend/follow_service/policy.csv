@@ -21,3 +21,5 @@ p, Regular, /recommendations/*, GET
 p, Business, /recommendations/*, GET
 p, NotLoggedIn, /recommendations/*, GET
 p, Business, /ad, POST
+p, Regular, /followExist/*, GET
+p, Business, /followExist/*, GET

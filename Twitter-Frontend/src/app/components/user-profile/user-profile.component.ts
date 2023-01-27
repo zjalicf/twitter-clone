@@ -19,6 +19,7 @@ export class UserProfileComponent implements OnInit {
   loggedInUser = new User();
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
+  isFollowing: boolean = false;
 
   constructor(
     private UserService: UserService,
@@ -30,6 +31,11 @@ export class UserProfileComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+      this.followService.IsFollowExist(this.profileUsername).subscribe(response => {
+        this.isFollowing = response;
+      })
+    
+
     this.UserService.GetOneUserByUsername(this.profileUsername)
       .subscribe({
         next: (data: User) => {
@@ -70,13 +76,10 @@ export class UserProfileComponent implements OnInit {
     }
   }
 
-  isPrivate(): boolean {
-    if (this.user.privacy == true) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+  // isPrivate(): boolean {
+  //   console.log("Privacy is " + this.user.privacy)
+  //   return this.user.privacy
+  // }
 
   SendRequest(user: User){
     var followReq = new FollowRequest()

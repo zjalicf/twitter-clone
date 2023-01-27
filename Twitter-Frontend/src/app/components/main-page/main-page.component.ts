@@ -74,7 +74,7 @@ export class MainPageComponent implements OnInit {
   }
 
   OpenProfile(name: string){
-    this.router.navigate(["View-Profile/:" + name])
+    this.router.navigate(["View-Profile/" + name])
 
   }
 }

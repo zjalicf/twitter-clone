@@ -7,15 +7,17 @@
     <h2 class="residence" *ngIf="user.userType == 'Regular'"><b>Residence: </b>{{user.residence}}</h2>
     <mat-card-actions class="user-profile-options-card">
         <div>
-            <button *ngIf="!isThatMe()" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
+            <button *ngIf="user.privacy && !isFollowing" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
         </div>
     </mat-card-actions>
 </mat-card>
-<div *ngIf="isPrivate() && !isThatMe()">
+<div *ngIf="user.privacy && !isFollowing"> 
+    <!-- treba i provera da li ga pratimo ili ne -->
     <h1 class="private-text">You cannot see this Users Tweets because their profile is <b>Private</b></h1>
 </div>
 
-<div *ngIf="!isPrivate() || isThatMe()">
+<div *ngIf="(user.privacy && isFollowing) || !user.privacy">
+    <!-- treba i provera da li ga pratimo ili ne -->
     <h1 class="user-posts-text">User Tweets</h1>
     <app-tweet-list *ngIf="tweets.length > 0" [tweets]="tweets"></app-tweet-list>
 </div>

@@ -41,6 +41,7 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
 	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
+	router.HandleFunc("/followExist/{username}", handler.FollowExist).Methods("GET")
 	router.HandleFunc("/recommendations", handler.GetRecommendationsForUser).Methods("GET")
 	router.HandleFunc("/ad", handler.SaveAd).Methods("POST")
 
@@ -205,4 +206,33 @@ func (handler *FollowHandler) SaveAd(writer http.ResponseWriter, req *http.Reque
 	}
 
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (handler *FollowHandler) FollowExist(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.FollowExist")
+	defer span.End()
+
+	vars := mux.Vars(req)
+	followingUsername, ok := vars["username"]
+	if !ok {
+		http.Error(writer, errors.BadRequestError, http.StatusBadRequest)
+		return
+	}
+
+	token, _ := authorization.GetToken(req)
+	claims := authorization.GetMapClaims(token.Bytes())
+	username := claims["username"]
+
+	request := domain.FollowRequest{
+		Receiver:  followingUsername,
+		Requester: username,
+	}
+
+	isExist, err := handler.service.FollowExist(ctx, &request)
+	if err != nil {
+		http.Error(writer, errors.InternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse(isExist, writer)
 }

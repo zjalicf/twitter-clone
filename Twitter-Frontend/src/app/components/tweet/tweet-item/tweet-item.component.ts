@@ -7,6 +7,7 @@ import { UserService } from 'src/app/services/user.service';
 import { MatDialog } from '@angular/material/dialog';
 import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
 import { Favorite } from 'src/app/models/favorite.model';
+import { FollowService } from 'src/app/services/follow.service';
 
 @Component({
   selector: 'app-tweet-item',
@@ -17,6 +18,7 @@ export class TweetItemComponent implements OnInit {
 
   constructor(private userService: UserService,
     private tweetService: TweetService,
+    private followService: FollowService,
     public dialog: MatDialog) { }
 
   @Input() tweet: Tweet = new Tweet();
@@ -33,9 +35,18 @@ export class TweetItemComponent implements OnInit {
   liked: string = "favorite_border";
   retweeted: string = "star_border"
   isThatMeLoggedIn: boolean = false;
+  isFollowingOwner: boolean = true;
 
   ngOnInit(): void {
+    this.isThatMe()
     this.totalLikes = this.tweet.favorite_count;
+    
+    if(this.tweet.owner_username != ''){
+      this.followService.IsFollowExist(this.tweet.owner_username).subscribe(response => {
+        this.isFollowingOwner = response;
+        console.log(this.isFollowingOwner);
+      })
+    }
 
     if(this.tweet.image) {
       this.tweetService.GetImageByTweet(this.tweet.id).subscribe(response => {

@@ -44,6 +44,7 @@ func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username 
 		usernameList = append(usernameList, &followings[i].Username)
 	}
 	usernameList = append(usernameList, &username)
+	log.Println(usernameList)
 	return usernameList, nil
 }
 

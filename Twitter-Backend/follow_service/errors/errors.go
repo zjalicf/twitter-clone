@@ -6,4 +6,5 @@ var (
 	ErrorInSaveFollow     = "save follow relationship error"
 	ErrorInAcceptRequest  = "update accept request error"
 	ErrorRequestNotExists = "request not exists"
+	InternalServerError   = "internal server error"
 )

@@ -10,7 +10,7 @@ export class User {
     email: string = "";
     website: string = "";
     userType: string = "";
-    privacy: boolean = true;
+    privacy: boolean = false;
 
     User(firstName: string, lastName: string, gender: string, age: number, residence: string, username: string, password: string, companyName: string, email: string, website: string, userType: string, privacy: boolean) {
         this.firstName = firstName;

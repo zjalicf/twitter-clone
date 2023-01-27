@@ -41,6 +41,9 @@ func (store *AuthMongoDBStore) Register(ctx context.Context, user *domain.Creden
 	ctx, span := store.tracer.Start(ctx, "AuthStore.Register")
 	defer span.End()
 
+	//vratiti u jednom trenutku
+	user.Verified = true
+
 	result, err := store.credentials.InsertOne(context.TODO(), user)
 	if err != nil {
 		return err

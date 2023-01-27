@@ -161,8 +161,8 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 	followings, err := session.ExecuteRead(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
 		result, err := transaction.Run(ctx,
 			"MATCH (f:User)-[:FOLLOWS]->(u:User) "+
-				"WHERE u.username = $username "+
-				"RETURN f.id as id, f.username as username, f.age as age, f.residence as residence",
+				"WHERE f.username = $username "+
+				"RETURN u.id as id, u.username as username, u.age as age, u.residence as residence",
 			map[string]any{"username": username})
 		if err != nil {
 			log.Printf("Error in getting followings of user: %s", err.Error())
@@ -538,10 +538,10 @@ func (store *FollowNeo4JStore) RecommendationWithoutFollowings(ctx context.Conte
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			result, err := transaction.Run(ctx,
 				"MATCH (u1:User), (u2:User) "+
-					"WHERE u2.username = $username AND NOT u1.username IN $recommends AND NOT u1 = u2 "+
+					"WHERE u1.username = $username AND NOT u2.username IN $recommends AND NOT u1 = u2 "+
 					"AND u1.residence = u2.residence AND u2.age-3 <= u1.age <= u2.age+3 "+
 					"AND NOT exists((u1:User)-[:FOLLOWS]->(u2:User)) "+
-					"RETURN collect(u1.username) as usernames",
+					"RETURN collect(u2.username) as usernames",
 				map[string]any{"username": username, "recommends": recommends})
 			if err != nil {
 				return nil, err
