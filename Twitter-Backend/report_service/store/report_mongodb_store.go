@@ -25,13 +25,15 @@ type ReportMongoDBStore struct {
 	tracer         trace.Tracer
 }
 
-func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID string, reportType string) (*domain.Report, error) {
+func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID string, reportType string, timestamp int64) (*domain.Report, error) {
 	ctx, span := store.tracer.Start(ctx, "ReportMongoDBStore.GetReportForAd")
 	defer span.End()
 
+	log.Println(timestamp)
+
 	if reportType == "daily" {
 
-		result, err := store.filterOneDaily(bson.M{"tweet_id": tweetID})
+		result, err := store.filterOneDaily(bson.M{"tweet_id": tweetID, "timestamp": timestamp})
 		if err != nil {
 			log.Printf("Error in ReportMongoDB filterOneDaily: &s", err.Error())
 			return nil, err
@@ -40,7 +42,7 @@ func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID str
 
 	} else if reportType == "monthly" {
 
-		result, err := store.filterOneMonthly(bson.M{"tweet_id": tweetID})
+		result, err := store.filterOneMonthly(bson.M{"tweet_id": tweetID, "timestamp": timestamp})
 		if err != nil {
 			log.Printf("Error in ReportMongoDB filterOneMonthly: &s", err.Error())
 			return nil, err

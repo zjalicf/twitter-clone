@@ -32,10 +32,29 @@
 </div>
 
 <div>
-  <mat-card class="report">
+  <mat-card class="report" *ngIf="isAnAd()">
     <mat-card-title class="report-title">Advertisement Report</mat-card-title>
-    <mat-card-content>
-      
-    </mat-card-content>
+    <mat-card>
+      <form [formGroup]="reportGroup">
+        <input [matDatepicker]="picker" formControlName="date">
+        <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <input name="button" type="radio" class="with-gap" style="margin-left: 15px;" formControlName="button" value="daily"/>
+        <label style="margin-left: 5px; font-size: 16px;">Daily</label>
+        <input name="button" type="radio" class="with-gap" style="margin-left: 15px;" formControlName="button" value="monthly"/>
+        <label style="margin-left: 5px; font-size: 16px;">Monthly</label>
+        <button class="btn btn-primary" style="margin-left: 5px; font-size: 12px;" (click)="GetReport()">Generate</button>
+      </form>
+    </mat-card>
+    <mat-card *ngIf="report.like_count != 0 || report.unlike_count != 0 || report.view_count != 0 || report.time_spent != 0">
+
+      <label>Like count: <b>{{report.like_count}}</b> </label> <br>
+      <label>Unlike count: <b>{{report.unlike_count}}</b> </label> <br>
+      <label>View profile count: <b>{{report.view_count}}</b> </label> <br>
+      <label>Average time spent on this advertisement: <b>{{report.time_spent}}</b> </label> <br>
+
+
+    </mat-card>
+
   </mat-card>
 </div>

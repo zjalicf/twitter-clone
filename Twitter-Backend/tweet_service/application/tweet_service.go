@@ -175,6 +175,7 @@ func (service *TweetService) Favorite(ctx context.Context, id string, username s
 		} else {
 			event.Type = "Liked"
 		}
+		log.Println(event.Timestamp)
 		err = service.orchestrator.Start(ctx, event)
 		if err != nil {
 			return status, err

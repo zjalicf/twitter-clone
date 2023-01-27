@@ -9,6 +9,7 @@ import (
 	"report_service/application"
 	"report_service/authorization"
 	"report_service/domain"
+	"strconv"
 )
 
 type KeyUser struct{}
@@ -35,7 +36,7 @@ func (handler *ReportHandler) Init(router *mux.Router) {
 
 	log.Println(reportEnforcer.GetPolicy())
 
-	router.HandleFunc("/{id}/{reportType}", handler.GetReportForAd).Methods("GET")
+	router.HandleFunc("/{id}/{reportType}/{date}", handler.GetReportForAd).Methods("GET")
 	http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(":8005", authorization.Authorizer(reportEnforcer)(router)))
 
@@ -48,10 +49,11 @@ func (handler *ReportHandler) GetReportForAd(writer http.ResponseWriter, req *ht
 	log.Println("Uslo u handler")
 
 	vars := mux.Vars(req)
+	timestamp, _ := strconv.Atoi(vars["date"])
 
-	log.Printf("TweetID : %s, reportType : %s", vars["id"], vars["reportType"])
+	log.Printf("TweetID : %s, reportType : %s, timestamp: %s", vars["id"], vars["reportType"], vars["date"])
 
-	ad, err := handler.service.GetReportForAd(ctx, vars["id"], vars["reportType"])
+	ad, err := handler.service.GetReportForAd(ctx, vars["id"], vars["reportType"], int64(timestamp))
 	if err != nil {
 		http.Error(writer, "Error in handler GetReportForAd", http.StatusInternalServerError)
 		return

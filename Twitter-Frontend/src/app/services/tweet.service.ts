@@ -20,12 +20,12 @@ import { Tweet } from "../models/tweet.model";
         return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, formData);
     }
 
-    public GetHomeFeed(): Observable<any> {
-        return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/feed`);
+    public GetHomeFeed(): Observable<Tweet[]> {
+        return this.http.get<Tweet[]>(`${environment.baseApiUrl}/${this.url}/feed`);
     }
 
-    public GetTweetsForUser(username: string): Observable<any> {
-        return this.http.get<any>(`${environment.baseApiUrl}/${this.url}/user/` + username)
+    public GetTweetsForUser(username: string): Observable<Tweet[]> {
+        return this.http.get<Tweet[]>(`${environment.baseApiUrl}/${this.url}/user/` + username)
     }
 
     //Ovde je povezano sa bekom gde fali endpoint
@@ -46,16 +46,7 @@ import { Tweet } from "../models/tweet.model";
     }
     
     public GetImageByTweet(tweetID: string): Observable<Blob> {
-        // let returnRet: Blob = new Blob()
-        // fetch('https://localhost:8000/api/tweets/image/' + tweetID).then(response => response.blob())
-        // .then(blob => {
-        //     const returnRet = blob
-        //     console.log(returnRet);
-        // });
-        // return returnRet
         return this.http.get(`${environment.baseApiUrl}/${this.url}/image/${tweetID}`, { responseType: 'blob' })
-        
-    
     }
 
     public TimespentOnAd(timespent: TimespentDTO): Observable<void> {

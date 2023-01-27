@@ -1,13 +1,17 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { TimespentDTO } from 'src/app/dto/TimespentDTO';
 import { TweetID } from 'src/app/dto/tweetIdDTO';
 import { Favorite } from 'src/app/models/favorite.model';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
+import { ReportService } from 'src/app/services/reportService';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
+import { Report } from 'src/app/models/report'
 import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
 
 @Component({
@@ -21,10 +25,18 @@ export class TweetViewComponent implements OnInit, OnDestroy {
     private tweetService: TweetService,
     private userService: UserService,
     private route: ActivatedRoute,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private formBuilder: FormBuilder,
+    private reportService: ReportService,
+    private _snackBar: MatSnackBar
   ) { }
 
-  imagePath: string = ""
+  reportGroup: FormGroup = new FormGroup({
+    date: new FormControl(),
+    button: new FormControl(''),
+  });
+
+  imagePath: string = "";
   likesByTweet: Favorite[] = [];
   tweet: Tweet = new Tweet();
   tweetID: TweetID = new TweetID();
@@ -35,11 +47,21 @@ export class TweetViewComponent implements OnInit, OnDestroy {
   isRetweeted: boolean = false;
   liked: string = "favorite_border";
   isThatMeLoggedIn: boolean = false;
+  report: Report = new Report();
+
 
   startTime: number = 0;
   endTime: number = 0;
 
   ngOnInit(): void {
+
+    console.log(this.report)
+
+    this.reportGroup = this.formBuilder.group({
+      date: ['', [Validators.required]],
+      button: ['', [Validators.required]]
+    });
+
     this.startTime = performance.now();
     this.totalLikes = this.tweet.favorite_count;
 
@@ -62,6 +84,41 @@ export class TweetViewComponent implements OnInit, OnDestroy {
       });
       
       
+  }
+
+  GetReport(): void{
+
+    if(this.reportGroup.get('button')?.value == ""){
+      this.openSnackBar("Please select report type!", "OK")
+      return
+    }
+
+    let date = String(this.reportGroup.get('date')?.value);
+    let timestamp = new Date(date)
+
+    if (this.reportGroup.get('button')?.value == "monthly"){
+      timestamp.setDate(1) // ovo za monthly
+      timestamp.setHours(1,0,0)
+    }else{
+      timestamp.setHours(1,0,0) // ovo za daily
+    }
+
+
+    this.reportService.GetReport(this.tweet.id, timestamp.getTime()/1000, this.reportGroup.get('button')?.value).subscribe(
+      data => {
+        this.report = data
+      },
+      error => {
+        if (error.status == 500){
+            this.openSnackBar("This advertisement doesn't have report for that date! Try another one.", "OK")
+        }
+        this.report.like_count = 0;
+        this.report.unlike_count = 0;
+        this.report.time_spent = 0;
+        this.report.view_count = 0;
+      }
+    )
+
   }
 
   ngOnDestroy(): void {
@@ -166,6 +223,10 @@ export class TweetViewComponent implements OnInit, OnDestroy {
     } else {
       return false;
     }
+  }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action, {duration: 5000});
   }
 
 }

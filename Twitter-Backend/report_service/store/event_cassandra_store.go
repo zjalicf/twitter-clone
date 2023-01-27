@@ -101,9 +101,11 @@ func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context,
 	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentMonthlyEvents")
 	defer span.End()
 
-	date := time.Unix(event.Timestamp, 0)
-	firstMonthDate := time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, time.UTC)
-	lastMonthDate := time.Date(date.Year(), date.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	thisT := time.Unix(event.Timestamp, 0)
+	localTime := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), thisT.Hour()+1, 0, 0, 0, time.Local)
+
+	firstMonthDate := time.Date(localTime.Year(), localTime.Month(), 1, 0, 0, 0, 0, time.Local)
+	lastMonthDate := time.Date(localTime.Year(), localTime.Month()+1, 1, 0, 0, 0, 0, time.Local)
 
 	log.Printf("first: %s  ,  last: %s", firstMonthDate, lastMonthDate)
 
@@ -140,8 +142,9 @@ func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, e
 	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentDailyEvents")
 	defer span.End()
 
-	date := time.Unix(event.Timestamp, 0)
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	thisT := time.Unix(event.Timestamp, 0)
+	localTime := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), thisT.Hour()+1, 0, 0, 0, time.Local)
+	startOfDay := time.Date(localTime.Year(), localTime.Month(), localTime.Day(), 0, 0, 0, 0, time.Local)
 	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	log.Printf("start of day: %s  ,  end of day: %s", startOfDay, endOfDay)
