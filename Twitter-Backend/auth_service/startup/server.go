@@ -107,7 +107,7 @@ func (server *Server) Start() {
 
 	redisClient := server.initRedisClient()
 	authCache := server.initAuthCache(redisClient)
-	authStore := server.initAuthStore(mongoClient, tracer)
+	authStore := server.initAuthStore(mongoClient, tracer, Logger)
 
 	//saga init
 
@@ -121,7 +121,7 @@ func (server *Server) Start() {
 
 	createUserOrchestrator := server.initCreateUserOrchestrator(commandPublisher, replySubscriber, tracer)
 
-	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer)
+	authService := server.initAuthService(authStore, authCache, createUserOrchestrator, tracer, Logger)
 
 	server.initCreateUserHandler(authService, replyPublisher, commandSubscriber, tracer)
 	authHandler := server.initAuthHandler(authService, tracer, Logger)
@@ -145,8 +145,8 @@ func (server *Server) initRedisClient() *redis.Client {
 	return client
 }
 
-func (server *Server) initAuthStore(client *mongo.Client, tracer trace.Tracer) domain.AuthStore {
-	store := store2.NewAuthMongoDBStore(client, tracer)
+func (server *Server) initAuthStore(client *mongo.Client, tracer trace.Tracer, logging *logrus.Logger) domain.AuthStore {
+	store := store2.NewAuthMongoDBStore(client, tracer, logging)
 	return store
 }
 
@@ -155,8 +155,8 @@ func (server *Server) initAuthCache(client *redis.Client) domain.AuthCache {
 	return cache
 }
 
-func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *application.CreateUserOrchestrator, tracer trace.Tracer) *application.AuthService {
-	return application.NewAuthService(store, cache, orchestrator, tracer)
+func (server *Server) initAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *application.CreateUserOrchestrator, tracer trace.Tracer, logging *logrus.Logger) *application.AuthService {
+	return application.NewAuthService(store, cache, orchestrator, tracer, logging)
 }
 
 func (server *Server) initAuthHandler(service *application.AuthService, tracer trace.Tracer, logging *logrus.Logger) *handlers.AuthHandler {

@@ -40,7 +40,7 @@ func NewAuthHandler(service *application.AuthService, tracer trace.Tracer, loggi
 
 func (handler *AuthHandler) Init(router *mux.Router) {
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	log.Println("successful init of enforcer")
+	handler.logging.Infoln("auth_service : successful init of enforcer")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -278,6 +278,8 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, "Wrong password", http.StatusUnauthorized)
 		return
 	}
+
+	handler.logging.Info("AuthHandler.Login : endpoint login successful")
 
 	writer.Write([]byte(token))
 }

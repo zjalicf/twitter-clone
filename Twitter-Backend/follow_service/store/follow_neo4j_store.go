@@ -6,6 +6,7 @@ import (
 	"follow_service/domain"
 	"follow_service/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 )
@@ -16,16 +17,18 @@ const (
 )
 
 type FollowNeo4JStore struct {
-	driver neo4j.DriverWithContext
-	logger *log.Logger
-	tracer trace.Tracer
+	driver  neo4j.DriverWithContext
+	logger  *log.Logger
+	logging *logrus.Logger
+	tracer  trace.Tracer
 }
 
-func NewFollowNeo4JStore(driver *neo4j.DriverWithContext, tracer trace.Tracer) domain.FollowRequestStore {
+func NewFollowNeo4JStore(driver *neo4j.DriverWithContext, tracer trace.Tracer, logging *logrus.Logger) domain.FollowRequestStore {
 	return &FollowNeo4JStore{
-		driver: *driver,
-		logger: log.Default(),
-		tracer: tracer,
+		driver:  *driver,
+		logger:  log.Default(),
+		tracer:  tracer,
+		logging: logging,
 	}
 }
 
