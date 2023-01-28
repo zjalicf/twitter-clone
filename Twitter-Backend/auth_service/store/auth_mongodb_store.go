@@ -32,6 +32,7 @@ func NewAuthMongoDBStore(client *mongo.Client, tracer trace.Tracer) domain.AuthS
 func (store *AuthMongoDBStore) GetAll(ctx context.Context) ([]*domain.Credentials, error) {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.GetAll")
 	defer span.End()
+	handler.logging.Infoln("reached getAll in store")
 
 	filter := bson.D{{}}
 	return store.filter(filter)
@@ -40,12 +41,13 @@ func (store *AuthMongoDBStore) GetAll(ctx context.Context) ([]*domain.Credential
 func (store *AuthMongoDBStore) Register(ctx context.Context, user *domain.Credentials) error {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.Register")
 	defer span.End()
-
+	handler.logging.Infoln("reached register in store")
 	//vratiti u jednom trenutku
 	user.Verified = true
 
 	result, err := store.credentials.InsertOne(context.TODO(), user)
 	if err != nil {
+		handler.logging.Errorln(err)
 		return err
 	}
 
@@ -58,17 +60,22 @@ func (store *AuthMongoDBStore) UpdateUser(ctx context.Context, user *domain.Cred
 	ctx, span := store.tracer.Start(ctx, "AuthStore.UpdateUser")
 	defer span.End()
 
+	handler.logging.Infoln("reached updateUser in store")
+
 	newState, err := store.credentials.UpdateOne(context.TODO(), bson.M{"_id": user.ID}, bson.M{"$set": user})
 	if err != nil {
+		handler.logging.Errorln(err)
 		return err
 	}
-	fmt.Println(newState)
+
 	return nil
 }
 
 func (store *AuthMongoDBStore) GetOneUser(ctx context.Context, username string) (*domain.Credentials, error) {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.GetOneUser")
 	defer span.End()
+
+	handler.logging.Infoln("reached getOneUser in store")
 
 	filter := bson.M{"username": username}
 
@@ -77,14 +84,15 @@ func (store *AuthMongoDBStore) GetOneUser(ctx context.Context, username string) 
 		log.Println(err.Error())
 		return nil, err
 	}
-	log.Println("SVE OK")
-
+	
+	handler.logging.Infoln("getOneUser success")
 	return user, nil
 }
 
 func (store *AuthMongoDBStore) GetOneUserByID(ctx context.Context, id primitive.ObjectID) *domain.Credentials {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.GetOneUserByID")
 	defer span.End()
+	handler.logging.Infoln("reached getOneUserbyID in store")
 
 	filter := bson.M{"_id": id}
 
@@ -94,18 +102,21 @@ func (store *AuthMongoDBStore) GetOneUserByID(ctx context.Context, id primitive.
 		return nil
 	}
 
+	handler.logging.Infoln("getOneUser success")
 	return &user
 }
 
 func (store *AuthMongoDBStore) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.DeleteUserByID")
 	defer span.End()
+	handler.logging.Infoln("reached deleteUserbyID in store")
 
 	_, err := store.credentials.DeleteMany(ctx, bson.M{"_id": id})
 	if err != nil {
 		return err
 	}
 
+	handler.logging.Infoln("deletebyID success")
 	return nil
 }
 
