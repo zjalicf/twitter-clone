@@ -7,7 +7,7 @@
     <h2 class="residence" *ngIf="user.userType == 'Regular'"><b>Residence: </b>{{user.residence}}</h2>
     <mat-card-actions class="user-profile-options-card">
         <div>
-            <button *ngIf="user.privacy && !isFollowing" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
+            <button *ngIf="(user.privacy && !isFollowing) || !isFollowing" class="btn btn-primary" (click)="SendRequest(user)">Follow</button>
         </div>
     </mat-card-actions>
 </mat-card>
