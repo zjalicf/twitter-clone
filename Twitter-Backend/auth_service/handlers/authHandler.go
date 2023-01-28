@@ -73,23 +73,24 @@ func (handler *AuthHandler) Register(writer http.ResponseWriter, req *http.Reque
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Register")
 	defer span.End()
 
-	handler.logging.Infoln("Register endpoint reached")
+	handler.logging.Infoln("AuthHandler.Register : Register endpoint reached")
 
 	myUser := req.Context().Value(domain.User{}).(domain.User)
 
 	token, statusCode, err := handler.service.Register(ctx, &myUser)
 	if statusCode == 55 {
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.Register : %s", err)
 		writer.WriteHeader(http.StatusFound)
 		http.Error(writer, err.Error(), 302)
 		return
 	}
 	if err != nil {
+		handler.logging.Errorf("AuthHandler.Register : %s", err)
 		http.Error(writer, err.Error(), statusCode)
 		return
 	}
 	writer.WriteHeader(http.StatusOK)
-	handler.logging.Infoln("Registration success")
+	handler.logging.Infoln("AuthHandler.Register : Registration success")
 	jsonResponse(token, writer)
 }
 
@@ -97,7 +98,7 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.VerifyAccount")
 	defer span.End()
 
-	handler.logging.Infoln("VerifyAccount endpoint reached")
+	handler.logging.Infoln("AuthHandler.Register : VerifyAccount endpoint reached")
 
 	var request domain.RegisterRecoverVerification
 	err := json.NewDecoder(req.Body).Decode(&request)
@@ -109,7 +110,7 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 	}
 
 	if len(request.UserToken) == 0 {
-		handler.logging.Errorln("bad token")
+		handler.logging.Errorln("AuthHandler.Register : bad token (token is empty)")
 		http.Error(writer, errors.InvalidUserTokenError, http.StatusBadRequest)
 		return
 	}
@@ -117,17 +118,17 @@ func (handler *AuthHandler) VerifyAccount(writer http.ResponseWriter, req *http.
 	err = handler.service.VerifyAccount(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.InvalidTokenError {
-			handler.logging.Errorln("bad token")
+			handler.logging.Errorln("AuthHandler.Register : bad token (invalid token)")
 			log.Println(err.Error())
 			http.Error(writer, errors.InvalidTokenError, http.StatusNotAcceptable)
 		} else if err.Error() == errors.ExpiredTokenError {
-			handler.logging.Errorln("expired token")
+			handler.logging.Errorln("AuthHandler.Register : expired token")
 			log.Println(err.Error())
 			http.Error(writer, errors.ExpiredTokenError, http.StatusNotFound)
 		}
 		return
 	}
-	handler.logging.Infoln("Verified account")
+	handler.logging.Infoln("AuthHandler.Register : Verified account")
 
 	writer.WriteHeader(http.StatusOK)
 }
@@ -136,12 +137,12 @@ func (handler *AuthHandler) ResendVerificationToken(writer http.ResponseWriter, 
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.ResendVerificationToken")
 	defer span.End()
 
-	handler.logging.Infoln("ResendVerificationToken endpoint reached")
+	handler.logging.Infoln("AuthHandler.ResendVerificationToken : ResendVerificationToken endpoint reached")
 
 	var request domain.ResendVerificationRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.ResendVerificationToken : %s", err)
 		http.Error(writer, errors.InvalidRequestFormatError, http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
@@ -150,11 +151,11 @@ func (handler *AuthHandler) ResendVerificationToken(writer http.ResponseWriter, 
 	err = handler.service.ResendVerificationToken(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.InvalidResendMailError {
-			handler.logging.Errorln("Invalid mail")
+			handler.logging.Errorf("AuthHandler.ResendVerificationToken : %s (Invalid mail)", err)
 			http.Error(writer, err.Error(), http.StatusNotAcceptable)
 			return
 		} else {
-			handler.logging.Errorln(err)
+			handler.logging.Errorf("AuthHandler.ResendVerificationToken : %s", err)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -167,12 +168,12 @@ func (handler *AuthHandler) SendRecoveryPasswordToken(writer http.ResponseWriter
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.SendRecoveryPasswordToken")
 	defer span.End()
 
-	handler.logging.Infoln("SendRecoveryPassword endpoint reached")
+	handler.logging.Infoln("AuthHandler.SendRecoveryPasswordToken : SendRecoveryPassword endpoint reached")
 
 	buf := new(strings.Builder)
 	_, err := io.Copy(buf, req.Body)
 	if err != nil {
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.SendRecoveryPasswordToken : %s", err)
 		http.Error(writer, errors.InvalidRequestFormatError, http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
@@ -180,12 +181,11 @@ func (handler *AuthHandler) SendRecoveryPasswordToken(writer http.ResponseWriter
 
 	id, statusCode, err := handler.service.SendRecoveryPasswordToken(ctx, buf.String())
 	if err != nil {
-		handler.logging.Errorln("service sendrecovery failed")
+		handler.logging.Errorf("AuthHandler.SendRecoveryPasswordToken : %s (service sendrecovery failed)", err)
 		http.Error(writer, err.Error(), statusCode)
 		return
 	}
-
-	handler.logging.Infoln("recovery pass sent")
+	handler.logging.Errorf("AuthHandler.SendRecoveryPasswordToken : %s (recovery password sent)", err)
 
 	jsonResponse(id, writer)
 }
@@ -194,12 +194,12 @@ func (handler *AuthHandler) CheckRecoveryPasswordToken(writer http.ResponseWrite
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.CheckRecoveryPasswordToken")
 	defer span.End()
 
-	handler.logging.Infoln("check recovery endpoint reached")
+	handler.logging.Infoln("AuthHandler.CheckRecoveryPasswordToken : check recovery endpoint reached")
 
 	var request domain.RegisterRecoverVerification
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.CheckRecoveryPasswordToken : %s", err)
 		http.Error(writer, errors.InvalidRequestFormatError, http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
@@ -207,12 +207,12 @@ func (handler *AuthHandler) CheckRecoveryPasswordToken(writer http.ResponseWrite
 
 	err = handler.service.CheckRecoveryPasswordToken(ctx, &request)
 	if err != nil {
-		handler.logging.Errorln("service check recovery failed")
+		handler.logging.Errorf("AuthHandler.CheckRecoveryPasswordToken : %s (service check recovery failed)", err)
 		http.Error(writer, err.Error(), http.StatusNotAcceptable)
 		return
 	}
 
-	handler.logging.Infoln(check success)
+	handler.logging.Infoln("AuthHandler.CheckRecoveryPasswordToken : check success")
 	writer.WriteHeader(http.StatusOK)
 }
 
@@ -220,12 +220,12 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.RecoverPassword")
 	defer span.End()
 
-	handler.logging.Info("Endpoint recoverPassword reached")
+	handler.logging.Info("AuthHandler.RecoverPassword : Endpoint recoverPassword reached")
 
 	var request domain.RecoverPasswordRequest
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.RecoverPassword : %s", err)
 		http.Error(writer, errors.InvalidRequestFormatError, http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
@@ -234,7 +234,7 @@ func (handler *AuthHandler) RecoverPassword(writer http.ResponseWriter, req *htt
 	err = handler.service.RecoverPassword(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotMatchingPasswordsError {
-			handler.logging.Errorln("passwords dont match")
+			handler.logging.Errorf("AuthHandler.RecoverPassword : %s (passwords don't match)", err)
 			http.Error(writer, err.Error(), http.StatusNotAcceptable)
 			return
 		}
@@ -249,16 +249,14 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.Login")
 	defer span.End()
 
-	
 	//Println, Error, Fatal, Print, Errorln, Info, Infoln, Warn, Warnln, Warnf
 
-	handler.logging.Info("Endpoint login reached")
+	handler.logging.Info("AuthHandler.Login : endpoint login reached")
 
 	var request domain.Credentials
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		log.Println(err)
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.Login : %s", err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -266,17 +264,17 @@ func (handler *AuthHandler) Login(writer http.ResponseWriter, req *http.Request)
 	token, err := handler.service.Login(ctx, &request)
 	if err != nil {
 		if err.Error() == errors.NotVerificatedUser {
-			handler.logging.Errorln(err)
+			handler.logging.Errorf("AuthHandler.Login : %s", err)
 			http.Error(writer, token, http.StatusLocked)
 			return
 		}
-		handler.logging.Errorln(err)
+		handler.logging.Errorf("AuthHandler.Login : %s (username not exist)", err)
 		http.Error(writer, "Username not exist!", http.StatusBadRequest)
 		return
 	}
 
 	if token == "not_same" {
-		handler.logging.Errorln("wrong password")
+		handler.logging.Errorln("AuthHandler.Login : wrong password")
 		http.Error(writer, "Wrong password", http.StatusUnauthorized)
 		return
 	}
@@ -311,19 +309,16 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 	ctx, span := handler.tracer.Start(req.Context(), "AuthHandler.ChangePassword")
 	defer span.End()
 
-	handler.logging.Info("Endpoint changePassword reached")
+	handler.logging.Info("AuthHandler.ChangePassword : Endpoint changePassword reached")
 
 	var token string = req.Header.Get("Authorization")
 	bearerToken := strings.Split(token, "Bearer ")
 	tokenString := bearerToken[1]
 
-	fmt.Println(req.Body)
-
 	var password domain.PasswordChange
 	err := json.NewDecoder(req.Body).Decode(&password)
 	if err != nil {
-		handler.logging.Errorln(err)
-		log.Println(err)
+		handler.logging.Errorf("AuthHandler.ChangePassword : %s", err)
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -331,15 +326,15 @@ func (handler *AuthHandler) ChangePassword(writer http.ResponseWriter, req *http
 	status := handler.service.ChangePassword(ctx, password, tokenString)
 
 	if status == "oldPassErr" {
-		handler.logging.Errorln("wrong old password")
+		handler.logging.Errorf("AuthHandler.ChangePassword : %s (wrong old password)", err)
 		http.Error(writer, "Wrong old password", http.StatusConflict) //409
 		return
 	} else if status == "newPassErr" {
-		handler.logging.Errorln("wrong new password")
+		handler.logging.Errorf("AuthHandler.ChangePassword : %s (wrong new password)", err)
 		http.Error(writer, "Wrong new password", http.StatusNotAcceptable) //406
 		return
 	} else if status == "baseErr" {
-		handler.logging.Errorln("internal")
+		handler.logging.Errorf("AuthHandler.ChangePassword : %s (Internal server error)", err)
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
