@@ -1,6 +1,6 @@
 <h1 mat-dialog-title class="dialog-title">Users who follow me:</h1>
 <div mat-dialog-content class="dialog-content">
-    <h3 *ngFor="let favorite of data" (click)="onUsernameClick(favorite.username)" class="dialog-username">{{favorite}}</h3>
+    <h3 *ngFor="let username of data" (click)="onUsernameClick(username)" class="dialog-username">{{username}}</h3>
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="onOkClick()">Ok</button>

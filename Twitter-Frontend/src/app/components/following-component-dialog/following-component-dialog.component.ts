@@ -12,7 +12,7 @@ export class FollowingComponentDialogComponent implements OnInit {
 
   constructor(private router: Router,
     public dialogRef: MatDialogRef<FollowingComponentDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: User[],
+    @Inject(MAT_DIALOG_DATA) public data: string[],
     ) { }
 
   ngOnInit(): void {

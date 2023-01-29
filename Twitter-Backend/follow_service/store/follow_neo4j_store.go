@@ -95,7 +95,7 @@ func (store *FollowNeo4JStore) GetRequestsForUser(ctx context.Context, username 
 		}
 
 		var requests []*domain.FollowRequest
-		if result.Next(ctx) {
+		for result.Next(ctx) {
 			record := result.Record()
 			id, _ := record.Get("id")
 			requester, _ := record.Get("requester")
@@ -167,7 +167,7 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(ctx context.Context
 	return requests.(*domain.FollowRequest), nil
 }
 
-func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username string) ([]*domain.User, error) {
+func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username string) ([]string, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.GetFollowingsOfUser")
 	defer span.End()
 
@@ -180,26 +180,25 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 		result, err := transaction.Run(ctx,
 			"MATCH (f:User)-[:FOLLOWS]->(u:User) "+
 				"WHERE f.username = $username "+
-				"RETURN u.id as id, u.username as username, u.age as age, u.residence as residence",
+				"RETURN collect(DISTINCT u.username) as usernames",
 			map[string]any{"username": username})
 		if err != nil {
 			store.logging.Errorf("FollowStore.GetFollowingsOfUser.Run() : %s", err)
 			return nil, err
 		}
 
-		var followings []*domain.User
+		var followings []string
 		if result.Next(ctx) {
-			record := result.Record()
-			id, _ := record.Get("id")
-			username, _ := record.Get("username")
-			age, _ := record.Get("age")
-			residence, _ := record.Get("residence")
-			followings = append(followings, &domain.User{
-				ID:        id.(string),
-				Username:  username.(string),
-				Age:       int(age.(int64)),
-				Residence: residence.(string),
-			})
+
+			usernames, _ := result.Record().Get("usernames")
+			if usernames == nil {
+				return followings, nil
+			}
+			for _, username := range usernames.([]interface{}) {
+				followings = append(followings, username.(string))
+				log.Println(username)
+			}
+
 		}
 
 		return followings, nil
@@ -211,7 +210,53 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 
 	store.logging.Infoln("FollowStore.GetFollowingsOfUser : GetFollowingsOfUser successful")
 
-	return followings.([]*domain.User), nil
+	return followings.([]string), nil
+}
+
+func (store *FollowNeo4JStore) GetFollowersOfUser(ctx context.Context, username string) ([]string, error) {
+	ctx, span := store.tracer.Start(ctx, "FollowStore.GetFollowersOfUser")
+	defer span.End()
+
+	store.logging.Infoln("FollowStore.GetFollowersOfUser : GetFollowersOfUser reached")
+
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	followings, err := session.ExecuteRead(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(ctx,
+			"MATCH (u:User)-[:FOLLOWS]->(f:User) "+
+				"WHERE f.username = $username "+
+				"RETURN collect(DISTINCT u.username) as usernames",
+			map[string]any{"username": username})
+		if err != nil {
+			store.logging.Errorf("FollowStore.GetFollowersOfUser.Run() : %s", err)
+			return nil, err
+		}
+
+		var followings []string
+		if result.Next(ctx) {
+
+			usernames, _ := result.Record().Get("usernames")
+			if usernames == nil {
+				return followings, nil
+			}
+			for _, username := range usernames.([]interface{}) {
+				followings = append(followings, username.(string))
+				log.Println(username)
+			}
+
+		}
+
+		return followings, nil
+	})
+	if err != nil {
+		store.logging.Errorf("FollowStore.GetFollowersOfUser.ExecuteRead() : %s", err)
+		return nil, err
+	}
+
+	store.logging.Infoln("FollowStore.GetFollowersOfUser : GetFollowersOfUser successful")
+
+	return followings.([]string), nil
 }
 
 func (store *FollowNeo4JStore) SaveRequest(ctx context.Context, request *domain.FollowRequest) error {
@@ -570,7 +615,7 @@ func (store *FollowNeo4JStore) RecommendWithFollowings(ctx context.Context, user
 					"OPTIONAL MATCH (u1:User)-[:FOLLOWS]->(u3:User)-[:FOLLOWS]->(u4:User) "+
 					"WHERE NOT u1 = u4 AND NOT u2 = u3 "+
 					"OPTIONAL MATCH (u4:User)-[:FOLLOWS]->(u5:User) "+
-					"WHERE NOT u5 = u2 AND NOT u5 = u3 AND NOT u5 = u1 "+
+					"WHERE NOT u5 = u2 AND NOT u5 = u3 AND NOT u5 = u1 AND NOT exists((u1)-[:FOLLOWS]->(u5))"+
 					"MATCH (u1:User)-[:FOLLOWS]->(u2:User)-[:FOLLOWS]->(u6:User) "+
 					"WHERE NOT u6 = u1 AND NOT exists((u1:User)-[:FOLLOWS]->(u6:User)) "+
 					"WITH collect(distinct u4.username) + collect(distinct u5.username) + "+

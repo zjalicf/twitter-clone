@@ -44,11 +44,11 @@ export class FollowService {
     return this.http.get<boolean>(`${environment.baseApiUrl}/${this.url}/followExist/${username}`)
   }
 
-  public GetFollowingsForMe(): Observable<User[]>{
-    return this.http.get<User[]>(`${environment.baseApiUrl}/${this.url}/followings/me`)
+  public GetFollowings(username: string): Observable<string[]>{
+    return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/followings/${username}`)
   }
 
-  public GetFollowingsForUser(username: string): Observable<User[]>{
-    return this.http.get<User[]>(`${environment.baseApiUrl}/${this.url}/followings/${username}`)
+  public GetFollowiners(username: string): Observable<string[]>{
+    return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/followers/${username}`)
   }
 }

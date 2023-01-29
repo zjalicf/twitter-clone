@@ -26,8 +26,8 @@ export class MyProfileComponent implements OnInit {
   user: User = new User();
   tweets: Tweet[] = [];
   isBusinessBool: boolean = false
-  followings: User[] = []
-  followers: User[] = []
+  followings: string[] = []
+  followers: string[] = []
     
   ngOnInit(): void {
 
@@ -48,10 +48,15 @@ export class MyProfileComponent implements OnInit {
             .subscribe({
               next: (data: Tweet[]) => {
                 this.tweets = data;
-                this.followService.GetFollowingsForMe().subscribe(
+                this.followService.GetFollowings("me").subscribe(
                   data => {
                     this.followings = data
                     console.log(this.followings)
+                  }
+                )
+                this.followService.GetFollowiners("me").subscribe(
+                  data => {
+                    this.followers = data
                   }
                 )
 
