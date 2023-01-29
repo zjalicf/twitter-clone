@@ -107,26 +107,26 @@ func (server *Server) Start() {
 	otel.SetTracerProvider(tp)
 	tracer := tp.Tracer("user_service")
 
-	userStore := server.initUserStore(mongoClient, tracer)
-	userService := server.initUserService(userStore, tracer)
-	userHandler := server.initUserHandler(userService, tracer)
+	userStore := server.initUserStore(mongoClient, tracer, Logger)
+	userService := server.initUserService(userStore, tracer, Logger)
+	userHandler := server.initUserHandler(userService, tracer, Logger)
 
 	server.initCreateUserHandler(userService, replyPublisher, commandSubscriber, tracer)
 
 	server.start(userHandler)
 }
 
-func (server *Server) initUserStore(client *mongo.Client, tracer trace.Tracer) domain.UserStore {
-	userStore := store.NewUserMongoDBStore(client, tracer)
+func (server *Server) initUserStore(client *mongo.Client, tracer trace.Tracer, logging *logrus.Logger) domain.UserStore {
+	userStore := store.NewUserMongoDBStore(client, tracer, logging)
 	return userStore
 }
 
-func (server *Server) initUserService(store domain.UserStore, tracer trace.Tracer) *application.UserService {
-	return application.NewUserService(store, tracer)
+func (server *Server) initUserService(store domain.UserStore, tracer trace.Tracer, logging *logrus.Logger) *application.UserService {
+	return application.NewUserService(store, tracer, logging)
 }
 
-func (server *Server) initUserHandler(service *application.UserService, tracer trace.Tracer) *handlers.UserHandler {
-	return handlers.NewUserHandler(service, tracer)
+func (server *Server) initUserHandler(service *application.UserService, tracer trace.Tracer, logging *logrus.Logger) *handlers.UserHandler {
+	return handlers.NewUserHandler(service, tracer, logging)
 }
 
 func (server *Server) initMongoClient() *mongo.Client {

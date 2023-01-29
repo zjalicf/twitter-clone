@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/neo4j/neo4j-go-driver/v5 v5.4.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/zjalicf/twitter-clone-common/common v0.0.0-20230119211805-4db3ea2db008
 	go.opentelemetry.io/otel v1.11.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2

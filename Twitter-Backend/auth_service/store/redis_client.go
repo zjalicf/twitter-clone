@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/sirupsen/logrus"
 	"log"
 )
 
@@ -16,7 +17,7 @@ func GetRedisClient(host, port string) (*redis.Client, error) {
 
 	_, err := client.Ping().Result()
 	if err != nil {
-		handler.logging.Errorln(err)
+		logrus.Errorln(err)
 		log.Printf("failed to ping cache db because of: %s ", err)
 		return nil, err
 	}

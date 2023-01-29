@@ -6,6 +6,7 @@ import (
 	"follow_service/domain"
 	"follow_service/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 )
@@ -16,22 +17,26 @@ const (
 )
 
 type FollowNeo4JStore struct {
-	driver neo4j.DriverWithContext
-	logger *log.Logger
-	tracer trace.Tracer
+	driver  neo4j.DriverWithContext
+	logger  *log.Logger
+	logging *logrus.Logger
+	tracer  trace.Tracer
 }
 
-func NewFollowNeo4JStore(driver *neo4j.DriverWithContext, tracer trace.Tracer) domain.FollowRequestStore {
+func NewFollowNeo4JStore(driver *neo4j.DriverWithContext, tracer trace.Tracer, logging *logrus.Logger) domain.FollowRequestStore {
 	return &FollowNeo4JStore{
-		driver: *driver,
-		logger: log.Default(),
-		tracer: tracer,
+		driver:  *driver,
+		logger:  log.Default(),
+		tracer:  tracer,
+		logging: logging,
 	}
 }
 
 func (store *FollowNeo4JStore) FollowExist(ctx context.Context, followRequest *domain.FollowRequest) (bool, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.FollowExist")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.FollowExist : FollowExist reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -44,7 +49,7 @@ func (store *FollowNeo4JStore) FollowExist(ctx context.Context, followRequest *d
 					"RETURN rec as receiver",
 				map[string]any{"requester": followRequest.Requester, "receiver": followRequest.Receiver})
 			if err != nil {
-				log.Printf("Error in creating request node and relationships because of: %s", err.Error())
+				store.logging.Errorf("FollowStore.FollowExist.Run() : %s", err)
 				return nil, err
 			}
 
@@ -60,8 +65,11 @@ func (store *FollowNeo4JStore) FollowExist(ctx context.Context, followRequest *d
 			return true, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.FollowExist.ExecuteRead() : %s", err)
 		return false, err
 	}
+
+	store.logging.Infoln("FollowStore.FollowExist : FollowExist successful")
 
 	return isExist.(bool), nil
 }
@@ -69,6 +77,8 @@ func (store *FollowNeo4JStore) FollowExist(ctx context.Context, followRequest *d
 func (store *FollowNeo4JStore) GetRequestsForUser(ctx context.Context, username string) ([]*domain.FollowRequest, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.GetRequestsForUser")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.GetRequestsForUser : GetRequestsForUser reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -80,7 +90,7 @@ func (store *FollowNeo4JStore) GetRequestsForUser(ctx context.Context, username 
 				"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 			map[string]any{"username": username})
 		if err != nil {
-			log.Printf("Error in getting pending requests of user: %s", err.Error())
+			store.logging.Errorf("FollowStore.GetRequestsForUser.Run() : %s", err)
 			return nil, err
 		}
 
@@ -102,8 +112,10 @@ func (store *FollowNeo4JStore) GetRequestsForUser(ctx context.Context, username 
 		return requests, nil
 	})
 	if err != nil {
+		store.logging.Errorf("FollowStore.GetRequestsForUser.ExecuteRead() : %s", err)
 		return nil, err
 	}
+	store.logging.Infoln("FollowStore.GetRequestsForUser : GetRequestsForUser successful")
 
 	return requests.([]*domain.FollowRequest), nil
 }
@@ -111,6 +123,8 @@ func (store *FollowNeo4JStore) GetRequestsForUser(ctx context.Context, username 
 func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(ctx context.Context, requester, receiver *string) (*domain.FollowRequest, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.GetRequestByRequesterReceiver")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.GetRequestByRequesterReceiver : GetRequestByRequesterReceiver reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -122,7 +136,7 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(ctx context.Context
 				"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 			map[string]any{"requester": requester, "receiver": receiver})
 		if err != nil {
-			log.Printf("Error in getting request by requester and receiver: %s", err.Error())
+			store.logging.Errorf("FollowStore.GetRequestByRequesterReceiver.Run() : %s", err)
 			return nil, err
 		}
 
@@ -145,8 +159,10 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(ctx context.Context
 		return request, nil
 	})
 	if err != nil {
+		store.logging.Errorf("FollowStore.GetRequestByRequesterReceiver.ExecuteRead() : %s", err)
 		return nil, err
 	}
+	store.logging.Infoln("FollowStore.GetRequestByRequesterReceiver : GetRequestByRequesterReceiver successful")
 
 	return requests.(*domain.FollowRequest), nil
 }
@@ -154,6 +170,8 @@ func (store *FollowNeo4JStore) GetRequestByRequesterReceiver(ctx context.Context
 func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username string) ([]*domain.User, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.GetFollowingsOfUser")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.GetFollowingsOfUser : GetFollowingsOfUser reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -165,7 +183,7 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 				"RETURN u.id as id, u.username as username, u.age as age, u.residence as residence",
 			map[string]any{"username": username})
 		if err != nil {
-			log.Printf("Error in getting followings of user: %s", err.Error())
+			store.logging.Errorf("FollowStore.GetFollowingsOfUser.Run() : %s", err)
 			return nil, err
 		}
 
@@ -187,8 +205,11 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 		return followings, nil
 	})
 	if err != nil {
+		store.logging.Errorf("FollowStore.GetFollowingsOfUser.ExecuteRead() : %s", err)
 		return nil, err
 	}
+
+	store.logging.Infoln("FollowStore.GetFollowingsOfUser : GetFollowingsOfUser successful")
 
 	return followings.([]*domain.User), nil
 }
@@ -196,6 +217,8 @@ func (store *FollowNeo4JStore) GetFollowingsOfUser(ctx context.Context, username
 func (store *FollowNeo4JStore) SaveRequest(ctx context.Context, request *domain.FollowRequest) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.SaveRequest")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.SaveRequest : SaveRequest reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -212,7 +235,7 @@ func (store *FollowNeo4JStore) SaveRequest(ctx context.Context, request *domain.
 				map[string]any{"id": request.ID, "requester": request.Requester, "receiver": request.Receiver,
 					"status": request.Status.EnumIndex()})
 			if err != nil {
-				log.Printf("Error in creating request node and relationships because of: %s", err.Error())
+				store.logging.Errorf("FollowStore.SaveRequest.Run() : %s", err)
 				return nil, err
 			}
 
@@ -227,8 +250,11 @@ func (store *FollowNeo4JStore) SaveRequest(ctx context.Context, request *domain.
 			return nil, fmt.Errorf("neo4j node and relationships didn't save")
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.SaveRequest.ExecuteWrite () : %s", err)
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.SaveRequest : SaveRequest successful")
 
 	return nil
 }
@@ -236,6 +262,8 @@ func (store *FollowNeo4JStore) SaveRequest(ctx context.Context, request *domain.
 func (store *FollowNeo4JStore) UpdateRequest(ctx context.Context, request *domain.FollowRequest) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.UpdateRequest")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.UpdateRequest : UpdateRequest reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -248,6 +276,7 @@ func (store *FollowNeo4JStore) UpdateRequest(ctx context.Context, request *domai
 					"SET request.status = $status",
 				map[string]any{"id": request.ID, "status": request.Status})
 			if err != nil {
+				store.logging.Errorf("FollowStore.UpdateRequest.Run() : %s", err)
 				log.Printf("Error in creating request node and relationships because of: %s", err.Error())
 				return nil, err
 			}
@@ -255,8 +284,11 @@ func (store *FollowNeo4JStore) UpdateRequest(ctx context.Context, request *domai
 			return nil, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.UpdateRequest.ExecuteWrite() : %s", err)
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.UpdateRequest : UpdateRequest successful")
 
 	return nil
 }
@@ -264,6 +296,8 @@ func (store *FollowNeo4JStore) UpdateRequest(ctx context.Context, request *domai
 func (store *FollowNeo4JStore) SaveUser(ctx context.Context, user *domain.User) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.SaveUser")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.SaveUser : SaveUser reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -276,6 +310,7 @@ func (store *FollowNeo4JStore) SaveUser(ctx context.Context, user *domain.User) 
 				map[string]any{"id": user.ID, "username": user.Username, "age": user.Age,
 					"residence": user.Residence, "gender": user.Gender})
 			if err != nil {
+				store.logging.Errorf("FollowStore.SaveUser.Run() : %s", err)
 				return nil, err
 			}
 
@@ -286,8 +321,11 @@ func (store *FollowNeo4JStore) SaveUser(ctx context.Context, user *domain.User) 
 			return nil, result.Err()
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.SaveUser.ExecuteWrite() : %s", err)
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.SaveUser : SaveUser successful")
 
 	return nil
 }
@@ -295,6 +333,8 @@ func (store *FollowNeo4JStore) SaveUser(ctx context.Context, user *domain.User) 
 func (store *FollowNeo4JStore) DeleteUser(ctx context.Context, id *string) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.DeleteUser")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.DeleteUser : DeleteUser reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -306,6 +346,7 @@ func (store *FollowNeo4JStore) DeleteUser(ctx context.Context, id *string) error
 				"DELETE u",
 			map[string]any{"id": id})
 		if err != nil {
+			store.logging.Errorf("FollowStore.DeleteUser.Run() : %s", err)
 			return nil, err
 		}
 
@@ -313,8 +354,12 @@ func (store *FollowNeo4JStore) DeleteUser(ctx context.Context, id *string) error
 	})
 
 	if err != nil {
+		store.logging.Errorf("FollowStore.DeleteUser.ExecuteWrite() : %s", err)
+
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.DeleteUser : DeleteUser successful")
 
 	return nil
 }
@@ -322,6 +367,8 @@ func (store *FollowNeo4JStore) DeleteUser(ctx context.Context, id *string) error
 func (store *FollowNeo4JStore) SaveFollow(ctx context.Context, request *domain.FollowRequest) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.SaveFollow")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.SaveFollow : SaveFollow reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -334,14 +381,18 @@ func (store *FollowNeo4JStore) SaveFollow(ctx context.Context, request *domain.F
 					"CREATE f = (requester)-[:FOLLOWS]->(receiver)",
 				map[string]any{"requester": request.Requester, "receiver": request.Receiver})
 			if err != nil {
+				store.logging.Errorf("FollowStore.SaveFollow.Run() : %s", err)
 				return nil, err
 			}
 
 			return nil, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.SaveFollow.ExecuteWrite() : %s", err)
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.SaveFollow : SaveFollow successful")
 
 	return nil
 }
@@ -349,6 +400,8 @@ func (store *FollowNeo4JStore) SaveFollow(ctx context.Context, request *domain.F
 func (store *FollowNeo4JStore) AcceptRequest(ctx context.Context, id *string) (*domain.FollowRequest, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.AcceptRequest")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.AcceptRequest : AcceptRequest reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -362,6 +415,7 @@ func (store *FollowNeo4JStore) AcceptRequest(ctx context.Context, id *string) (*
 					"RETURN r.id as id, r.requester as requester, r.receiver as receiver, r.status as status",
 				map[string]any{"id": id})
 			if err != nil {
+				store.logging.Errorf("FollowStore.AcceptRequest.Run() : %s", err)
 				return nil, err
 			}
 
@@ -383,14 +437,19 @@ func (store *FollowNeo4JStore) AcceptRequest(ctx context.Context, id *string) (*
 			return request, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.AcceptRequest.ExecuteWrite() : %s", err)
 		return nil, err
 	}
+
+	store.logging.Infoln("FollowStore.AcceptRequest : AcceptRequest successful")
 
 	return request.(*domain.FollowRequest), nil
 }
 func (store *FollowNeo4JStore) DeclineRequest(ctx context.Context, id *string) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.DeclineRequest")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.DeclineRequest : DeclineRequest reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -403,14 +462,17 @@ func (store *FollowNeo4JStore) DeclineRequest(ctx context.Context, id *string) e
 					"SET r.status = 2",
 				map[string]any{"id": id})
 			if err != nil {
+				store.logging.Errorf("FollowStore.DeclineRequest.Run() : %s", err)
 				return nil, err
 			}
 
 			return nil, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.DeclineRequest.ExecuteWrite() : %s", err)
 		return err
 	}
+	store.logging.Infoln("FollowStore.DeclineRequest : DeclineRequest successful")
 
 	return nil
 }
@@ -418,6 +480,8 @@ func (store *FollowNeo4JStore) DeclineRequest(ctx context.Context, id *string) e
 func (store *FollowNeo4JStore) SaveAd(ctx context.Context, ad *domain.Ad) error {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.SaveAd")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.SaveAd : SaveAd reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -431,6 +495,7 @@ func (store *FollowNeo4JStore) SaveAd(ctx context.Context, ad *domain.Ad) error 
 				map[string]any{"tweetID": ad.TweetID, "ageFrom": ad.AgeFrom, "ageTo": ad.AgeTo,
 					"gender": ad.Gender, "residence": ad.Residence})
 			if err != nil {
+				store.logging.Errorf("FollowStore.SaveAd.Run() : %s", err)
 				return nil, err
 			}
 
@@ -441,8 +506,11 @@ func (store *FollowNeo4JStore) SaveAd(ctx context.Context, ad *domain.Ad) error 
 			return nil, result.Err()
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.SaveAd.ExecuteWrite() : %s", err)
 		return err
 	}
+
+	store.logging.Infoln("FollowStore.SaveAd : SaveAd successful")
 
 	return nil
 }
@@ -450,6 +518,8 @@ func (store *FollowNeo4JStore) SaveAd(ctx context.Context, ad *domain.Ad) error 
 func (store *FollowNeo4JStore) CountFollowings(ctx context.Context, username string) (int, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.CountFollowings")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.CountFollowings : CountFollowings reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -462,6 +532,7 @@ func (store *FollowNeo4JStore) CountFollowings(ctx context.Context, username str
 					"RETURN count(u2) as count",
 				map[string]any{"username": username})
 			if err != nil {
+				store.logging.Errorf("FollowStore.SaveAd.Run() : %s", err)
 				return nil, err
 			}
 
@@ -473,15 +544,20 @@ func (store *FollowNeo4JStore) CountFollowings(ctx context.Context, username str
 			return nil, result.Err()
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.SaveAd.ExecuteWrite() : %s", err)
 		return 0, err
 	}
-	log.Printf("COUNT FOLLOWINGS: %s", followingsCount.(int64))
+
+	store.logging.Infoln("FollowStore.CountFollowings : CountFollowings successful")
+
 	return int(followingsCount.(int64)), nil
 }
 
 func (store *FollowNeo4JStore) RecommendWithFollowings(ctx context.Context, username string) ([]string, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.RecommendWithFollowings")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.RecommendWithFollowings : RecommendWithFollowings reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -504,6 +580,7 @@ func (store *FollowNeo4JStore) RecommendWithFollowings(ctx context.Context, user
 					"RETURN collect(DISTINCT distUsernames) as usernames",
 				map[string]any{"username": username})
 			if err != nil {
+				store.logging.Errorf("FollowStore.RecommendWithFollowings.Run() : %s", err)
 				return nil, err
 			}
 
@@ -521,15 +598,20 @@ func (store *FollowNeo4JStore) RecommendWithFollowings(ctx context.Context, user
 			return users, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.RecommendWithFollowings.ExecuteWrite() : %s", err)
 		return nil, err
 	}
-	log.Println("Recommends with followers: %s", users.([]string))
+
+	store.logging.Infoln("FollowStore.RecommendWithFollowings : RecommendWithFollowings successful")
+
 	return users.([]string), nil
 }
 
 func (store *FollowNeo4JStore) RecommendationWithoutFollowings(ctx context.Context, username string, recommends []string) ([]string, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.RecommendationWithoutFollowings")
 	defer span.End()
+
+	store.logging.Infoln("FollowStore.RecommendationWithoutFollowings : RecommendationWithoutFollowings reached")
 
 	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
 	defer session.Close(ctx)
@@ -544,14 +626,14 @@ func (store *FollowNeo4JStore) RecommendationWithoutFollowings(ctx context.Conte
 					"RETURN collect(u2.username) as usernames",
 				map[string]any{"username": username, "recommends": recommends})
 			if err != nil {
+				store.logging.Errorf("FollowStore.RecommendationWithoutFollowings.Run() : %s", err)
 				return nil, err
 			}
 
 			var users []string
 			if result.Next(ctx) {
-				usernames, ok := result.Record().Get("usernames")
+				usernames, _ := result.Record().Get("usernames")
 				if usernames == nil {
-					log.Printf("OK STATUS IS %s", ok)
 					return users, nil
 				}
 				for _, username := range usernames.([]interface{}) {
@@ -562,8 +644,11 @@ func (store *FollowNeo4JStore) RecommendationWithoutFollowings(ctx context.Conte
 			return users, nil
 		})
 	if err != nil {
+		store.logging.Errorf("FollowStore.RecommendationWithoutFollowings.ExecuteWrite() : %s", err)
 		return nil, err
 	}
-	log.Println("Recommends without followers: %s", users.([]string))
+
+	store.logging.Infoln("FollowStore.RecommendationWithoutFollowings : RecommendationWithoutFollowings successful")
+
 	return users.([]string), nil
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/cristalhq/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/zjalicf/twitter-clone-common/common/saga/create_user"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel/trace"
@@ -37,21 +38,24 @@ type AuthService struct {
 	cache        domain.AuthCache
 	tracer       trace.Tracer
 	orchestrator *CreateUserOrchestrator
+	logging      *logrus.Logger
 }
 
-func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *CreateUserOrchestrator, tracer trace.Tracer) *AuthService {
+func NewAuthService(store domain.AuthStore, cache domain.AuthCache, orchestrator *CreateUserOrchestrator, tracer trace.Tracer, logging *logrus.Logger) *AuthService {
 	return &AuthService{
 		store:        store,
 		cache:        cache,
 		orchestrator: orchestrator,
 		tracer:       tracer,
+		logging:      logging,
 	}
 }
 
 func (service *AuthService) GetAll(ctx context.Context) ([]*domain.Credentials, error) {
 	ctx, span := service.tracer.Start(ctx, "AuthService.GetAll")
 	defer span.End()
-	handler.logging.Infoln("getAll service reached")
+
+	service.logging.Infoln("AuthService.GetAll : getAll service reached")
 
 	return service.store.GetAll(ctx)
 }
@@ -59,19 +63,19 @@ func (service *AuthService) GetAll(ctx context.Context) ([]*domain.Credentials, 
 func (service *AuthService) Register(ctx context.Context, user *domain.User) (string, int, error) {
 	ctx, span := service.tracer.Start(ctx, "AuthService.Register")
 	defer span.End()
-	handler.logging.Infoln("register service reached")
+	service.logging.Infoln("AuthService.Register : register service reached")
 
 	isUsernameExists, err := checkBlackList(user.Password)
 	log.Println(isUsernameExists)
 
 	if isUsernameExists {
-		handler.logging.Errorln("username exists")
+		service.logging.Errorln("AuthService.Register : password is in blacklist")
 		return "", 55, fmt.Errorf("Password not acceptable, try another one!")
 	}
 
 	_, err = service.store.GetOneUser(ctx, user.Username)
 	if err == nil {
-		handler.logging.Errorln("username exists")
+		service.logging.Errorln("AuthService.Register : username exists in database")
 		return "", 406, fmt.Errorf(errors.UsernameAlreadyExist)
 	}
 
@@ -79,10 +83,11 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 	userServiceRequestMail, _ := http.NewRequest("GET", userServiceEndpointMail, nil)
 	response, err := http.DefaultClient.Do(userServiceRequestMail)
 	if err != nil {
+		service.logging.Errorf("AuthService.Register : %s (user_service unavailable)", err)
 		return "", 500, fmt.Errorf(errors.ServiceUnavailable)
 	}
 	if response.StatusCode != 404 {
-		handler.logging.Errorln("email exists")
+		service.logging.Errorln("AuthService.Register : email exists in database")
 		return "", 406, fmt.Errorf(errors.EmailAlreadyExist)
 	}
 
@@ -91,12 +96,16 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 	user.ID = primitive.NewObjectID()
 	validatedUser, err := validateUserType(user)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.Register : %s", err)
+		service.logging.Errorln(err)
 		return "", 0, err
 	}
 
 	pass := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+
+	service.logging.Infoln("AuthService.Register : password sucessfully hashed")
+
 	if err != nil {
 		return "", 500, err
 	}
@@ -112,24 +121,24 @@ func (service *AuthService) Register(ctx context.Context, user *domain.User) (st
 
 	err = service.store.Register(ctx, &credentials)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.Register : %s", err)
 		return "", 0, err
 	}
 
 	err = service.orchestrator.Start(ctx, validatedUser)
 	if err != nil {
-		handler.logging.Errorln("orchestrator error")
-		log.Println("ERR IN START ORCHESTRATOR")
+		service.logging.Errorln("AuthService.Register : orchestrator error")
 		return "", 0, err
 	}
 
+	service.logging.Infoln("AuthService.Register : register service finished")
 	return credentials.ID.Hex(), 200, nil
 }
 
 func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.ObjectID) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.DeleteUserByID")
 	defer span.End()
-	handler.logging.Infoln("deleteUser service reached")
+	service.logging.Infoln("AuthService.DeleteUserByID : deleteUser service reached")
 
 	return service.store.DeleteUserByID(ctx, id)
 }
@@ -137,22 +146,23 @@ func (service *AuthService) DeleteUserByID(ctx context.Context, id primitive.Obj
 func (service *AuthService) SendMail(ctx context.Context, user *domain.User) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.SendMail")
 	defer span.End()
-	handler.logging.Infoln("sendMail service reached")
+	service.logging.Infoln("AuthService.SendMail : sendMail service reached")
 
 	validationToken := uuid.New()
 	err := service.cache.PostCacheData(user.ID.Hex(), validationToken.String())
 	if err != nil {
-		handler.logging.Errorf("failed to post validation data to redis: %s \n", err)
+		service.logging.Errorf("AuthService.SendMail : failed to post validation data to redis: %s \n", err)
 		log.Fatalf("failed to post validation data to redis: %s", err)
 		return err
 	}
 
 	err = service.sendValidationMail(ctx, validationToken, user.Email)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.SendMail : %s (failed to sent mail)", err)
 		log.Printf("Failed to send mail: %s", err.Error())
 		return err
 	}
+	service.logging.Infoln("AuthService.SendMail : sendMail service finished")
 
 	return nil
 }
@@ -160,7 +170,7 @@ func (service *AuthService) SendMail(ctx context.Context, user *domain.User) err
 func (service *AuthService) sendValidationMail(ctx context.Context, validationToken uuid.UUID, email string) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.sendValidationMail")
 	defer span.End()
-	handler.logging.Infoln("sendValidationMail service reached")
+	service.logging.Infoln("AuthService.sendValidationMail : sendValidationMail service reached")
 
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
@@ -174,14 +184,17 @@ func (service *AuthService) sendValidationMail(ctx context.Context, validationTo
 
 	_, err := client.Dial()
 	if err != nil {
+		service.logging.Errorf("AuthService.sendValidationMail : %s", err)
 		return err
 	}
 
 	if err := client.DialAndSend(message); err != nil {
-		handler.logging.Errorln("failed to send verification mail because of: %s", err)
+		service.logging.Errorln("AuthService.sendValidationMail : failed to send verification mail because of: %s", err)
 		log.Fatalf("failed to send verification mail because of: %s", err)
 		return err
 	}
+
+	service.logging.Infoln("AuthService.sendValidationMail : sendValidationMail service finished")
 
 	return nil
 }
@@ -189,7 +202,7 @@ func (service *AuthService) sendValidationMail(ctx context.Context, validationTo
 func (service *AuthService) VerifyAccount(ctx context.Context, validation *domain.RegisterRecoverVerification) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.VerifyAccount")
 	defer span.End()
-	handler.logging.Infoln("verifyAccount service reached")
+	service.logging.Infoln("AuthService.VerifyAccount : verifyAccount service reached")
 
 	token, err := service.cache.GetCachedValue(validation.UserToken)
 	if err != nil {
@@ -200,7 +213,7 @@ func (service *AuthService) VerifyAccount(ctx context.Context, validation *domai
 	if validation.MailToken == token {
 		err = service.cache.DelCachedValue(validation.UserToken)
 		if err != nil {
-			log.Printf("error in deleting cached value: %s", err)
+			service.logging.Errorf("AuthService.VerifyAccount : error in deleting cached value: %s", err)
 			return err
 		}
 
@@ -210,8 +223,7 @@ func (service *AuthService) VerifyAccount(ctx context.Context, validation *domai
 
 		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
-			handler.logging.Errorln(err)
-			log.Printf("error in updating user after changing status of verify: %s", err.Error())
+			service.logging.Errorf("AuthService.VerifyAccount : error in updating user after changing status of verify: %s", err)
 			return err
 		}
 
@@ -224,10 +236,10 @@ func (service *AuthService) VerifyAccount(ctx context.Context, validation *domai
 func (service *AuthService) ResendVerificationToken(ctx context.Context, request *domain.ResendVerificationRequest) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.ResendVerificationToken")
 	defer span.End()
-	handler.logging.Infoln("resendVerification service reached")
+	service.logging.Infoln("AuthService.ResendVerificationToken : resendVerification service reached")
 
 	if len(request.UserMail) == 0 {
-		log.Println(errors.InvalidResendMailError)
+		service.logging.Errorf("AuthService.ResendVerificationToken : %s", errors.InvalidResendMailError)
 		return fmt.Errorf(errors.InvalidResendMailError)
 	}
 
@@ -235,15 +247,13 @@ func (service *AuthService) ResendVerificationToken(ctx context.Context, request
 
 	err := service.cache.PostCacheData(request.UserToken, tokenUUID.String())
 	if err != nil {
-		handler.logging.Errorln(err)
-		log.Println("POST CACHE DATA PROBLEM")
+		service.logging.Errorf("AuthService.ResendVerificationToken.PostCacheData() : %s", err)
 		return err
 	}
 
 	err = service.sendValidationMail(ctx, tokenUUID, request.UserMail)
 	if err != nil {
-		handler.logging.Errorln(err)
-		log.Println("SEND VALIDATION MAIL PROBLEM")
+		service.logging.Errorf("AuthService.ResendVerificationToken.sendValidationMail() : %s", err)
 		return err
 	}
 
@@ -253,7 +263,7 @@ func (service *AuthService) ResendVerificationToken(ctx context.Context, request
 func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email string) (string, int, error) {
 	ctx, span := service.tracer.Start(ctx, "AuthService.SendRecoveryPasswordToken")
 	defer span.End()
-	handler.logging.Infoln("sendRecoveryPass service reached")
+	service.logging.Infoln("AuthService.SendRecoveryPasswordToken : sendRecoveryPass service reached")
 
 	userServiceEndpoint := fmt.Sprintf("http://%s:%s/mailExist/%s", userServiceHost, userServicePort, email)
 	userServiceRequest, _ := http.NewRequest("GET", userServiceEndpoint, nil)
@@ -271,13 +281,13 @@ func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email
 	recoverUUID, _ := uuid.NewUUID()
 	err := service.sendRecoverPasswordMail(ctx, recoverUUID, email)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.SendRecoveryPasswordToken.sendRecoverPasswordMail() : %s", err)
 		return "", 500, err
 	}
 
 	err = service.cache.PostCacheData(userID, recoverUUID.String())
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.SendRecoveryPasswordToken.PostCacheData() : %s", err)
 		return "", 500, err
 	}
 
@@ -287,21 +297,22 @@ func (service *AuthService) SendRecoveryPasswordToken(ctx context.Context, email
 func (service *AuthService) CheckRecoveryPasswordToken(ctx context.Context, request *domain.RegisterRecoverVerification) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.CheckRecoveryPasswordToken")
 	defer span.End()
-	handler.logging.Infoln("checkRecovery service reached")
+
+	service.logging.Infoln("AuthService.CheckRecoveryPasswordToken : checkRecovery service reached")
 
 	if len(request.UserToken) == 0 {
-		handler.logging.Errorln("invalid user token")
+		service.logging.Errorln("AuthService.CheckRecoveryPasswordToken : invalid user token")
 		return fmt.Errorf(errors.InvalidUserTokenError)
 	}
 
 	token, err := service.cache.GetCachedValue(request.UserToken)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.CheckRecoveryPasswordToken.GetCachedValue() : %s", err)
 		return fmt.Errorf(errors.InvalidTokenError)
 	}
 
 	if request.MailToken != token {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.CheckRecoveryPasswordToken : %s", err)
 		return fmt.Errorf(errors.InvalidTokenError)
 	}
 
@@ -312,7 +323,8 @@ func (service *AuthService) CheckRecoveryPasswordToken(ctx context.Context, requ
 func (service *AuthService) sendRecoverPasswordMail(ctx context.Context, validationToken uuid.UUID, email string) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.sendRecoverPasswordMail")
 	defer span.End()
-	handler.logging.Infoln("sendRecoveryMail service reached")
+
+	service.logging.Infoln("AuthService.sendRecoverPasswordMail : sendRecoveryMail service reached")
 
 	message := gomail.NewMessage()
 	message.SetHeader("From", smtpEmail)
@@ -325,8 +337,8 @@ func (service *AuthService) sendRecoverPasswordMail(ctx context.Context, validat
 	client := gomail.NewDialer(smtpServer, smtpServerPort, smtpEmail, smtpPassword)
 
 	if err := client.DialAndSend(message); err != nil {
-		handler.logging.Errorln(err)
-		log.Fatalf("failed to send verification mail because of: %s", err)
+		service.logging.Errorln(err)
+		log.Fatalf("AuthService.sendRecoverPasswordMail : failed to send verification mail because of: %s", err)
 		return err
 	}
 
@@ -336,16 +348,16 @@ func (service *AuthService) sendRecoverPasswordMail(ctx context.Context, validat
 func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword *domain.RecoverPasswordRequest) error {
 	ctx, span := service.tracer.Start(ctx, "AuthService.RecoverPassword")
 	defer span.End()
-	handler.logging.Infoln("recoverPassword service reached")
+	service.logging.Infoln("AuthService.RecoverPassword : recoverPassword service reached")
 
 	if recoverPassword.NewPassword != recoverPassword.RepeatedNew {
-		handler.logging.Errorln("password dont match")
+		service.logging.Errorln("AuthService.RecoverPassword : password don't match")
 		return fmt.Errorf(errors.NotMatchingPasswordsError)
 	}
 
 	primitiveID, err := primitive.ObjectIDFromHex(recoverPassword.UserID)
 	if err != nil {
-		handler.logging.Errorln("conversion problem")
+		service.logging.Errorf("AuthService.RecoverPassword.ObjectIDFromHex() : %s", err)
 		return err
 	}
 	credentials := service.store.GetOneUserByID(ctx, primitiveID)
@@ -353,13 +365,14 @@ func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword
 	pass := []byte(recoverPassword.NewPassword)
 	hash, err := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
 	if err != nil {
+		service.logging.Errorf("AuthService.RecoverPassword.GenerateFromPassword() : %s", err)
 		return err
 	}
 	credentials.Password = string(hash)
 
 	err = service.store.UpdateUser(ctx, credentials)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.RecoverPassword.UpdateUser() : %s", err)
 		return err
 	}
 
@@ -369,11 +382,11 @@ func (service *AuthService) RecoverPassword(ctx context.Context, recoverPassword
 func (service *AuthService) Login(ctx context.Context, credentials *domain.Credentials) (string, error) {
 	ctx, span := service.tracer.Start(ctx, "AuthService.Login")
 	defer span.End()
-	handler.logging.Infoln("login service reached")
+	service.logging.Infoln("AuthService.Login : login service reached")
 
 	user, err := service.store.GetOneUser(ctx, credentials.Username)
 	if err != nil {
-		handler.logging.Errorln(err)
+		service.logging.Errorf("AuthService.Login.GetOneUser() %s", err)
 		return "", err
 	}
 
@@ -383,6 +396,7 @@ func (service *AuthService) Login(ctx context.Context, credentials *domain.Crede
 		response, _ := http.DefaultClient.Do(userServiceRequest)
 		if response.StatusCode != 200 {
 			if response.StatusCode == 404 {
+				service.logging.Errorln("AuthService.Login : user doesn't exist")
 				return "", fmt.Errorf("user doesn't exist")
 			}
 		}
@@ -390,6 +404,7 @@ func (service *AuthService) Login(ctx context.Context, credentials *domain.Crede
 		var userUser domain.User
 		err := responseToType(response.Body, &userUser)
 		if err != nil {
+			service.logging.Errorf("AuthService.Login.responseToType() : %s", err)
 			return "", err
 		}
 
@@ -400,7 +415,7 @@ func (service *AuthService) Login(ctx context.Context, credentials *domain.Crede
 
 		err = service.ResendVerificationToken(ctx, &verify)
 		if err != nil {
-			handler.logging.Errorln(err)
+			service.logging.Errorf("AuthService.Login.ResendVerificationToken() : %s", err)
 			return "", err
 		}
 
@@ -409,12 +424,13 @@ func (service *AuthService) Login(ctx context.Context, credentials *domain.Crede
 
 	passError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if passError != nil {
+		service.logging.Errorln("AuthService.Login.CompareHashAndPassword() : password not same")
 		return "not_same", err
 	}
 
 	tokenString, err := GenerateJWT(user)
-
 	if err != nil {
+		service.logging.Errorf("AuthService.Login.GenerateJWT() : %s", err)
 		return "", err
 	}
 
@@ -465,7 +481,7 @@ func (service *AuthService) ChangePassword(ctx context.Context, password domain.
 	ctx, span := service.tracer.Start(ctx, "AuthService.ChangePassword")
 	defer span.End()
 
-	handler.logging.Infoln("changePassword service reached")
+	service.logging.Infoln("changePassword service reached")
 
 	parsedToken := authorization.GetToken(token)
 	claims := authorization.GetMapClaims(parsedToken.Bytes())
@@ -474,16 +490,16 @@ func (service *AuthService) ChangePassword(ctx context.Context, password domain.
 
 	user, err := service.store.GetOneUser(ctx, username)
 	if err != nil {
-		log.Println(err)
+		service.logging.Errorf("AuthService.ChangePassword.GetOneUser() : %s", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password.OldPassword))
 	if err != nil {
+		service.logging.Errorf("AuthService.ChangePassword.CompareHashAndPassword() : %s (old password not match)", err)
 		return "oldPassErr"
 	}
 
 	var validNew bool = false
-	fmt.Println(password)
 	if password.NewPassword == password.NewPasswordConfirm {
 		validNew = true
 	}
@@ -499,6 +515,7 @@ func (service *AuthService) ChangePassword(ctx context.Context, password domain.
 
 		err = service.store.UpdateUser(ctx, user)
 		if err != nil {
+			service.logging.Errorf("AuthService.ChangePassword.UpdateUser() : %s", err)
 			return "baseErr"
 		}
 
