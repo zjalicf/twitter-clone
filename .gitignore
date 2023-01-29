@@ -1,3 +1,10 @@
+/certs
+Twitter-Backend/tweet_service/logs
+Twitter-Backend/auth_service/logs
+Twitter-Backend/user_service/logs
+Twitter-Backend/follow_service/logs
+Twitter-Backend/report_service/logs
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -14,8 +21,13 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+.vscode
+.idea
+
 Twitter-Backend/.idea/
 Twitter-Backend/.vscode/
 
 Twitter-Frontend/.idea/
 Twitter-Frontend/.vscode/
+
+Twitter-Backend/api_gateway/cert

@@ -1,18 +1,27 @@
 <mat-toolbar class="app-navbar" color="primary">
     <div class="right">
-        <div fxFlex="1 1 auto" fxLayout="row" fxLayoutAlign="flex-end center">
-            <button aria-pressed="true" mat-button mat-ripple routerLink="/Main-Page">
-                <span>Main Page</span>
+        <div>
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/New-Tweet">
+                <span>Tweet</span>
             </button>
-            <!-- <button *ngIf="notLoggedIn()" mat-button mat-ripple routerLink="/login">
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Main-Page">
+                <span>Feed</span>
+            </button>
+            <button *ngIf="!isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Register-Regular">
+                <span>Register</span>
+            </button>
+            <button *ngIf="!isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Login">
                 <span>Login</span>
             </button>
-            <button *ngIf="isLoggedIn()" mat-button mat-ripple routerLink="/myProfile">
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/Follow-Requests">
+                <span>Follow Requests</span>
+            </button>
+            <button *ngIf="isLoggedIn()" aria-pressed="true" mat-button mat-ripple routerLink="/My-Profile">
                 <span>My Profile</span>
             </button>
-            <button *ngIf="isLoggedIn()" (click)="logout()" mat-button mat-ripple>
+            <button *ngIf="isLoggedIn()" aria-pressed="true" (click)="logout()" mat-button mat-ripple>
                 <span>Logout</span>
-            </button> -->
+            </button>
         </div>
     </div>
 </mat-toolbar>
