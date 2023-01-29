@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gocql/gocql"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
@@ -18,11 +19,11 @@ const (
 
 type EventCassandraStore struct {
 	session *gocql.Session
-	logger  *log.Logger
+	logger  *logrus.Logger
 	tracer  trace.Tracer
 }
 
-func New(logger *log.Logger, tracer trace.Tracer) (*EventCassandraStore, error) {
+func New(logger *logrus.Logger, tracer trace.Tracer) (*EventCassandraStore, error) {
 	db := os.Getenv("EVENT_DB")
 	log.Println(db)
 
@@ -81,17 +82,15 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 	ctx, span := store.tracer.Start(ctx, "EventStore.CreateEvent")
 	defer span.End()
 
-	log.Println("Uslo u create event u cassandra store linije 83")
+	store.logger.Infoln("EventCassandra.CreateEvent : reached CreateEvent in store")
 
 	tweetID, err := gocql.ParseUUID(event.TweetID)
 	insert := fmt.Sprintf("INSERT INTO %s (id, event_type, timestamp, timespent) VALUES (?, ?, ?, ?)", COLLECTION_EVENT)
 
-	log.Println("Proslo upis u bazu")
-
 	err = store.session.Query(
 		insert, tweetID, event.Type, event.Timestamp, event.Timespent).Exec()
 	if err != nil {
-		store.logger.Println(err)
+		store.logger.Errorf("Error in EventCassandra.CreateEvent : %s", err)
 		return nil, err
 	}
 	return event, nil
@@ -100,6 +99,8 @@ func (store *EventCassandraStore) CreateEvent(ctx context.Context, event *domain
 func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context, event *domain.Event) (int64, error) {
 	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentMonthlyEvents")
 	defer span.End()
+
+	store.logger.Infoln("EventCassandra.CreateEvent : reached CreateEvent in store")
 
 	thisT := time.Unix(event.Timestamp, 0)
 	localTime := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), thisT.Hour()+1, 0, 0, 0, time.Local)
@@ -125,11 +126,9 @@ func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context,
 		err := scanner.Scan(&entries, &timeSum)
 		log.Printf("NEXT2: timeSum is %s, entries is %s", timeSum, entries)
 		if err != nil {
-			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
+			store.logger.Errorf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
 			return 0, err
 		}
-		//timeSum += int64(timespentNow)
-		//entries++
 	}
 
 	if entries == 0 {
@@ -141,6 +140,8 @@ func (store *EventCassandraStore) GetTimespentMonthlyEvents(ctx context.Context,
 func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, event *domain.Event) (int64, error) {
 	ctx, span := store.tracer.Start(ctx, "EventStore.GetTimespentDailyEvents")
 	defer span.End()
+
+	store.logger.Infoln("EventCassandra.CreateEvent : reached CreateEvent in store")
 
 	thisT := time.Unix(event.Timestamp, 0)
 	localTime := time.Date(thisT.Year(), thisT.Month(), thisT.Day(), thisT.Hour()+1, 0, 0, 0, time.Local)
@@ -163,7 +164,7 @@ func (store *EventCassandraStore) GetTimespentDailyEvents(ctx context.Context, e
 		err := scanner.Scan(&entries, &timeSum)
 		log.Printf("NEXT4: timeSum is %s, entries is %s", timeSum, entries)
 		if err != nil {
-			log.Printf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
+			store.logger.Errorf("Error in getting timespent ==> EventStore.GetTimespentMonthlyEvents: %s", err.Error())
 			return 0, err
 		}
 		//timeSum += int64(timespentNow)

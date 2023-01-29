@@ -33,6 +33,7 @@ func NewAuthMongoDBStore(client *mongo.Client, tracer trace.Tracer, logging *log
 func (store *AuthMongoDBStore) GetAll(ctx context.Context) ([]*domain.Credentials, error) {
 	ctx, span := store.tracer.Start(ctx, "AuthStore.GetAll")
 	defer span.End()
+
 	store.logging.Infoln("AuthStore.GetAll : reached getAll in store")
 
 	filter := bson.D{{}}
@@ -48,7 +49,6 @@ func (store *AuthMongoDBStore) Register(ctx context.Context, user *domain.Creden
 
 	result, err := store.credentials.InsertOne(context.TODO(), user)
 	if err != nil {
-
 		store.logging.Errorf("AuthStore.Register.InsertOne() : %s", err)
 		return err
 	}

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	events "github.com/zjalicf/twitter-clone-common/common/saga/create_event"
 	"go.opentelemetry.io/otel/trace"
 	"log"
@@ -13,18 +14,19 @@ type ReportService struct {
 	eventStore  domain.EventStore
 	reportStore domain.ReportStore
 	tracer      trace.Tracer
+	logger      *logrus.Logger
 }
 
-func NewReportService(eventStore domain.EventStore, reportStore domain.ReportStore, tracer trace.Tracer) *ReportService {
+func NewReportService(eventStore domain.EventStore, reportStore domain.ReportStore, tracer trace.Tracer, logger *logrus.Logger) *ReportService {
 	return &ReportService{
 		eventStore:  eventStore,
 		reportStore: reportStore,
 		tracer:      tracer,
+		logger:      logger,
 	}
 }
 
 func (service *ReportService) CreateEvent(event events.Event) {
-
 	eventOut := EventToDomain(event)
 	_, err := service.eventStore.CreateEvent(context.TODO(), &eventOut)
 	if err != nil {
@@ -37,16 +39,18 @@ func (service *ReportService) CreateReport(event *events.Event) {
 	ctx, span := service.tracer.Start(context.TODO(), "ReportService.CreateReport")
 	defer span.End()
 
+	service.logger.Infoln("ReportService.CreateReport : Create Report service reached")
+
 	if event.Type == "Timespent" {
 		domainEvent := EventToDomain(*event)
 		timeSpendDaily, err := service.eventStore.GetTimespentDailyEvents(ctx, &domainEvent)
 		if err != nil {
-			log.Printf("Error in getting daily spent: %s", err.Error())
+			service.logger.Errorf("Error in getting daily spent: %s", err.Error())
 			return
 		}
 		timeSpendMonthly, err := service.eventStore.GetTimespentMonthlyEvents(ctx, &domainEvent)
 		if err != nil {
-			log.Printf("Error in getting monthly spent: %s", err.Error())
+			service.logger.Errorf("Error in getting monthly spent: %s", err.Error())
 			return
 		}
 
@@ -62,7 +66,7 @@ func (service *ReportService) CreateReport(event *events.Event) {
 	monthlyUnix := time.Date(localTime.Year(), localTime.Month(), 1, 0, 0, 0, 0, time.Local).Unix()             //monthlyRepDate
 	_, err := service.reportStore.CreateReport(ctx, event, monthlyUnix, dailyUnix)
 	if err != nil {
-		log.Printf("Error in report_service CreateReport()", err.Error())
+		service.logger.Errorf("Error in report_service CreateReport(): %s", err.Error())
 		return
 	} else {
 		log.Println("Succesfull updated report")
@@ -74,9 +78,11 @@ func (service *ReportService) GetReportForAd(ctx context.Context, tweetID string
 	ctx, span := service.tracer.Start(context.TODO(), "ReportService.GetReportForAd")
 	defer span.End()
 
+	service.logger.Infoln("ReportService.GetReportForAd : GetReportForAd service reached")
+
 	result, err := service.reportStore.GetReportForAd(ctx, tweetID, reportType, date)
 	if err != nil {
-		log.Printf("Error in ReportService GetReportForAd: %s", err.Error())
+		service.logger.Errorf("Error in ReportService GetReportForAd: %s", err.Error())
 		return nil, err
 	}
 	return result, nil
