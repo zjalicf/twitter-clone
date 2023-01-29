@@ -63,7 +63,7 @@ func (handler *UserHandler) GetAll(writer http.ResponseWriter, req *http.Request
 	ctx, span := handler.tracer.Start(req.Context(), "UserHandler.GetAll")
 	defer span.End()
 
-	
+	handler.logging.Infoln("UserHandler.GetAll : getAll endpoint reached")
 
 	users, err := handler.service.GetAll(ctx)
 	if err != nil {
