@@ -12,7 +12,7 @@ export class FollowComponentDialogComponent implements OnInit {
 
   constructor(private router: Router,
     public dialogRef: MatDialogRef<FollowComponentDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: User[],
+    @Inject(MAT_DIALOG_DATA) public data: string[],
     @Inject(MAT_DIALOG_DATA) public type: boolean,
     ) { }
 
@@ -24,7 +24,7 @@ export class FollowComponentDialogComponent implements OnInit {
   }
 
   onUsernameClick(username: string): void {
-    this.router.navigate(["/  View-Profile/" + username])
+    this.router.navigate(["/View-Profile/" + username])
     this.dialogRef.close("username");
   }
 

@@ -66,13 +66,14 @@ func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetFeedByUser")
 	defer span.End()
 
-	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
+	followServiceEndpoint := fmt.Sprintf("http://%s:%s/feedInfo", followServiceHost, followServicePort)
 	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
 	followServiceRequest.Header.Add("Authorization", token)
 	bodyBytes, err := service.cb.Execute(func() (interface{}, error) {
 
 		responseFservice, err := http.DefaultClient.Do(followServiceRequest)
 		if err != nil {
+			log.Printf("Error in TweetService.GetFeedByUser.Do() : %s", err)
 			return nil, fmt.Errorf("FollowServiceError")
 		}
 

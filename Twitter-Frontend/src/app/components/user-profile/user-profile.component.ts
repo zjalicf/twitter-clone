@@ -23,8 +23,8 @@ export class UserProfileComponent implements OnInit {
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
   isFollowing: boolean = false;
-  followings: User[] = []
-  followers: User[] = []
+  followings: string[] = []
+  followers: string[] = []
 
   constructor(
     private UserService: UserService,
@@ -52,11 +52,15 @@ export class UserProfileComponent implements OnInit {
         }
       });
 
-    this.followService.GetFollowingsForUser(this.profileUsername).subscribe(
+    this.followService.GetFollowings(this.profileUsername).subscribe(
       data => {
         this.followings = data
-        console.log(this.followings)
-        this.followings.length
+      }
+    )
+
+    this.followService.GetFollowiners(this.profileUsername).subscribe(
+      data => {
+        this.followers = data
       }
     )
 

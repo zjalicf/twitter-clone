@@ -34,11 +34,11 @@ func (service *FollowService) FollowExist(ctx context.Context, followRequest *do
 	return service.store.FollowExist(ctx, followRequest)
 }
 
-func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username string) ([]*string, error) {
-	ctx, span := service.tracer.Start(ctx, "FollowService.GetFollowingsOfUser")
+func (service *FollowService) GetFeedInfoOfUser(ctx context.Context, username string) ([]string, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetFeedInfoOfUser")
 	defer span.End()
 
-	service.logging.Infoln("FollowService.GetFollowingsOfUser : get_followings_for_user reached")
+	service.logging.Infoln("FollowService.GetFeedInfoOfUser : GetFeedInfoOfUser reached")
 
 	followings, err := service.store.GetFollowingsOfUser(ctx, username)
 	if err != nil {
@@ -46,15 +46,45 @@ func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username 
 		return nil, err
 	}
 
-	var usernameList []*string
-	for i := 0; i < len(followings); i++ {
-		usernameList = append(usernameList, &followings[i].Username)
+	followings = append(followings, username)
+
+	service.logging.Infoln("FollowService.GetFeedInfoOfUser : GetFeedInfoOfUser successful")
+
+	return followings, nil
+}
+
+func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username string) ([]string, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetFollowingsOfUser")
+	defer span.End()
+
+	service.logging.Infoln("FollowService.GetFollowingsOfUser : GetFollowingsOfUser reached")
+
+	followings, err := service.store.GetFollowingsOfUser(ctx, username)
+	if err != nil {
+		service.logging.Errorf("FollowService.GetFollowingsOfUser.GetFollowingsOfUser() : %s", err)
+		return nil, err
 	}
-	usernameList = append(usernameList, &username)
 
-	service.logging.Infoln("FollowService.GetFollowingsOfUser : get_followings_for_user successful")
+	service.logging.Infoln("FollowService.GetFollowingsOfUser : GetFollowingsOfUser successful")
 
-	return usernameList, nil
+	return followings, nil
+}
+
+func (service *FollowService) GetFollowersOfUser(ctx context.Context, username string) ([]string, error) {
+	ctx, span := service.tracer.Start(ctx, "FollowService.GetFollowersOfUser")
+	defer span.End()
+
+	service.logging.Infoln("FollowService.GetFollowersOfUser : GetFollowersOfUser reached")
+
+	followings, err := service.store.GetFollowersOfUser(ctx, username)
+	if err != nil {
+		service.logging.Errorf("FollowService.GetFollowersOfUser.GetFollowersOfUser() : %s", err)
+		return nil, err
+	}
+
+	service.logging.Infoln("FollowService.GetFollowersOfUser : GetFollowersOfUser successful")
+
+	return followings, nil
 }
 
 func (service *FollowService) GetRequestsForUser(ctx context.Context, username string) ([]*domain.FollowRequest, error) {

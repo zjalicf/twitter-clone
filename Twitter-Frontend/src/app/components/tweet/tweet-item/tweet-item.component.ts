@@ -83,12 +83,14 @@ export class TweetItemComponent implements OnInit {
     this.userService.GetMe()
       .subscribe({
         next: (data: User) => {
+          console.log(data)
           this.loggedInUser = data;
-          if (this.tweet.username === this.loggedInUser.username) {
+          if (this.tweet.username === this.loggedInUser.username || this.tweet.owner_username === this.loggedInUser.username) {
             this.isThatMeLoggedIn = true;
           } else {
             this.isThatMeLoggedIn = false;
           }
+          console.log("Logged in me:" + this.isThatMeLoggedIn)
           return this.isThatMeLoggedIn
         },
         error: (error) => {
