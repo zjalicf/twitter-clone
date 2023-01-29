@@ -43,6 +43,8 @@ import { FollowRequestListComponent } from './components/follow-request/follow-r
 import { TweetLikesDialogComponent } from './components/tweet/tweet-likes-dialog/tweet-likes-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { FollowComponentDialogComponent } from './components/follow-component-dialog/follow-component-dialog.component';
+import { FollowingComponentDialogComponent } from './components/following-component-dialog/following-component-dialog.component';
 
 @NgModule({
   declarations: [
@@ -68,7 +70,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     FollowRequestsComponent,
     FollowRequestItemComponent,
     FollowRequestListComponent,
-    TweetLikesDialogComponent
+    TweetLikesDialogComponent,
+    FollowComponentDialogComponent,
+    FollowingComponentDialogComponent
   ],
   imports: [
     BrowserModule,

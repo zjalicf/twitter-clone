@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FollowRequest } from 'src/app/models/followRequest.model';
@@ -7,6 +8,8 @@ import { User } from 'src/app/models/user.model';
 import { FollowService } from 'src/app/services/follow.service';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
+import { FollowComponentDialogComponent } from '../follow-component-dialog/follow-component-dialog.component';
+import { FollowingComponentDialogComponent } from '../following-component-dialog/following-component-dialog.component';
 
 @Component({
   selector: 'app-user-profile',
@@ -20,6 +23,8 @@ export class UserProfileComponent implements OnInit {
   tweets: Tweet[] = []
   profileUsername = String(this.route.snapshot.paramMap.get("username"));
   isFollowing: boolean = false;
+  followings: User[] = []
+  followers: User[] = []
 
   constructor(
     private UserService: UserService,
@@ -27,14 +32,14 @@ export class UserProfileComponent implements OnInit {
     private router: Router,
     private TweetService: TweetService,
     private followService: FollowService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    public dialog: MatDialog,
   ) { }
 
   ngOnInit(): void {
       this.followService.IsFollowExist(this.profileUsername).subscribe(response => {
         this.isFollowing = response;
       })
-    
 
     this.UserService.GetOneUserByUsername(this.profileUsername)
       .subscribe({
@@ -46,6 +51,14 @@ export class UserProfileComponent implements OnInit {
           this.router.navigate(["/404"])
         }
       });
+
+    this.followService.GetFollowingsForUser(this.profileUsername).subscribe(
+      data => {
+        this.followings = data
+        console.log(this.followings)
+        this.followings.length
+      }
+    )
 
     this.TweetService.GetTweetsForUser(this.profileUsername)
       .subscribe({
@@ -115,6 +128,28 @@ export class UserProfileComponent implements OnInit {
   openSnackBar(message: string, action: string) {
     this._snackBar.open(message, action,  {
       duration: 3500
+    });
+  }
+
+  openDialogFollowers(): void {
+    const dialogRef = this.dialog.open(FollowComponentDialogComponent, {
+      data: this.followers,
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result == "username") {
+        this.dialog.closeAll();
+      }
+    });
+  }
+
+  openDialogFollowings(): void {
+    const dialogRef = this.dialog.open(FollowingComponentDialogComponent, {
+      data: this.followings,
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result == "username") {
+        this.dialog.closeAll();
+      }
     });
   }
 

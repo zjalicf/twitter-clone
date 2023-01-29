@@ -1,6 +1,6 @@
 .my-profile-card {
   width: 800px;
-  height: 325px;
+  height: 38%;
   margin-top: 15px;
   margin-bottom: 10px;
   margin-left: auto;
@@ -136,4 +136,22 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+.follow {
+  text-align: center;
+}
+
+.follow label {
+  margin: 2%;
+  padding: 2%;
+  border-radius: 8%;
+}
+
+.follow label:hover {
+  margin: 2%;
+  padding: 2%;
+  background-color: blue;
+  border-radius: 8%;
+  color: white;
 }
