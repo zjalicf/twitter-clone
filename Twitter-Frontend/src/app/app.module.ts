@@ -45,6 +45,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { FollowComponentDialogComponent } from './components/follow-component-dialog/follow-component-dialog.component';
 import { FollowingComponentDialogComponent } from './components/following-component-dialog/following-component-dialog.component';
+import { MatCarouselModule } from 'ng-mat-carousel';
 
 @NgModule({
   declarations: [
@@ -95,7 +96,8 @@ import { FollowingComponentDialogComponent } from './components/following-compon
     MatCheckboxModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatMomentDateModule
+    MatMomentDateModule,
+    MatCarouselModule.forRoot(),
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,
