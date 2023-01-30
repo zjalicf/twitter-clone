@@ -3,25 +3,30 @@
         <mat-card-title class="main-page-card-title">Welcome to Twitter</mat-card-title>
         <mat-card-subtitle class="main-page-card-subtitle">Browse through your Feed</mat-card-subtitle>
     </mat-card>
-
-    <mat-carousel
-  timings="250ms ease-in"
-  [autoplay]="true"
-  [interval]="3000"
-  color="accent"
-  maxWidth="auto"
-  [loop]="true"
-  [hideArrows]="false"
-  [hideIndicators]="false"
-  [useKeyboard]="true"
-  [useMouseWheel]="false"
-  orientation="ltr">
-  <mat-carousel-slide *ngFor="let p of ['1','2','3']">
-    <p>{{p}}</p>
-    <app-tweet-item></app-tweet-item>
-
-  </mat-carousel-slide>
-</mat-carousel>
+    <ng-container *ngIf="dataLoaded">
+        <mat-carousel
+        timings="250ms ease-in"
+        [autoplay]="true"
+        [interval]="3000"
+        color="accent"
+        maxWidth="auto"
+        [loop]="true"
+        [hideArrows]="false"
+        [hideIndicators]="false"
+        [useKeyboard]="true"
+        [useMouseWheel]="false"
+        orientation="ltr" 
+        slideHeight="650px"
+        [maintainAspectRatio]="false">
+            <mat-carousel-slide  *ngFor="let ad of ads" overlayColor="#ffffff">
+                <div class="slide-height-fix">
+                    <app-tweet-item [tweet]="ad" ></app-tweet-item>
+                </div>
+                    
+            </mat-carousel-slide>
+        </mat-carousel>
+      </ng-container>
+    
 </div>
 
 <div class="row">

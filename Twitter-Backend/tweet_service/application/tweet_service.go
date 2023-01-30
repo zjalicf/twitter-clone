@@ -62,7 +62,7 @@ func (service *TweetService) GetTweetsByUser(ctx context.Context, username strin
 	return service.store.GetTweetsByUser(ctx, username)
 }
 
-func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([]*domain.Tweet, error) {
+func (service *TweetService) GetFeedByUser(ctx context.Context, token string) (*domain.FeedData, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetFeedByUser")
 	defer span.End()
 
@@ -106,7 +106,10 @@ func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([
 	}
 
 	if len(feedInfo.AdIds) == 0 {
-		return feed, nil
+		return &domain.FeedData{
+			Feed: feed,
+			Ads:  nil,
+		}, nil
 	}
 
 	ads, err := service.store.GetRecommendAdsForUser(ctx, feedInfo.AdIds)
@@ -114,9 +117,11 @@ func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([
 		log.Printf("Error in getting recommend ads for user: %s", err.Error())
 		return nil, err
 	}
-	retList := append(ads, feed...)
 
-	return retList, nil
+	return &domain.FeedData{
+		Feed: feed,
+		Ads:  ads,
+	}, nil
 }
 
 func (service *TweetService) saveImage(ctx context.Context, tweetID gocql.UUID, imageBytes []byte) error {

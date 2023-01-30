@@ -47,6 +47,7 @@ import { FollowComponentDialogComponent } from './components/follow-component-di
 import { FollowingComponentDialogComponent } from './components/following-component-dialog/following-component-dialog.component';
 import { MatCarouselModule } from 'ng-mat-carousel';
 
+
 @NgModule({
   declarations: [
     AppComponent,

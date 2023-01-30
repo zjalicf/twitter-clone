@@ -62,3 +62,12 @@ type FeedInfo struct {
 	Usernames []string `json:"usernames"`
 	AdIds     []string `json:"ad_ids"`
 }
+
+type FeedData struct {
+	Feed []*Tweet `json:"feed"`
+	Ads  []*Tweet `json:"ads"`
+}
+
+//id, ad , created at, favcount, favorited, image, owusername, retweetcount, retweeted, text, username
+// bf4054c7-7ea8-4e5e-9714-03b8b880e28f | True | 1675109581 | 1 | True | True |  | 1 | True | Reklama | Company123
+//INSERT INTO tweet(id, advertisement, created_at, favorite)
