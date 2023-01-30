@@ -42,7 +42,6 @@ func (store *ReportMongoDBStore) GetReportForAd(ctx context.Context, tweetID str
 	ctx, span := store.tracer.Start(ctx, "ReportMongoDBStore.GetReportForAd")
 	defer span.End()
 
-	log.Println(timestamp)
 	store.logging.Infoln("ReportStore.GetReportForAd : reached Get Report For Ad in store")
 
 	if reportType == "daily" {
@@ -76,7 +75,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 
 	oneDaily, err := store.filterOneDaily(bson.M{"tweet_id": event.TweetID, "timestamp": dailyUnix})
 	if err != nil {
-		log.Println(err.Error())
+		store.logging.Errorf("Error in ReportMongoStore.filterOneDaily(), filterOneDaily: %s", err.Error())
 		report := domain.Report{
 			ID:          primitive.NewObjectID(),
 			TweetID:     event.TweetID,
@@ -131,7 +130,7 @@ func (store *ReportMongoDBStore) CreateReport(ctx context.Context, event *events
 	//monthly
 	oneMonthly, err := store.filterOneMonthly(bson.M{"tweet_id": event.TweetID, "timestamp": monthlyUnix})
 	if err != nil {
-		log.Println(err.Error())
+		store.logging.Errorf("Error in ReportMongoStore.filterOneMonthly(), filterOneMonthly: %s", err.Error())
 		report := domain.Report{
 			ID:          primitive.NewObjectID(),
 			TweetID:     event.TweetID,

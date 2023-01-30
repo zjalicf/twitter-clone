@@ -37,8 +37,6 @@ func (handler *ReportHandler) Init(router *mux.Router) {
 		log.Fatal(err)
 	}
 
-	log.Println(reportEnforcer.GetPolicy())
-
 	router.HandleFunc("/{id}/{reportType}/{date}", handler.GetReportForAd).Methods("GET")
 	http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(":8005", authorization.Authorizer(reportEnforcer)(router)))
