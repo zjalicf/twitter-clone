@@ -16,6 +16,7 @@ type FollowRequestStore interface {
 	FollowExist(ctx context.Context, followRequest *FollowRequest) (bool, error)
 	UpdateRequest(ctx context.Context, request *FollowRequest) error
 	SaveAd(ctx context.Context, ad *Ad) error
+	GetRecommendAdsId(ctx context.Context, username string) ([]string, error)
 	CountFollowings(ctx context.Context, username string) (int, error)
 	RecommendWithFollowings(ctx context.Context, username string) ([]string, error)
 	RecommendationWithoutFollowings(ctx context.Context, username string, recommends []string) ([]string, error)

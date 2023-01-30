@@ -85,27 +85,38 @@ func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([
 			return nil, err
 		}
 
-		var followingsList []string
-		err = json.Unmarshal(responseBodyBytes, &followingsList)
+		var feedInfo domain.FeedInfo
+		err = json.Unmarshal(responseBodyBytes, &feedInfo)
 		if err != nil {
 			log.Printf("error in unmarshal: %s", err.Error())
 			return nil, err
 		}
 
-		return followingsList, nil
+		return feedInfo, nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
-	userFeed, err := service.store.GetFeedByUser(ctx, bodyBytes.([]string))
+	feedInfo := bodyBytes.(domain.FeedInfo)
+	feed, err := service.store.GetPostsFeedByUser(ctx, feedInfo.Usernames)
 	if err != nil {
 		log.Printf("Error in getting feed by user: %s", err.Error())
 		return nil, err
 	}
 
-	return userFeed, nil
+	if len(feedInfo.AdIds) == 0 {
+		return feed, nil
+	}
+
+	ads, err := service.store.GetRecommendAdsForUser(ctx, feedInfo.AdIds)
+	if err != nil {
+		log.Printf("Error in getting recommend ads for user: %s", err.Error())
+		return nil, err
+	}
+	retList := append(ads, feed...)
+
+	return retList, nil
 }
 
 func (service *TweetService) saveImage(ctx context.Context, tweetID gocql.UUID, imageBytes []byte) error {

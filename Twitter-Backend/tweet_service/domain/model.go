@@ -57,3 +57,8 @@ type Event struct {
 	Type      string
 	Timestamp int
 }
+
+type FeedInfo struct {
+	Usernames []string `json:"usernames"`
+	AdIds     []string `json:"ad_ids"`
+}

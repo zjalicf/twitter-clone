@@ -560,6 +560,47 @@ func (store *FollowNeo4JStore) SaveAd(ctx context.Context, ad *domain.Ad) error 
 	return nil
 }
 
+func (store *FollowNeo4JStore) GetRecommendAdsId(ctx context.Context, username string) ([]string, error) {
+	ctx, span := store.tracer.Start(ctx, "FollowStore.GetRecommendAdsId")
+	defer span.End()
+
+	store.logging.Infoln("FollowStore.GetRecommendAdsId : GetRecommendAdsId reached")
+
+	session := store.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: DATABASE})
+	defer session.Close(ctx)
+
+	recommendsIds, err := session.ExecuteRead(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				"MATCH (u:User), (ad:Ad) "+
+					"WHERE u.username = $username AND ad.ageFrom <= u.age <= ad.ageTo "+
+					"AND u.residence = ad.residence AND ad.gender = u.gender OR ad.gender = 'Both' "+
+					"RETURN ad.tweetID as tweetID",
+				map[string]any{"username": username})
+			if err != nil {
+				store.logging.Errorf("FollowStore.GetRecommendAdsId.Run() : %s", err)
+				return nil, err
+			}
+
+			var recommends []string
+			for result.Next(ctx) {
+				record := result.Record()
+				tweetID, _ := record.Get("tweetID")
+				recommends = append(recommends, tweetID.(string))
+			}
+
+			return recommends, nil
+		})
+	if err != nil {
+		store.logging.Errorf("FollowStore.GetRecommendAdsId.ExecuteRead() : %s", err)
+		return nil, err
+	}
+
+	store.logging.Infoln("FollowStore.SaveAd : GetRecommendAdsId successful")
+
+	return recommendsIds.([]string), nil
+}
+
 func (store *FollowNeo4JStore) CountFollowings(ctx context.Context, username string) (int, error) {
 	ctx, span := store.tracer.Start(ctx, "FollowStore.CountFollowings")
 	defer span.End()

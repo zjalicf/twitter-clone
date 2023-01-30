@@ -91,7 +91,7 @@ func (handler *FollowHandler) GetFeedInfoOfUser(writer http.ResponseWriter, req 
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	users, err := handler.service.GetFollowingsOfUser(ctx, username)
+	feedInfo, err := handler.service.GetFeedInfoOfUser(ctx, username)
 	if err != nil {
 		handler.logging.Errorf("FollowHandler.GetFeedInfoOfUser : %s", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func (handler *FollowHandler) GetFeedInfoOfUser(writer http.ResponseWriter, req 
 
 	handler.logging.Infoln("FollowHandler.GetFeedInfoOfUser : GetFeedInfoOfUser successful")
 
-	jsonResponse(users, writer)
+	jsonResponse(feedInfo, writer)
 
 }
 
