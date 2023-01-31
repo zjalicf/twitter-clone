@@ -23,6 +23,11 @@ type Ad struct {
 	Residence string `json:"residence"`
 }
 
+type FeedInfo struct {
+	Usernames []string `json:"usernames"`
+	AdIds     []string `json:"ad_ids"`
+}
+
 type Status int
 
 const (

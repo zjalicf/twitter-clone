@@ -18,11 +18,11 @@
       <mat-card-subtitle class="tweet-text" [routerLink]="['/View-Tweet', tweet.id]">{{tweet.text}}</mat-card-subtitle>
       <img class="tweet-image" mat-card-image alt="twitter-logo-item" *ngIf="this.tweet.image" [src]="imagePath" [routerLink]="['/View-Tweet', tweet.id]">
     </div>
-    <div *ngIf="tweet.owner_username != '' && !this.isFollowingOwner">
+    <div *ngIf="(tweet.owner_username != '' && !this.isFollowingOwner)">
       <mat-card-subtitle class="tweet-text">This profile is private, content hide. Follow {{tweet.owner_username}} to get this post view.</mat-card-subtitle>
     </div>
 
-    <mat-card-actions>
+    <mat-card-actions *ngIf="this.isFollowingOwner">
       <button *ngIf="isLiked" (click)="likeTweet(tweet)" mat-icon-button color="warn">
         <mat-icon class="favorite-icon">favorite</mat-icon>
       </button>
@@ -44,3 +44,4 @@
     </mat-card-actions>
 
 </mat-card>
+</div>

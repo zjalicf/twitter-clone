@@ -2,6 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
+import { FeedData } from "../dto/feedData";
 import { TimespentDTO } from "../dto/TimespentDTO";
 import { TweetID } from "../dto/tweetIdDTO";
 import { Favorite } from "../models/favorite.model";
@@ -20,8 +21,8 @@ import { Tweet } from "../models/tweet.model";
         return this.http.post<Tweet>(`${environment.baseApiUrl}/${this.url}/`, formData);
     }
 
-    public GetHomeFeed(): Observable<Tweet[]> {
-        return this.http.get<Tweet[]>(`${environment.baseApiUrl}/${this.url}/feed`);
+    public GetHomeFeed(): Observable<FeedData> {
+        return this.http.get<FeedData>(`${environment.baseApiUrl}/${this.url}/feed`);
     }
 
     public GetTweetsForUser(username: string): Observable<Tweet[]> {

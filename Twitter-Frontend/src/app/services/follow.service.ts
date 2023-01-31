@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AdConfig } from '../models/adConfig';
 import { FollowRequest } from '../models/followRequest.model';
+import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -41,5 +42,13 @@ export class FollowService {
 
   public IsFollowExist(username: string): Observable<boolean> {
     return this.http.get<boolean>(`${environment.baseApiUrl}/${this.url}/followExist/${username}`)
+  }
+
+  public GetFollowings(username: string): Observable<string[]>{
+    return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/followings/${username}`)
+  }
+
+  public GetFollowiners(username: string): Observable<string[]>{
+    return this.http.get<string[]>(`${environment.baseApiUrl}/${this.url}/followers/${username}`)
   }
 }

@@ -42,7 +42,9 @@ func (handler *FollowHandler) Init(router *mux.Router) {
 	router.HandleFunc("/requests/{visibility}", handler.CreateRequest).Methods("POST")
 	router.HandleFunc("/acceptRequest/{id}", handler.AcceptRequest).Methods("PUT")
 	router.HandleFunc("/declineRequest/{id}", handler.DeclineRequest).Methods("PUT")
-	router.HandleFunc("/followings", handler.GetFollowingsByUser).Methods("GET")
+	router.HandleFunc("/feedInfo", handler.GetFeedInfoOfUser).Methods("GET")
+	router.HandleFunc("/followings/{username}", handler.GetFollowingsOfUser).Methods("GET")
+	router.HandleFunc("/followers/{username}", handler.GetFollowersOfUser).Methods("GET")
 	router.HandleFunc("/followExist/{username}", handler.FollowExist).Methods("GET")
 	router.HandleFunc("/recommendations", handler.GetRecommendationsForUser).Methods("GET")
 	router.HandleFunc("/ad", handler.SaveAd).Methods("POST")
@@ -79,24 +81,82 @@ func (handler *FollowHandler) GetRequestsForUser(writer http.ResponseWriter, req
 	jsonResponse(returnRequests, writer)
 }
 
-func (handler *FollowHandler) GetFollowingsByUser(writer http.ResponseWriter, req *http.Request) {
-	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetFollowingsByUser")
+func (handler *FollowHandler) GetFeedInfoOfUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetFeedInfoOfUser")
 	defer span.End()
 
-	handler.logging.Infoln("FollowHandler.GetFollowingsByUser : get_followings_by_user reached")
+	handler.logging.Infoln("FollowHandler.GetFeedInfoOfUser : GetFeedInfoOfUser reached")
 
 	token, _ := authorization.GetToken(req)
 	claims := authorization.GetMapClaims(token.Bytes())
 	username := claims["username"]
 
-	users, err := handler.service.GetFollowingsOfUser(ctx, username)
+	feedInfo, err := handler.service.GetFeedInfoOfUser(ctx, username)
 	if err != nil {
-		handler.logging.Errorf("FollowHandler.GetFollowingsByUser : %s", err)
+		handler.logging.Errorf("FollowHandler.GetFeedInfoOfUser : %s", err)
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	handler.logging.Infoln("FollowHandler.GetFollowingsByUser : get_followings_by_user successful")
+	handler.logging.Infoln("FollowHandler.GetFeedInfoOfUser : GetFeedInfoOfUser successful")
+
+	jsonResponse(feedInfo, writer)
+
+}
+
+func (handler *FollowHandler) GetFollowingsOfUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetFollowingsOfUser")
+	defer span.End()
+
+	handler.logging.Infoln("FollowHandler.GetFollowingsOfUser : GetFollowingsOfUser reached")
+
+	vars := mux.Vars(req)
+	var username string
+	if vars["username"] == "me" {
+		token, _ := authorization.GetToken(req)
+		claims := authorization.GetMapClaims(token.Bytes())
+		username = claims["username"]
+	} else {
+		username = vars["username"]
+	}
+
+	users, err := handler.service.GetFollowingsOfUser(ctx, username)
+	if err != nil {
+		handler.logging.Errorf("FollowHandler.GetFollowingsOfUser : %s", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	handler.logging.Infoln("FollowHandler.GetFollowingsOfUser : GetFollowingsOfUser successful")
+
+	jsonResponse(users, writer)
+
+}
+
+func (handler *FollowHandler) GetFollowersOfUser(writer http.ResponseWriter, req *http.Request) {
+	ctx, span := handler.tracer.Start(req.Context(), "FollowHandler.GetFollowersOfUser")
+	defer span.End()
+
+	handler.logging.Infoln("FollowHandler.GetFollowersOfUser : GetFollowersOfUser reached")
+
+	vars := mux.Vars(req)
+	var username string
+	if vars["username"] == "me" {
+		token, _ := authorization.GetToken(req)
+		claims := authorization.GetMapClaims(token.Bytes())
+		username = claims["username"]
+	} else {
+		username = vars["username"]
+	}
+
+	users, err := handler.service.GetFollowersOfUser(ctx, username)
+	if err != nil {
+		handler.logging.Errorf("FollowHandler.GetFollowersOfUser : %s", err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	handler.logging.Infoln("FollowHandler.GetFollowersOfUser : GetFollowersOfUser successful")
 
 	jsonResponse(users, writer)
 

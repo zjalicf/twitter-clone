@@ -62,17 +62,18 @@ func (service *TweetService) GetTweetsByUser(ctx context.Context, username strin
 	return service.store.GetTweetsByUser(ctx, username)
 }
 
-func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([]*domain.Tweet, error) {
+func (service *TweetService) GetFeedByUser(ctx context.Context, token string) (*domain.FeedData, error) {
 	ctx, span := service.tracer.Start(ctx, "TweetService.GetFeedByUser")
 	defer span.End()
 
-	followServiceEndpoint := fmt.Sprintf("http://%s:%s/followings", followServiceHost, followServicePort)
+	followServiceEndpoint := fmt.Sprintf("http://%s:%s/feedInfo", followServiceHost, followServicePort)
 	followServiceRequest, _ := http.NewRequest("GET", followServiceEndpoint, nil)
 	followServiceRequest.Header.Add("Authorization", token)
 	bodyBytes, err := service.cb.Execute(func() (interface{}, error) {
 
 		responseFservice, err := http.DefaultClient.Do(followServiceRequest)
 		if err != nil {
+			log.Printf("Error in TweetService.GetFeedByUser.Do() : %s", err)
 			return nil, fmt.Errorf("FollowServiceError")
 		}
 
@@ -84,27 +85,43 @@ func (service *TweetService) GetFeedByUser(ctx context.Context, token string) ([
 			return nil, err
 		}
 
-		var followingsList []string
-		err = json.Unmarshal(responseBodyBytes, &followingsList)
+		var feedInfo domain.FeedInfo
+		err = json.Unmarshal(responseBodyBytes, &feedInfo)
 		if err != nil {
 			log.Printf("error in unmarshal: %s", err.Error())
 			return nil, err
 		}
 
-		return followingsList, nil
+		return feedInfo, nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
-	userFeed, err := service.store.GetFeedByUser(ctx, bodyBytes.([]string))
+	feedInfo := bodyBytes.(domain.FeedInfo)
+	feed, err := service.store.GetPostsFeedByUser(ctx, feedInfo.Usernames)
 	if err != nil {
 		log.Printf("Error in getting feed by user: %s", err.Error())
 		return nil, err
 	}
 
-	return userFeed, nil
+	if len(feedInfo.AdIds) == 0 {
+		return &domain.FeedData{
+			Feed: feed,
+			Ads:  nil,
+		}, nil
+	}
+
+	ads, err := service.store.GetRecommendAdsForUser(ctx, feedInfo.AdIds)
+	if err != nil {
+		log.Printf("Error in getting recommend ads for user: %s", err.Error())
+		return nil, err
+	}
+
+	return &domain.FeedData{
+		Feed: feed,
+		Ads:  ads,
+	}, nil
 }
 
 func (service *TweetService) saveImage(ctx context.Context, tweetID gocql.UUID, imageBytes []byte) error {

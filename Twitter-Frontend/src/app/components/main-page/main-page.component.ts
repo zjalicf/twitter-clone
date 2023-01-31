@@ -15,8 +15,10 @@ import { UserService } from 'src/app/services/user.service';
 export class MainPageComponent implements OnInit {
 
   tweets: Tweet[] = [];
+  ads: Tweet[] = [];
   user: User = new User();
   recommendations: string[] = [];
+  dataLoaded = false;
 
   constructor(private tweetService: TweetService,
     private userService: UserService,
@@ -54,7 +56,15 @@ export class MainPageComponent implements OnInit {
           this.tweetService.GetHomeFeed()
             .subscribe({
               next: (data) => {
-                this.tweets = data;
+                if (data.feed != null){
+                  this.tweets = data.feed;
+                }
+
+                if(data.ads != null){
+                  console.log("ads " + data.ads)
+                  this.ads = data.ads;
+                  this.dataLoaded = true;
+                }
               },
               error: (error) => {
                 this.openSnackBar("The service is currently unavailable. Try again later.", "")
