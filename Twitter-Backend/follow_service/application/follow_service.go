@@ -34,7 +34,7 @@ func (service *FollowService) FollowExist(ctx context.Context, followRequest *do
 	return service.store.FollowExist(ctx, followRequest)
 }
 
-func (service *FollowService) GetFeedInfoOfUser(ctx context.Context, username string) ([]string, error) {
+func (service *FollowService) GetFeedInfoOfUser(ctx context.Context, username string) (*domain.FeedInfo, error) {
 	ctx, span := service.tracer.Start(ctx, "FollowService.GetFeedInfoOfUser")
 	defer span.End()
 
@@ -48,9 +48,18 @@ func (service *FollowService) GetFeedInfoOfUser(ctx context.Context, username st
 
 	followings = append(followings, username)
 
+	recommendAds, err := service.store.GetRecommendAdsId(ctx, username)
+	if err != nil {
+		service.logging.Errorf("FollowService.GetFollowingsOfUser.GetRecommendAdsId() : %s", err)
+		return nil, err
+	}
+
 	service.logging.Infoln("FollowService.GetFeedInfoOfUser : GetFeedInfoOfUser successful")
 
-	return followings, nil
+	return &domain.FeedInfo{
+		Usernames: followings,
+		AdIds:     recommendAds,
+	}, nil
 }
 
 func (service *FollowService) GetFollowingsOfUser(ctx context.Context, username string) ([]string, error) {

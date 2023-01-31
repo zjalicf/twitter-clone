@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Injectable, Input, OnInit } from '@angular/core';
 import { TweetID } from 'src/app/dto/tweetIdDTO';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
@@ -15,6 +15,7 @@ import { FollowService } from 'src/app/services/follow.service';
   styleUrls: ['./tweet-item.component.css']
 })
 export class TweetItemComponent implements OnInit {
+
 
   constructor(private userService: UserService,
     private tweetService: TweetService,

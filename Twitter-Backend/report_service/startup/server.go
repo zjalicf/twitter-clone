@@ -105,7 +105,7 @@ func (server *Server) Start() {
 	tracer := tp.Tracer("report_service")
 
 	reportStore := server.initReportStore(mongoClient, tracer)
-	cassandraStore, err := store.New(log.Default(), tracer)
+	cassandraStore, err := store.New(Logger, tracer)
 	if err != nil {
 		log.Printf("Error in server cassandra store.New(): %s", err.Error())
 		log.Fatal(err)
@@ -165,16 +165,16 @@ func newTraceProvider(exp sdktrace.SpanExporter) *sdktrace.TracerProvider {
 }
 
 func (server *Server) initReportStore(client *mongo.Client, tracer trace.Tracer) domain.ReportStore {
-	store2 := store.NewReportMongoDBStore(client, tracer)
+	store2 := store.NewReportMongoDBStore(client, tracer, Logger)
 	return store2
 }
 
 func (server *Server) initReportService(eventStore domain.EventStore, reportStore domain.ReportStore, tracer trace.Tracer) *application.ReportService {
-	return application.NewReportService(eventStore, reportStore, tracer)
+	return application.NewReportService(eventStore, reportStore, tracer, Logger)
 }
 
 func (server *Server) initReportHandler(service *application.ReportService, tracer trace.Tracer) *handlers.ReportHandler {
-	return handlers.NewReportHandler(service, tracer)
+	return handlers.NewReportHandler(service, tracer, Logger)
 }
 
 func (server *Server) initPublisher(subject string) saga.Publisher {

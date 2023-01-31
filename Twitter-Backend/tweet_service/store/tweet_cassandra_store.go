@@ -76,7 +76,8 @@ func (sr *TweetRepo) CreateTables() {
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s
 					(id UUID, text text, created_at time, favorited boolean, favorite_count int, retweeted boolean,
 					retweet_count int, username text, owner_username text, image boolean, advertisement boolean,
-					PRIMARY KEY ((id)))`, //for now there is no clustering order!!
+					PRIMARY KEY ((id), created_at))
+					WITH CLUSTERING ORDER BY (created_at DESC)`, //for now there is no clustering order!!
 			COLLECTION)).Exec()
 
 	err = sr.session.Query(
@@ -113,7 +114,7 @@ func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	for scanner.Next() {
 		var tweet domain.Tweet
 
-		err := scanner.Scan(&tweet.ID, &tweet.Advertisement, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited,
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
 			sr.logger.Println(err)
@@ -140,7 +141,7 @@ func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet,
 	for scanner.Next() {
 		var tweet domain.Tweet
 
-		err := scanner.Scan(&tweet.ID, &tweet.Advertisement, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited,
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
 			sr.logger.Println(err)
@@ -185,11 +186,12 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	return tweets, nil
 }
 
-func (sr *TweetRepo) GetFeedByUser(ctx context.Context, followings []string) ([]*domain.Tweet, error) {
-	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetFeedByUser")
+func (sr *TweetRepo) GetPostsFeedByUser(ctx context.Context, usernames []string) ([]*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetPostsFeedByUser")
 	defer span.End()
-
-	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ? ORDER BY created_at DESC`, followings)
+	log.Printf("usernames: %s", usernames)
+	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ? ORDER BY created_at DESC`,
+		usernames)
 	query.PageSize(0)
 	scanner := query.Iter().Scanner()
 
@@ -213,6 +215,35 @@ func (sr *TweetRepo) GetFeedByUser(ctx context.Context, followings []string) ([]
 		return nil, err
 	}
 	return tweets, nil
+}
+
+func (sr *TweetRepo) GetRecommendAdsForUser(ctx context.Context, ids []string) ([]*domain.Tweet, error) {
+	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetRecommendAdsForUser")
+	defer span.End()
+	log.Printf("ads: %s", ids)
+	query := sr.session.Query(`SELECT * FROM tweet WHERE id IN ? ORDER BY created_at DESC`, ids)
+	query.PageSize(0)
+	scanner := query.Iter().Scanner()
+
+	var ads []*domain.Tweet
+	for scanner.Next() {
+		var tweet domain.Tweet
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+
+		if err != nil {
+			sr.logger.Println(err)
+			return nil, err
+		}
+
+		ads = append(ads, &tweet)
+	}
+
+	if err := scanner.Err(); err != nil {
+		sr.logger.Println(err)
+		return nil, err
+	}
+	return ads, nil
 }
 
 func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Tweet, error) {
@@ -289,8 +320,8 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 	var tweets []*domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
-		err := scanner.Scan(&tweet.ID, &tweet.Advertisement, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.Image,
-			&tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
 			sr.logger.Println(err)
@@ -463,8 +494,8 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 	var tweets []*domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
-		err := scanner.Scan(&tweet.ID, &tweet.Advertisement, &tweet.CreatedAt, &tweet.FavoriteCount, &tweet.Favorited, &tweet.Image,
-			&tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
+		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
+			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
 			sr.logger.Println(err)
