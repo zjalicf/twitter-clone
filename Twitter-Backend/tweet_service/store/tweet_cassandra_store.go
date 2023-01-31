@@ -380,7 +380,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 	}
 
 	err = sr.session.Query(
-		`UPDATE tweet SET favorited=?, favorite_count=? where id=?`, favorited, favoriteCount, id.String()).Exec()
+		`UPDATE tweet SET favorited=?, favorite_count=? where id=? and created_at = ?`, favorited, favoriteCount, id.String(), createdAt).Exec()
 
 	if err != nil {
 		log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
@@ -521,7 +521,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 	}
 
 	err = sr.session.Query(
-		`UPDATE tweet SET retweeted=?, retweet_count=? WHERE id=?`, retweeted, retweetCount, id.String()).Exec()
+		`UPDATE tweet SET retweeted=?, retweet_count=? WHERE id=? AND created_at=?`, retweeted, retweetCount, id.String(), createdAt).Exec()
 
 	if err != nil {
 		sr.logger.Println(err)
