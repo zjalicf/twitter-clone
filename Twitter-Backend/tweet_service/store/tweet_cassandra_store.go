@@ -162,9 +162,7 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetsByUser")
 	defer span.End()
 
-	query := fmt.Sprintf(`SELECT * FROM tweets_by_user WHERE username = '%s'`, username)
-	fmt.Println(query)
-	scanner := sr.session.Query(query).Iter().Scanner()
+	scanner := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username = ?`, username).Iter().Scanner()
 
 	var tweets []*domain.Tweet
 	for scanner.Next() {
@@ -368,9 +366,9 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 		}
 
 	} else {
-		deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE tweet_id=%s AND username='%s'", COLLECTION_FAVORITE, id, username)
+		deleteQuery := fmt.Sprintf("DELETE FROM %s WHERE tweet_id = ? AND username = ?", COLLECTION_FAVORITE)
 
-		err = sr.session.Query(deleteQuery).Exec()
+		err = sr.session.Query(deleteQuery, id, username).Exec()
 
 		if err != nil {
 			log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
@@ -416,8 +414,7 @@ func (sr *TweetRepo) GetLikesByTweet(ctx context.Context, tweetID string) ([]*do
 		return nil, err
 	}
 
-	query := fmt.Sprintf(`SELECT * FROM favorite WHERE tweet_id = %s`, id.String())
-	scanner := sr.session.Query(query).Iter().Scanner()
+	scanner := sr.session.Query(`SELECT * FROM favorite WHERE tweet_id = ?`, id.String()).Iter().Scanner()
 
 	var favorites []*domain.Favorite
 	for scanner.Next() {
@@ -469,8 +466,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 		return nil, 500, nil
 	}
 
-	query := fmt.Sprintf(`SELECT * FROM retweet WHERE tweet_id = %s AND username = '%s'`, id.String(), username)
-	scanner := sr.session.Query(query).Iter().Scanner()
+	scanner := sr.session.Query(`SELECT * FROM retweet WHERE tweet_id = ? AND username = ?`, id.String(), username).Iter().Scanner()
 
 	var retweets []*domain.Retweet
 
