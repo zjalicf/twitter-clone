@@ -3,13 +3,14 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/gocql/gocql"
-	"go.opentelemetry.io/otel/trace"
 	"log"
 	"os"
 	"time"
 	"tweet_service/domain"
 	"tweet_service/errors"
+	"github.com/gocql/gocql"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -25,9 +26,10 @@ type TweetRepo struct {
 	session *gocql.Session
 	logger  *log.Logger
 	tracer  trace.Tracer
+	logging *logrus.Logger
 }
 
-func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
+func New(logger *log.Logger, tracer trace.Tracer, logging *logrus.Logger) (*TweetRepo, error) {
 	db := os.Getenv("TWEET_DB")
 	log.Println(db)
 
@@ -63,6 +65,7 @@ func New(logger *log.Logger, tracer trace.Tracer) (*TweetRepo, error) {
 		session: session,
 		logger:  logger,
 		tracer:  tracer,
+		logging: logging,
 	}, nil
 }
 
@@ -109,7 +112,7 @@ func (sr *TweetRepo) CreateTables() {
 // (60089906-68d2-11ed-9022-0242ac120002, 1641540002, 0, false, 0, false, 'cao', dae71a94-68d2-11ed-9022-0242ac120002) ;
 func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	scanner := sr.session.Query(`SELECT * FROM tweet`).Iter().Scanner()
-
+	sr.logging.Infoln("Store: getAll reached")
 	var tweets []domain.Tweet
 	for scanner.Next() {
 		var tweet domain.Tweet
@@ -117,7 +120,7 @@ func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 
@@ -125,7 +128,7 @@ func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return tweets, nil
@@ -134,6 +137,8 @@ func (sr *TweetRepo) GetAll(ctx context.Context) ([]domain.Tweet, error) {
 func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetOne")
 	defer span.End()
+
+	sr.logging.Infoln("Store: getOne reached")
 
 	scanner := sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, tweetID).Iter().Scanner()
 
@@ -144,7 +149,7 @@ func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet,
 		err := scanner.Scan(&tweet.ID, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount, &tweet.Favorited,
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 
@@ -152,7 +157,7 @@ func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet,
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return &tweets[0], nil
@@ -161,6 +166,7 @@ func (sr *TweetRepo) GetOne(ctx context.Context, tweetID string) (*domain.Tweet,
 func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*domain.Tweet, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetsByUser")
 	defer span.End()
+	sr.logging.Infoln("Store: tweetsByUser reached")
 
 	scanner := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username = ?`, username).Iter().Scanner()
 
@@ -170,7 +176,7 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 		err := scanner.Scan(&tweet.Username, &tweet.CreatedAt, &tweet.Advertisement, &tweet.FavoriteCount,
 			&tweet.Favorited, &tweet.ID, &tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 
@@ -178,7 +184,7 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return tweets, nil
@@ -187,9 +193,12 @@ func (sr *TweetRepo) GetTweetsByUser(ctx context.Context, username string) ([]*d
 func (sr *TweetRepo) GetPostsFeedByUser(ctx context.Context, usernames []string) ([]*domain.Tweet, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetPostsFeedByUser")
 	defer span.End()
-	log.Printf("usernames: %s", usernames)
-	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ? ORDER BY created_at DESC`,
-		usernames)
+
+	query := sr.session.Query(`SELECT * FROM tweets_by_user WHERE username IN ? ORDER BY created_at DESC`, usernames)
+
+	sr.logging.Infoln("Store: getFeed reached")
+
+
 	query.PageSize(0)
 	scanner := query.Iter().Scanner()
 
@@ -200,8 +209,7 @@ func (sr *TweetRepo) GetPostsFeedByUser(ctx context.Context, usernames []string)
 			&tweet.Favorited, &tweet.ID, &tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text)
 
 		if err != nil {
-			log.Println("ovde 173")
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 
@@ -209,7 +217,7 @@ func (sr *TweetRepo) GetPostsFeedByUser(ctx context.Context, usernames []string)
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return tweets, nil
@@ -248,6 +256,8 @@ func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Twe
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.Post")
 	defer span.End()
 
+	sr.logging.Infoln("Store: post reached")
+
 	insert := fmt.Sprintf("INSERT INTO %s "+
 		"(id, created_at, favorite_count, favorited, retweet_count, retweeted, text, username, owner_username, image, advertisement) "+
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", COLLECTION)
@@ -265,7 +275,7 @@ func (sr *TweetRepo) Post(ctx context.Context, tweet *domain.Tweet) (*domain.Twe
 		tweet.RetweetCount, tweet.Retweeted, tweet.Text, tweet.Username, tweet.OwnerUsername, tweet.Image, tweet.Advertisement).Exec()
 
 	if err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return tweet, nil
@@ -275,11 +285,13 @@ func (sr *TweetRepo) SaveImage(ctx context.Context, tweetID gocql.UUID, imageByt
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.SaveImage")
 	defer span.End()
 
+	sr.logging.Infoln("Store: saveImage reached")
+
 	insert := fmt.Sprintf("INSERT INTO %s (tweet_id, image) VALUES (?, ?)", COLLECTION_TWEET_IMAGE)
 
 	err := sr.session.Query(insert, tweetID, imageBytes).Exec()
 	if err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return err
 	}
 
@@ -290,9 +302,11 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.Favorite")
 	defer span.End()
 
+	sr.logging.Infoln("Store: favorite reached")
+
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
-		log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
+		sr.logging.Errorln(err)
 		return -1, nil
 	}
 
@@ -304,7 +318,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 		var favorite domain.Favorite
 		err = scanner.Scan(&favorite.TweetID, &favorite.Username, &favorite.ID)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
 			return 502, err
 		}
@@ -314,6 +328,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 
 	scanner = sr.session.Query(`SELECT * FROM tweet WHERE id = ?`, id.String()).Iter().Scanner()
 
+	sr.logging.Infoln("Getting all tweets in favorite")
 	var tweetUsername string
 	var tweets []*domain.Tweet
 	for scanner.Next() {
@@ -322,7 +337,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
 			return 500, err
 		}
@@ -331,7 +346,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 	}
 
 	if len(tweets) == 0 {
-		sr.logger.Println("No such tweet")
+		sr.logging.Errorln("no such tweet")
 		log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
 		return 500, nil
 	}
@@ -371,8 +386,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 		err = sr.session.Query(deleteQuery, id, username).Exec()
 
 		if err != nil {
-			log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
-			sr.logger.Println(err)
+			sr.logging.Errorf(err.Error())
 			return 502, err
 		}
 
@@ -383,8 +397,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 		`UPDATE tweet SET favorited=?, favorite_count=? where id=? and created_at = ?`, favorited, favoriteCount, id.String(), createdAt).Exec()
 
 	if err != nil {
-		log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return 502, err
 	}
 
@@ -393,8 +406,7 @@ func (sr *TweetRepo) Favorite(ctx context.Context, tweetID string, username stri
 		favorited, favoriteCount, tweetUsername, createdAt).Exec()
 
 	if err != nil {
-		log.Printf("Error int TweetCassandraStore, Favorite(): %s", err.Error())
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return 502, err
 	}
 
@@ -409,8 +421,11 @@ func (sr *TweetRepo) GetLikesByTweet(ctx context.Context, tweetID string) ([]*do
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetLikesByTweet")
 	defer span.End()
 
+	sr.logging.Infoln("Store: getLikesByTweet reached")
+
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 
@@ -421,14 +436,14 @@ func (sr *TweetRepo) GetLikesByTweet(ctx context.Context, tweetID string) ([]*do
 		var favorite domain.Favorite
 		err := scanner.Scan(&favorite.TweetID, &favorite.Username, &favorite.ID)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 		favorites = append(favorites, &favorite)
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 
@@ -439,19 +454,21 @@ func (sr *TweetRepo) GetTweetImage(ctx context.Context, id string) ([]byte, erro
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.GetTweetImage")
 	defer span.End()
 
+	sr.logging.Infoln("Store: tweetImage reached")
+
 	scanner := sr.session.Query(`SELECT * FROM tweet_image WHERE tweet_id = ?`, id).Iter().Scanner()
 
 	var byteImage []byte
 	for scanner.Next() {
 		err := scanner.Scan(nil, &byteImage)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, err
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, err
 	}
 	return byteImage, nil
@@ -460,6 +477,8 @@ func (sr *TweetRepo) GetTweetImage(ctx context.Context, id string) ([]byte, erro
 func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username string) (*gocql.UUID, int, error) {
 	ctx, span := sr.tracer.Start(ctx, "TweetStore.Retweet")
 	defer span.End()
+
+	sr.logging.Infoln("Store: retweet reached")
 
 	id, err := gocql.ParseUUID(tweetID)
 	if err != nil {
@@ -474,13 +493,14 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 		var retweet domain.Retweet
 		err = scanner.Scan(&retweet.TweetID, &retweet.Username, &retweet.ID)
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, 502, err
 		}
 		retweets = append(retweets, &retweet)
 	}
 
 	if len(retweets) != 0 {
+		sr.logging.Errorln("no retweets")
 		return nil, 406, fmt.Errorf(errors.RetweetAlreadyExist)
 	}
 
@@ -494,7 +514,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 			&tweet.Image, &tweet.OwnerUsername, &tweet.RetweetCount, &tweet.Retweeted, &tweet.Text, &tweet.Username)
 		tweetUsername = tweet.Username
 		if err != nil {
-			sr.logger.Println(err)
+			sr.logging.Errorln(err)
 			return nil, 500, err
 		}
 
@@ -516,7 +536,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 	err = sr.session.Query(
 		insert, retweetID.String(), tweets[0].ID.String(), username).Exec()
 	if err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, 502, err
 	}
 
@@ -533,7 +553,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 		retweeted, retweetCount, tweetUsername, createdAt).Exec()
 
 	if err != nil {
-		sr.logger.Println(err)
+		sr.logging.Errorln(err)
 		return nil, 502, err
 	}
 
@@ -541,7 +561,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 
 	newID, err := gocql.RandomUUID()
 	if err != nil {
-		sr.logger.Println(err.Error())
+		sr.logging.Errorln(err)
 		return nil, 502, err
 	}
 
@@ -562,7 +582,7 @@ func (sr *TweetRepo) Retweet(ctx context.Context, tweetID string, username strin
 		newID, timeNow, 0, false, 0, false, thisTweet.Text, username, thisTweet.Username, thisTweet.Image, false).Exec()
 
 	if err != nil {
-		sr.logger.Println(err.Error())
+		sr.logging.Errorln(err)
 		return nil, 502, err
 	}
 

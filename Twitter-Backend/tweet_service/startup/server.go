@@ -100,7 +100,7 @@ func (server *Server) Start() {
 
 	redisClient := server.initRedisClient()
 	tweetCache := server.initTweetCache(redisClient, tracer)
-	tweetStore, err := store.New(log.Default(), tracer)
+	tweetStore, err := store.New(log.Default(), tracer, Logger)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,15 +113,15 @@ func (server *Server) Start() {
 
 	createReportOrchestrator := server.initCreateEventOrchestrator(commandPublisher, replySubscriber, tracer)
 
-	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer, createReportOrchestrator)
+	tweetService := server.initTweetService(*tweetStore, tweetCache, tracer, createReportOrchestrator, Logger)
 
-	tweetHandler := server.initTweetHandler(tweetService, tracer)
+	tweetHandler := server.initTweetHandler(tweetService, tracer, Logger)
 
 	server.start(tweetHandler)
 }
 
-func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer, orchestrator *application2.CreateEventOrchestrator) *application.TweetService {
-	service := application.NewTweetService(&store, cache, tracer, orchestrator)
+func (server *Server) initTweetService(store store.TweetRepo, cache domain.TweetCache, tracer trace.Tracer, orchestrator *application2.CreateEventOrchestrator, logging *logrus.Logger) *application.TweetService {
+	service := application.NewTweetService(&store, cache, tracer, orchestrator, Logger)
 	Logger.Info("Started tweet service")
 	return service
 }
@@ -131,8 +131,8 @@ func (server *Server) initTweetCache(client *redis.Client, tracer trace.Tracer) 
 	return cache
 }
 
-func (server *Server) initTweetHandler(service *application.TweetService, tracer trace.Tracer) *handlers.TweetHandler {
-	return handlers.NewTweetHandler(service, tracer)
+func (server *Server) initTweetHandler(service *application.TweetService, tracer trace.Tracer, logging *logrus.Logger) *handlers.TweetHandler {
+	return handlers.NewTweetHandler(service, tracer, logging)
 }
 
 func (server *Server) initRedisClient() *redis.Client {
