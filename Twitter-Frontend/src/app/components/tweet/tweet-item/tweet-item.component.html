@@ -1,6 +1,6 @@
 <div>
   <mat-card class="tweet-card">
-    <div *ngIf="tweet.owner_username != '' && tweet.username != tweet.owner_username">
+    <div *ngIf="(tweet.owner_username != '' && tweet.username != tweet.owner_username) || tweet.owner_username == loggedInUser.username">
       <mat-card-subtitle class="tweet-text" [routerLink]="['/View-Profile', tweet.username]">Retweeted by {{tweet.username}}</mat-card-subtitle>
       <mat-card-title class="tweet-user-username" [routerLink]="['/View-Profile', tweet.owner_username]">{{tweet.owner_username}}</mat-card-title>
     </div>
