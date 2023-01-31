@@ -574,7 +574,8 @@ func (store *FollowNeo4JStore) GetRecommendAdsId(ctx context.Context, username s
 			result, err := transaction.Run(ctx,
 				"MATCH (u:User), (ad:Ad) "+
 					"WHERE u.username = $username AND ad.ageFrom <= u.age <= ad.ageTo "+
-					"AND u.residence = ad.residence AND ad.gender = u.gender OR ad.gender = 'Both' "+
+					"AND u.residence = ad.residence AND (ad.gender = u.gender "+
+					"OR (NOT ad.gender = u.gender AND ad.gender = 'Both')) "+
 					"RETURN ad.tweetID as tweetID",
 				map[string]any{"username": username})
 			if err != nil {

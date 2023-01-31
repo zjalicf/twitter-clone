@@ -97,7 +97,8 @@ import { MatCarouselModule } from 'ng-mat-carousel';
     MatCheckboxModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatMomentDateModule
+    MatMomentDateModule,
+    MatCarouselModule
   ],
   providers: [{
     provide: HTTP_INTERCEPTORS,
