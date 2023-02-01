@@ -47,16 +47,22 @@ export class MyProfileComponent implements OnInit {
           this.tweetService.GetTweetsForUser(this.user.username)
             .subscribe({
               next: (data: Tweet[]) => {
-                this.tweets = data;
+                if (data != null){
+                  this.tweets = data;
+                }
+                
                 this.followService.GetFollowings("me").subscribe(
                   data => {
+                    if (data != null) {
                     this.followings = data
-                    console.log(this.followings)
+                    }
                   }
                 )
                 this.followService.GetFollowiners("me").subscribe(
                   data => {
-                    this.followers = data
+                    if (data != null) {
+                      this.followers = data
+                    }
                   }
                 )
 

@@ -45,7 +45,6 @@ export class TweetItemComponent implements OnInit {
     if(this.tweet.owner_username != ''){
       this.followService.IsFollowExist(this.tweet.owner_username).subscribe(response => {
         this.isFollowingOwner = response;
-        console.log(this.isFollowingOwner);
       })
     }
 
@@ -75,7 +74,6 @@ export class TweetItemComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.log(error);
         }
       })
   }
@@ -91,11 +89,9 @@ export class TweetItemComponent implements OnInit {
           } else {
             this.isThatMeLoggedIn = false;
           }
-          console.log("Logged in me:" + this.isThatMeLoggedIn)
           return this.isThatMeLoggedIn
         },
         error: (error) => {
-          console.log(error);
           return this.isThatMeLoggedIn
 
         }

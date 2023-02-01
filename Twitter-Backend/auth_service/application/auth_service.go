@@ -28,7 +28,7 @@ var (
 	userServiceHost = os.Getenv("USER_SERVICE_HOST")
 	userServicePort = os.Getenv("USER_SERVICE_PORT")
 	smtpServer      = "smtp-mail.outlook.com"
-	smtpServerPort  = 587
+	smtpServerPort  = 5879
 	smtpEmail       = os.Getenv("SMTP_AUTH_MAIL")
 	smtpPassword    = os.Getenv("SMTP_AUTH_PASSWORD")
 )

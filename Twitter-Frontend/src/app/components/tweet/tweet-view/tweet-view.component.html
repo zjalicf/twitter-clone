@@ -24,11 +24,11 @@
         <b class="total-likes">{{tweet.favorite_count}}</b>
         <button mat-icon-button color="warn" class="who-liked" (click)="openDialog()">Likes</button>
   
-        <button *ngIf="isRetweeted" (click)="retweet(tweet)" mat-icon-button>
+        <button *ngIf="isRetweeted && tweet.owner_username == ''" (click)="retweet(tweet)" mat-icon-button>
           <mat-icon class="star-icon">star</mat-icon>
         </button>
   
-        <button *ngIf="!isRetweeted" (click)="retweet(tweet)" mat-icon-button>
+        <button *ngIf="!isRetweeted && tweet.owner_username == ''" (click)="retweet(tweet)" mat-icon-button>
           <mat-icon class="star-icon">star_border</mat-icon>
         </button>
       </mat-card-actions>
