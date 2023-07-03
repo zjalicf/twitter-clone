@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 import {  Router } from '@angular/router';
 import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
@@ -27,9 +27,6 @@ export class MainPageComponent implements OnInit {
     private router: Router
     ) { }
 
-
-  //treba napraviti da se prikazu samo tvitovi usera koje pratimo i tvitovi ulogovanog usera
-
   ngOnInit(): void {
     this.userService.GetMe()
       .subscribe({
@@ -52,7 +49,7 @@ export class MainPageComponent implements OnInit {
                 console.log(error);
               }
             });
-            
+
           this.tweetService.GetHomeFeed()
             .subscribe({
               next: (data) => {
@@ -71,8 +68,8 @@ export class MainPageComponent implements OnInit {
                 console.log(error);
               }
             });
-          
-          
+
+
         }
       });
   }

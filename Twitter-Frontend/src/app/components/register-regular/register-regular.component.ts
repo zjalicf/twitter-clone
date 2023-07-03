@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {Router} from "@angular/router"
 import { User } from 'src/app/models/user.model';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import { AuthService } from 'src/app/services/auth.service';
 import { PasswordStrenghtValidator } from 'src/app/services/customValidators';
 import { VerificationService } from 'src/app/services/verify.service';

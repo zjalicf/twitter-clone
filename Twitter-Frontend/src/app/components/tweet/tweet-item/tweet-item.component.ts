@@ -4,7 +4,7 @@ import { Tweet } from 'src/app/models/tweet.model';
 import { User } from 'src/app/models/user.model';
 import { TweetService } from 'src/app/services/tweet.service';
 import { UserService } from 'src/app/services/user.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { TweetLikesDialogComponent } from '../tweet-likes-dialog/tweet-likes-dialog.component';
 import { Favorite } from 'src/app/models/favorite.model';
 import { FollowService } from 'src/app/services/follow.service';
